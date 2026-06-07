@@ -55,3 +55,8 @@ def detect_secrets() -> NoReturn:
     cmd = ["detect-secrets-hook"] + sys.argv[1:]
     result = subprocess.run(cmd)
     sys.exit(result.returncode)
+
+
+def main() -> None:
+    """Main entry point for pkgdev."""
+    pass
