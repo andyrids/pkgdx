@@ -43,7 +43,6 @@ pkgdev-format-hook = "pkgdev.__main__:ruff_format"
 pkgdev-lint-hook = "pkgdev.__main__:ruff_lint"
 pkgdev-markdown-hook = "pkgdev.__main__:pymarkdown_lint"
 pkgdev-typing-hook = "pkgdev.__main__:mypy_typing"
-# pkgdev = "pkgdev.__main__:main"
 
 [project.urls]
 Repository = "https://gitlab.com/python-standards/pkgdev"
