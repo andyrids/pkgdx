@@ -10,7 +10,6 @@ secrets-baseline:
 
 [doc("Setup development environment")]
 [group("DEV")]
-setup:
+setup: && secrets-baseline
     uv sync
     uv run -m prek install
-    {{ if path_exists(".secrets.baseline") == "false" { "just secrets-baseline" } else { "" } }}

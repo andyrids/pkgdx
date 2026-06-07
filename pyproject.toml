@@ -1,7 +1,7 @@
 [project]
 name = "pkgdev"
 version = "0.1.0"
-description = ""
+description = "A package to centralise standards across Python projects."
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICEN[CS]E*", "COPYRIGHT"]
@@ -26,10 +26,10 @@ dependencies = []
 
 [dependency-groups]
 dev = [
-    "coverage",
     "detect-secrets",
     "mypy",
     "prek",
+    "pymarkdownlnt>=0.9.37",
     "pytest",
     "ruff",
 ]
@@ -88,6 +88,12 @@ extra_checks = true
 # Show error codes to enable precise type: ignore[<code>] annotations
 show_error_codes = true
 
+[tool.pymarkdown]
+extensions.markdown-tables.enabled = true
+plugins.line-length.enabled = true
+plugins.line-length.heading_line_length = 120
+plugins.line-length.line_length = 100
+
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
 tmp_path_retention_policy = "failed"
@@ -133,3 +139,12 @@ select = [
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.uv.workspace]
+members = [
+    ".",
+    ".",
+]
+
+[tool.uv.sources]
+pkgdev = { workspace = true }

@@ -54,6 +54,15 @@ repo = "local"
   pass_filenames = false
 
   [[repos.hooks]]
+  id = "check-markdown"
+  name = "Check Markdown [PyMarkdown]"
+  entry = "uv run -m pymarkdown scan"
+  language = "system"
+  types_or = ["markdown"]
+  require_serial = true
+  pass_filenames = true
+
+  [[repos.hooks]]
   id = "detect-secrets"
   name = "Detect Secrets [detect-secrets]"
   entry = "uv run detect-secrets-hook"
