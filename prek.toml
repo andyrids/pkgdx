@@ -1,0 +1,65 @@
+#:schema https://raw.githubusercontent.com/j178/prek/refs/heads/master/prek.schema.json
+
+# BUILTIN REPO HOOKS
+
+[[repos]]
+repo = "builtin"
+
+  [[repos.hooks]]
+  id = "check-toml"
+  name = "Check TOML [Builtin]"
+
+  [[repos.hooks]]
+  id = "check-yaml"
+  name = "Check YAML [Builtin]"
+
+  [[repos.hooks]]
+  id = "detect-private-key"
+  name = "Detect PEM [Builtin]"
+
+# LOCAL REPO HOOKS
+
+[[repos]]
+repo = "local"
+
+  [[repos.hooks]]
+  id = "format"
+  name = "Format [Ruff]"
+  entry = "uv run -m ruff format"
+  args = ["--exit-non-zero-on-format"]
+  language = "system"
+  types_or = ["python", "pyi"]
+  require_serial = true
+  pass_filenames = false
+
+  [[repos.hooks]]
+  id = "lint"
+  name = "Lint [Ruff]"
+  entry = "uv run -m ruff check"
+  args = ["--fix", "--exit-non-zero-on-fix"]
+  language = "system"
+  types_or = ["python", "pyi"]
+  require_serial = true
+  pass_filenames = false
+
+  [[repos.hooks]]
+  id = "typing"
+  name = "Typing [Mypy]"
+  entry = "uv run -m mypy"
+  args = ["-m", "pkgdev"]
+  language = "system"
+  types_or = ["python", "pyi"]
+  exclude = "tests/"
+  require_serial = true
+  pass_filenames = false
+
+  [[repos.hooks]]
+  id = "detect-secrets"
+  name = "Detect Secrets [detect-secrets]"
+  entry = "uv run detect-secrets-hook"
+  args = ["--baseline", ".secrets.baseline", "--no-verify"]
+  language = "system"
+  exclude = "(\\.secrets\\.baseline|.*\\.lock)"
+  require_serial = true
+  pass_filenames = true
+  stages = ["pre-commit"]

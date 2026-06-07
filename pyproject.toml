@@ -1,0 +1,135 @@
+[project]
+name = "pkgdev"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICEN[CS]E*", "COPYRIGHT"]
+authors = [
+    { name = "Andrew Ridyard", email = "andyrids.culprit320@passmail.com" },
+]
+requires-python = ">=3.10"
+keywords = []
+classifiers = [
+    # 3 - Alpha | 4 - Beta | 5 - Production/Stable
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "coverage",
+    "detect-secrets",
+    "mypy",
+    "prek",
+    "pytest",
+    "ruff",
+]
+
+[project.urls]
+Repository = "https://gitlab.com/python-standards/pkgdev"
+Issues = "https://gitlab.com/python-standards/pkgdev/issues"
+Changelog = "https://gitlab.com/python-standards/pkgdev/blob/main/CHANGELOG.md"
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+local_scheme = "no-local-version"
+version_scheme = "guess-next-dev"
+
+[tool.mypy]
+python_version = "3.13"
+
+# Require fully-typed function signatures
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
+
+# Disallow implicit Any — forces explicit handling of untyped imports
+disallow_any_generics = true
+disallow_any_unimported = true
+disallow_subclassing_any = true
+
+# Warn when Any propagates through return values
+warn_return_any = true
+
+# Enforce clean type: ignore hygiene
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+
+# Enforce explicit Optional and equality semantics
+strict_equality = true
+no_implicit_optional = true
+
+# Check bodies of functions even without annotations
+check_untyped_defs = true
+
+# Prevent accidental public re-exports
+no_implicit_reexport = true
+
+# Additional strict checks (e.g. TypeVar variance)
+extra_checks = true
+
+# Show error codes to enable precise type: ignore[<code>] annotations
+show_error_codes = true
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]
+tmp_path_retention_policy = "failed"
+
+[tool.ruff]
+exclude = []
+indent-width = 4
+line-length = 79
+
+[tool.ruff.format]
+indent-style = "space"
+line-ending = "auto"
+quote-style = "double"
+
+[tool.ruff.lint]
+select = [
+    "ANN001", # flake8-annotations (missing-type-function-argument)
+    "ANN002", # flake8-annotations (missing-type-args)
+    "ANN003", # flake8-annotations (missing-type-kwargs)
+    "D1",     # pydocstyle (undocumented-* ruleset)
+    "D403",   # pydocstyle (first-word-uncapitalized)
+    "D417",   # pydocstyle (undocumented-param)
+    "D419",   # pydocstyle (empty-docstring)
+    "E",      # pycodestyle (error ruleset)
+    "ERA",    # commented out code
+    "F401",   # pyflakes (unused-import)
+    "I002",   # isort (missing-required-import)
+    "LOG002", # flake8-logging (invalid-get-logger-argument)
+    "LOG007", # flake8-logging (exception-without-exc-info)
+    "LOG015", # flake8-logging (root-logger-call)
+    "NPY001", # NumPy-specific rules (numpy-deprecated-type-alias)
+    "NPY003", # NumPy-specific rules (numpy-deprecated-function)
+    "T100",   # flake8-debugger (debugger)
+    "T201",   # flake8-print (print)
+    "TRY002", # tryceratops (raise-vanilla-class)
+    "TRY003", # tryceratops (raise-vanilla-args)
+    "TRY004", # tryceratops (type-check-without-type-error)
+    "TRY300", # tryceratops (try-consider-else)
+    "TRY401", # tryceratops (verbose-log-message)
+    "W",      # pycodestyle (warning ruleset)
+    "C90",    # McCabe complexity (complex-structure)
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
