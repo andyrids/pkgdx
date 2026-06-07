@@ -1,0 +1,52 @@
+- id: pkgdev-format
+  name: Format [Ruff]
+  description: "Formats code using Ruff."
+  entry: pkgdev-format-hook
+  args: ["--exit-non-zero-on-format"]
+  language: python
+  types_or: ["python", "pyi"]
+  require_serial: true
+  pass_filenames: true
+  
+- id: pkgdev-lint
+  name: Lint [Ruff]
+  description: "Lints code using Ruff."
+  entry: pkgdev-lint-hook
+  args: ["--fix", "--exit-non-zero-on-fix"]
+  language: python
+  types_or: ["python", "pyi"]
+  require_serial: true
+  pass_filenames: true
+  
+- id: pkgdev-typing
+  name: Typing [Mypy]
+  description: "Checks type annotations using Mypy."
+  entry: pkgdev-typing-hook
+  args: []
+  language: python
+  types_or: ["python", "pyi"]
+  exclude: "tests/"
+  require_serial: true
+  pass_filenames: true
+  
+- id: pkgdev-markdown
+  name: Markdown [PyMarkdown]
+  description: "Lints Markdown files using PyMarkdown."
+  entry: pkgdev-markdown-hook
+  args: []
+  language: python
+  types_or: ["markdown"]
+  require_serial: true
+  pass_filenames: true
+
+- id: pkgdev-secrets
+  name: Detect Secrets [detect-secrets]
+  description: "Detects secrets in code using detect-secrets."
+  entry: pkgdev-secrets-hook
+  args: ["--baseline", ".secrets.baseline", "--no-verify"]
+  language: python
+  types_or: ["python", "pyi"]
+  exclude: "(\\.secrets\\.baseline|.*\\.lock)"
+  require_serial: true
+  pass_filenames: true
+  stages: ["pre-commit"]

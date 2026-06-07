@@ -63,7 +63,7 @@ repo = "local"
   pass_filenames = true
 
   [[repos.hooks]]
-  id = "detect-secrets"
+  id = "detect-secretss"
   name = "Detect Secrets [detect-secrets]"
   entry = "uv run detect-secrets-hook"
   args = ["--baseline", ".secrets.baseline", "--no-verify"]
