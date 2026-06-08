@@ -26,3 +26,5 @@ How this works in practice:
 and executes ruff check --config /path/to/standards.toml file1.py file2.py.
 6. The downstream project gets perfectly standardized linting without a single line of Ruff
 configuration in their own repo!
+
+TODO
