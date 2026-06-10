@@ -10,6 +10,7 @@ include:
   - template: Jobs/Dependency-Scanning.v2.gitlab-ci.yml
     inputs:
       enable_static_reachability: true
+      stage: Scan
 
 stages:
   - Lint
