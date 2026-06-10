@@ -68,8 +68,8 @@ workflow:
   - key:
       files:
         - uv.lock
-      paths:
-        - $UV_CACHE_DIR
+    paths:
+      - $UV_CACHE_DIR
   before_script:
     - uv sync
   after_script:
