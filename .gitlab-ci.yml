@@ -1,8 +1,8 @@
 variables:
-	DS_STATIC_REACHABILITY_ENABLED: true
-	UV_CACHE_DIR: .uv-cache
-	UV_LINK_MODE: copy
-	UV_VERSION: "0.11.19"
+  DS_STATIC_REACHABILITY_ENABLED: true
+  UV_CACHE_DIR: .uv-cache
+  UV_LINK_MODE: copy
+  UV_VERSION: "0.11.19"
 
 # Include the GitLab managed templates
 include:
@@ -18,7 +18,7 @@ stages:
   - Scan
 
 workflow:
-	name: "$CI_COMMIT_TIMESTAMP $CI_PIPELINE_SOURCE $CI_COMMIT_REF_NAME"
+  name: "$CI_COMMIT_TIMESTAMP $CI_PIPELINE_SOURCE $CI_COMMIT_REF_NAME"
   auto_cancel:
     on_new_commit: interruptible
 
@@ -50,70 +50,70 @@ workflow:
     - if: '$CI_COMMIT_TAG'
 
 .image-tag: &image-tag
-	before_script:
-		- |
-	    if [ -n "$CI_COMMIT_TAG" ]; then
-		    export CS_IMAGE="$CI_REGISTRY_IMAGE:${CI_COMMIT_TAG#v}"
-		  fi
+  before_script:
+    - |
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        export CS_IMAGE="$CI_REGISTRY_IMAGE:${CI_COMMIT_TAG#v}"
+      fi
 
 # ---------------------------------------------------------
 # Job Definitions
 # ---------------------------------------------------------
 
 .astral-uv:
-	image:
+  image:
     name: ghcr.io/astral-sh/uv:$UV_VERSION
     entrypoint: [""]
   cache:
-	- key:
+  - key:
     files:
-			- uv.lock
+      - uv.lock
     paths:
-			- $UV_CACHE_DIR
+      - $UV_CACHE_DIR
   before_script:
-	  - uv sync
-	after_script:
-		- if [ "$CI_JOB_STATUS" == "canceled" ]; then exit 0; fi
-		- uv cache prune --ci
+    - uv sync
+  after_script:
+    - if [ "$CI_JOB_STATUS" == "canceled" ]; then exit 0; fi
+    - uv cache prune --ci
 
 ruff-lint-job:
-	extends: .astral-uv
+  extends: .astral-uv
   stage: Lint
   interruptible: true
   <<: *protected-mr-rules
   script:
-		- uv run ruff check .
-		- uv run ruff format --check .
+    - uv run ruff check .
+    - uv run ruff format --check .
 
 pytest-job:
-	extends: .astral-uv
+  extends: .astral-uv
   stage: Test
   interruptible: true
   <<: *protected-mr-rules
   script:
-		- uv run pytest --cov --cov-report term --cov-report xml:coverage.xml
+    - uv run pytest --cov --cov-report term --cov-report xml:coverage.xml
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
-	artifacts:
-		reports:
-			coverage_report:
-				coverage_format: cobertura
-				path: coverage.xml
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
 
 build-image-job:
-	extends: .image-tag
+  extends: .image-tag
   stage: build
   interruptible: true
   <<: *image-job-rules
   script:
-		- echo "Executing multi-stage container build..."
-		- make build-image
+    - echo "Executing multi-stage container build..."
+    - make build-image
 
 # Override the default rules of the included container_scanning job
 container_scanning:
-	extends: .image-tag
-	stage: Scan
-	needs: ["build-image-job"]
-	interruptible: false
-	<<: *image-job-rules
-	variables:
-		CS_DEFAULT_BRANCH_IMAGE: "$CI_REGISTRY_IMAGE:latest"
+  extends: .image-tag
+  stage: Scan
+  needs: ["build-image-job"]
+  interruptible: false
+  <<: *image-job-rules
+  variables:
+    CS_DEFAULT_BRANCH_IMAGE: "$CI_REGISTRY_IMAGE:latest"
