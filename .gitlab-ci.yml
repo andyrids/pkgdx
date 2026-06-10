@@ -101,7 +101,7 @@ pytest-job:
 
 build-image-job:
   extends: .image-tag
-  stage: build
+  stage: Build
   interruptible: true
   <<: *image-job-rules
   script:
