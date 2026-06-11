@@ -57,6 +57,18 @@ def detect_secrets() -> NoReturn:
     sys.exit(result.returncode)
 
 
+def pymarkdown_lint() -> NoReturn:
+    """Runs pymarkdown linting with the configured settings.
+
+    Returns:
+        None
+    """
+    config = standards.PYMARKDOWN_CONFIG.as_posix()
+    cmd = ["pymarkdown", "scan", "--config", config] + sys.argv[1:]
+    result = subprocess.run(cmd)
+    sys.exit(result.returncode)
+
+
 def main() -> None:
     """Main entry point for pkgdev."""
     pass
