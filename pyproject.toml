@@ -39,11 +39,11 @@ dev = [
 
 [project.scripts]
 pkgdev = "pkgdev.__main__:main"
-pkgdev-secrets = "pkgdev.__main__:detect_secrets"
-pkgdev-format = "pkgdev.__main__:ruff_format"
-pkgdev-lint = "pkgdev.__main__:ruff_lint"
-pkgdev-markdown = "pkgdev.__main__:pymarkdown_lint"
-pkgdev-typing = "pkgdev.__main__:mypy_typing"
+pkgdev-secrets-hook = "pkgdev.__main__:detect_secrets"
+pkgdev-format-hook = "pkgdev.__main__:ruff_format"
+pkgdev-lint-hook = "pkgdev.__main__:ruff_lint"
+pkgdev-markdown-hook = "pkgdev.__main__:pymarkdown_lint"
+pkgdev-typing-hook = "pkgdev.__main__:mypy_typing"
 
 [project.urls]
 Repository = "https://gitlab.com/python-standards/pkgdev"
