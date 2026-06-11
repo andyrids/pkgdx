@@ -1,0 +1,4 @@
+extensions.markdown-tables.enabled = true
+plugins.line-length.enabled = true
+plugins.line-length.heading_line_length = 120
+plugins.line-length.line_length = 100

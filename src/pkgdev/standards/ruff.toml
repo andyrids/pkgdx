@@ -1,0 +1,40 @@
+exclude = []
+indent-width = 4
+line-length = 79
+
+[format]
+indent-style = "space"
+line-ending = "auto"
+quote-style = "double"
+
+[lint]
+select = [
+    "ANN001", # flake8-annotations (missing-type-function-argument)
+    "ANN002", # flake8-annotations (missing-type-args)
+    "ANN003", # flake8-annotations (missing-type-kwargs)
+    "D1",     # pydocstyle (undocumented-* ruleset)
+    "D403",   # pydocstyle (first-word-uncapitalized)
+    "D417",   # pydocstyle (undocumented-param)
+    "D419",   # pydocstyle (empty-docstring)
+    "E",      # pycodestyle (error ruleset)
+    "ERA",    # commented out code
+    "F401",   # pyflakes (unused-import)
+    "I002",   # isort (missing-required-import)
+    "LOG002", # flake8-logging (invalid-get-logger-argument)
+    "LOG007", # flake8-logging (exception-without-exc-info)
+    "LOG015", # flake8-logging (root-logger-call)
+    "NPY001", # NumPy-specific rules (numpy-deprecated-type-alias)
+    "NPY003", # NumPy-specific rules (numpy-deprecated-function)
+    "T100",   # flake8-debugger (debugger)
+    "T201",   # flake8-print (print)
+    "TRY002", # tryceratops (raise-vanilla-class)
+    "TRY003", # tryceratops (raise-vanilla-args)
+    "TRY004", # tryceratops (type-check-without-type-error)
+    "TRY300", # tryceratops (try-consider-else)
+    "TRY401", # tryceratops (verbose-log-message)
+    "W",      # pycodestyle (warning ruleset)
+    "C90",    # McCabe complexity (complex-structure)
+]
+
+[lint.pydocstyle]
+convention = "google"
