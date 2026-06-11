@@ -64,7 +64,7 @@ def pymarkdown_lint() -> NoReturn:
         None
     """
     config = standards.PYMARKDOWN_CONFIG.as_posix()
-    cmd = ["pymarkdown", "scan", "--config", config] + sys.argv[1:]
+    cmd = ["pymarkdown", "--config", config, "scan"] + sys.argv[1:]
     result = subprocess.run(cmd)
     sys.exit(result.returncode)
 
