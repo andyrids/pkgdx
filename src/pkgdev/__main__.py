@@ -13,34 +13,16 @@ from tomlkit import TOMLDocument
 from tomlkit.items import Table
 
 
-EXPECTED_BUILTIN_HOOKS: tuple[dict[str, str], ...] = (
-    {"id": "check-toml", "name": "Check TOML [Builtin]"},
-    {"id": "check-yaml", "name": "Check YAML [Builtin]"},
-    {"id": "detect-private-key", "name": "Detect PEM [Builtin]"},
-)
-
-EXPECTED_PKGDEV_HOOKS: tuple[dict[str, str], ...] = (
-    {"id": "pkgdev-lint", "name": "Lint [Ruff]"},
-    {"id": "pkgdev-format", "name": "Format [Ruff]"},
-    {"id": "pkgdev-markdown", "name": "Check Markdown [PyMarkdown]"},
-    {"id": "pkgdev-typing", "name": "Typing [Mypy]"},
-    {"id": "pkgdev-secrets", "name": "Detect Secrets [detect-secrets]"},
-)
-
-PKGDEV_REPO_URL: str = "https://gitlab.com/python-standards/pkgdev"
-
 logger = logging.getLogger(__name__)
 
 
-def ruff_format() -> NoReturn:
+def ruff_format() -> None:
     """Runs ruff formatting with the configured settings.
 
-    Returns:
-        None
+    NOTE: Relates to pre-commit hook ID `pkgdev-format`, with
+    entry point `pkgdev-format-hook`.
     """
     config = standards.RUFF_CONFIG.as_posix()
-    # Combine the base command, the explicit config flag, and any
-    # args passed by prek
     cmd = ["ruff", "format", "--config", config] + sys.argv[1:]
     result = subprocess.run(cmd)
     sys.exit(result.returncode)
@@ -49,8 +31,8 @@ def ruff_format() -> NoReturn:
 def ruff_lint() -> NoReturn:
     """Runs ruff linting with the configured settings.
 
-    Returns:
-        None
+    NOTE: Relates to pre-commit hook ID `pkgdev-lint`, with
+    entry point `pkgdev-lint-hook`.
     """
     config = standards.RUFF_CONFIG.as_posix()
     cmd = ["ruff", "check", "--config", config] + sys.argv[1:]
@@ -58,11 +40,11 @@ def ruff_lint() -> NoReturn:
     sys.exit(result.returncode)
 
 
-def mypy_typing() -> NoReturn:
+def mypy_typing() -> None:
     """Runs mypy type checking with the configured settings.
 
-    Returns:
-        None
+    NOTE: Relates to pre-commit hook ID `pkgdev-typing`, with
+    entry point `pkgdev-typing-hook`.
     """
     config = standards.MYPY_CONFIG.as_posix()
     cmd = ["mypy", "--config-file", config] + sys.argv[1:]
@@ -70,11 +52,11 @@ def mypy_typing() -> NoReturn:
     sys.exit(result.returncode)
 
 
-def detect_secrets() -> NoReturn:
+def detect_secrets() -> None:
     """Runs detect-secrets with the provided arguments.
 
-    Returns:
-        None
+    NOTE: Relates to pre-commit hook ID `pkgdev-secrets`, with
+    entry point `pkgdev-secrets-hook`.
     """
     args = sys.argv[1:]
     if "--baseline" not in args:
@@ -84,11 +66,11 @@ def detect_secrets() -> NoReturn:
     sys.exit(result.returncode)
 
 
-def pymarkdown_lint() -> NoReturn:
+def pymarkdown_lint() -> None:
     """Runs pymarkdown linting with the configured settings.
 
-    Returns:
-        None
+    NOTE: Relates to pre-commit hook ID `pkgdev-markdown`, with
+    entry point `pkgdev-markdown-hook`.
     """
     config = standards.PYMARKDOWN_CONFIG.as_posix()
     cmd = ["pymarkdown", "--config", config, "scan"] + sys.argv[1:]
@@ -97,7 +79,7 @@ def pymarkdown_lint() -> NoReturn:
 
 
 def get_project_root() -> Path:
-    """Get the root path of the consuming repo from the environment.
+    """Gets the root path of the consuming repo.
 
     Returns:
         The root path of the consuming repo.
@@ -115,8 +97,8 @@ def get_project_root() -> Path:
     raise exceptions.ProjectRootNotFoundError(msg)
 
 
-def _install_hooks(root: Path) -> None:
-    """Install pre-commit hooks if they are not already installed.
+def install_prek_hooks(root: Path) -> None:
+    """Install pre-commit hooks if not installed.
 
     Args:
         root: The root path of the consuming repo.
@@ -135,8 +117,11 @@ def _install_hooks(root: Path) -> None:
         logger.error(e, exc_info=True)
 
 
-def _update_hooks(root: Path) -> None:
+def update_prek_hooks(root: Path) -> None:
     """Auto-update pre-commit hooks.
+
+    NOTE: Updates the pre-commit hooks based on available tagged versions in
+    the remote `pkgdev` repo.
 
     Args:
         root: The root path of the consuming repo.
@@ -155,16 +140,17 @@ def _update_hooks(root: Path) -> None:
 
 
 def setup_prek_config(root: Path) -> None:
-    """"""
+    """Configures pre-commit hooks in the consuming repo.
 
+    Args:
+        root: The root path of the consuming repo.
+    """
     changed = False
     config_existing = root / "prek.toml"
     config_template = standards.PREK_CONFIG
 
-    if not config_template.exists():
+    if not config_existing.exists():
         config_existing.write_text(config_template.read_text())
-        _install_hooks(root)
-        _update_hooks(root)
         return
 
     doc: TOMLDocument = tomlkit.parse(config_existing.read_text())
@@ -174,7 +160,12 @@ def setup_prek_config(root: Path) -> None:
         changed = True
 
     def create_repo_table(name: str, revision: str | None = None) -> Table:
-        """"""
+        """Creates a new repository table in the pre-commit configuration.
+
+        Args:
+            name: The name of the repository.
+            revision: The revision of the repository.
+        """
         nonlocal changed
         new_repo = tomlkit.table()
         new_repo["repo"] = name
@@ -186,7 +177,12 @@ def setup_prek_config(root: Path) -> None:
         return new_repo
 
     def get_repo_table(name: str, revision: str | None = None) -> Table:
-        """"""
+        """Gets an existing or creates a new repository table.
+
+        Args:
+            name: The name of the repository.
+            revision: The revision of the repository.
+        """
         nonlocal changed
 
         for repo in doc["repos"]:
@@ -201,7 +197,12 @@ def setup_prek_config(root: Path) -> None:
     def inject_missing_hooks(
         table: dict, expected_hooks: tuple[dict[str, str], ...]
     ) -> None:
-        """"""
+        """Injects missing hooks into the repository table.
+
+        Args:
+            table: The repository table.
+            expected_hooks: The expected hooks to be present in the table.
+        """
         nonlocal changed
         existing_id_set = {hook.get("id") for hook in table.get("hooks", [])}
 
@@ -232,9 +233,6 @@ def setup_prek_config(root: Path) -> None:
         logger.info(f"Updating pre-commit hooks (`{config_existing}`).")
         config_existing.write_text(tomlkit.dumps(doc))
 
-    _install_hooks(root)
-    _update_hooks(root)
-
 
 def main() -> None:
     """Configures a consuming repo with `pkgdev` standards.
@@ -246,8 +244,38 @@ def main() -> None:
         root = get_project_root()
     except exceptions.ProjectRootNotFoundError as e:
         logger.error(e, exc_info=True)
-    else:
-        setup_prek_config(root)
+        sys.exit(1)
+
+    setup_prek_config(root)
+    install_prek_hooks(root)
+    update_prek_hooks(root)
+
+    secrets_baseline = root / ".secrets.baseline"
+    if not secrets_baseline.exists():
+        logger.info("Creating `.secrets.baseline`.")
+        try:
+            subprocess.run(
+                [
+                    "uv",
+                    "run",
+                    "detect-secrets",
+                    "scan",
+                    "--exclude-files",
+                    r"(.*\.lock)",
+                    ">",
+                    ".secrets.baseline",
+                ],
+                cwd=root,
+                capture_output=True,
+                check=True,
+            )
+        except subprocess.CalledProcessError as e:
+            logger.error(e, exc_info=True)
+            sys.exit(1)
+        except FileNotFoundError as e:
+            logger.error(e, exc_info=True)
+            sys.exit(1)
+    sys.exit(0)
 
 
 if __name__ == "__main__":
