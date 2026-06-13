@@ -8,7 +8,7 @@ from pathlib import Path
 
 MODULE_ROOT: Path = Path(__file__).parent
 MYPY_CONFIG: Path = MODULE_ROOT / "mypy.ini"
-PREK_CONFIG: Path = MODULE_ROOT / "prek.toml"
+PREK_CONFIG: Path = MODULE_ROOT / "_prek.toml"
 PYMARKDOWN_CONFIG: Path = MODULE_ROOT / "pymarkdown.toml"
 RUFF_CONFIG: Path = MODULE_ROOT / "ruff.toml"
 
