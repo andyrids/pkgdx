@@ -29,6 +29,7 @@ dependencies = [
     "pymarkdownlnt>=0.9.37",
     "rich>=15.0.0",
     "ruff",
+    "tomlkit>=0.15.0",
 ]
 
 [dependency-groups]

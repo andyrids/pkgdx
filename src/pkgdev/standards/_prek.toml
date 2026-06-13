@@ -1,0 +1,44 @@
+#:schema https://raw.githubusercontent.com/j178/prek/refs/heads/master/prek.schema.json
+
+# PKGDEV REPO HOOKS
+
+[[repos]]
+repo = "https://gitlab.com/python-standards/pkgdev"
+rev = "v0.1.0rc3"
+
+[[repos.hooks]]
+id = "pkgdev-lint"
+name = "Lint [Ruff]"
+
+[[repos.hooks]]
+id = "pkgdev-format"
+name = "Format [Ruff]"
+
+[[repos.hooks]]
+id = "pkgdev-markdown"
+name = "Check Markdown [PyMarkdown]"
+
+[[repos.hooks]]
+id = "pkgdev-typing"
+name = "Typing [Mypy]"
+
+[[repos.hooks]]
+id = "pkgdev-secrets"
+name = "Detect Secrets [detect-secrets]"
+
+# BUILTIN REPO HOOKS
+
+[[repos]]
+repo = "builtin"
+
+[[repos.hooks]]
+id = "check-toml"
+name = "Check TOML [Builtin]"
+
+[[repos.hooks]]
+id = "check-yaml"
+name = "Check YAML [Builtin]"
+
+[[repos.hooks]]
+id = "detect-private-key"
+name = "Detect PEM [Builtin]"
