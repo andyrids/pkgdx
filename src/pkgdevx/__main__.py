@@ -162,7 +162,7 @@ def update_prek_hooks(root: Path) -> None:
         )
     except subprocess.CalledProcessError as e:
         if e.stdout:
-            logger.warning(re.sub(f"\n", "", e.stdout))
+            logger.warning(re.sub("\n", "", e.stdout))
             logger.warning("Run `uv run prek update`")
         if e.stderr:
             logger.error(str(e))
