@@ -1,6 +1,6 @@
 [project]
 name = "pkgdev"
-version = "0.1.0"
+dynamic = ["version"]
 description = "A package to centralise standards across Python projects."
 readme = "README.md"
 license = "Apache-2.0"
@@ -23,19 +23,19 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "detect-secrets",
-    "mypy",
-    "prek",
+    "detect-secrets>=1.5.0",
+    "mypy>=2.1.0",
+    "prek>=0.4.6",
     "pymarkdownlnt>=0.9.37",
     "rich>=15.0.0",
-    "ruff",
+    "ruff>=0.15.20",
     "tomlkit>=0.15.0",
 ]
 
 [dependency-groups]
 dev = [
     "coverage>=7.14.1",
-    "pytest",
+    "pytest>=9.1.1",
 ]
 
 [project.scripts]
@@ -47,7 +47,7 @@ pkgdev-markdown-hook = "pkgdev.__main__:pymarkdown_lint"
 pkgdev-typing-hook = "pkgdev.__main__:mypy_typing"
 
 [project.urls]
-Repository = "https://gitlab.com/python-standards/pkgdev"
+Repository = "https://gitlab.com/andyrids/pkgdev"
 Issues = "https://gitlab.com/python-standards/pkgdev/issues"
 Changelog = "https://gitlab.com/python-standards/pkgdev/blob/main/CHANGELOG.md"
 
@@ -64,4 +64,11 @@ version_scheme = "guess-next-dev"
 
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
+log_cli = true
+log_cli_level = "INFO"
 tmp_path_retention_policy = "failed"
+
+[tool.uv.workspace]
+members = [
+    "consumers/testing",
+]
