@@ -3,8 +3,8 @@
 import contextlib
 from importlib import metadata
 from pathlib import Path
-from pkgdev import exceptions, standards
-from pkgdev.logging import configure_logging
+from pkgdevx import exceptions, standards
+from pkgdevx.logging import configure_logging
 
 __all__: list[str] = ["exceptions", "standards"]
 

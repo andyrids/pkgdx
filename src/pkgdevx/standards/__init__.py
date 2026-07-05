@@ -27,7 +27,7 @@ def get_pkgdev_repository() -> str:
     """
     import urllib.parse
     from importlib.metadata import metadata
-    from pkgdev.exceptions import ProjectRepoURLMissingError
+    from pkgdevx.exceptions import ProjectRepoURLMissingError
 
     pkgdev_metadata = metadata("pkgdev")
 
@@ -52,7 +52,7 @@ def get_config_revision() -> str:
         Revision tag.
     """
     import tomllib
-    from pkgdev.exceptions import PrekRepoRevisionError
+    from pkgdevx.exceptions import PrekRepoRevisionError
 
     with PREK_CONFIG.open("rb") as f:
         config = tomllib.load(f)
@@ -82,7 +82,7 @@ def get_config_repository() -> str:
         Repository URL.
     """
     import tomllib
-    from pkgdev.exceptions import PrekRepoRevisionError
+    from pkgdevx.exceptions import PrekRepoRevisionError
 
     with PREK_CONFIG.open("rb") as f:
         config = tomllib.load(f)

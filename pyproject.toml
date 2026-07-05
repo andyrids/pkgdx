@@ -1,5 +1,5 @@
 [project]
-name = "pkgdev"
+name = "pkgdevx"
 dynamic = ["version"]
 description = "A package to centralise standards across Python projects."
 readme = "README.md"
@@ -25,7 +25,7 @@ classifiers = [
 dependencies = [
     "detect-secrets>=1.5.0",
     "mypy>=2.1.0",
-    "prek>=0.4.6",
+    "prek~=0.4.8",
     "pymarkdownlnt>=0.9.37",
     "rich>=15.0.0",
     "ruff>=0.15.20",
@@ -39,17 +39,17 @@ dev = [
 ]
 
 [project.scripts]
-pkgdev = "pkgdev.__main__:main"
-pkgdev-secrets-hook = "pkgdev.__main__:detect_secrets"
-pkgdev-format-hook = "pkgdev.__main__:ruff_format"
-pkgdev-lint-hook = "pkgdev.__main__:ruff_lint"
-pkgdev-markdown-hook = "pkgdev.__main__:pymarkdown_lint"
-pkgdev-typing-hook = "pkgdev.__main__:mypy_typing"
+pkgdevx = "pkgdevx.__main__:main"
+pkgdevx-secrets-hook = "pkgdevx.__main__:detect_secrets"
+pkgdevx-format-hook = "pkgdevx.__main__:ruff_format"
+pkgdevx-lint-hook = "pkgdevx.__main__:ruff_lint"
+pkgdevx-markdown-hook = "pkgdevx.__main__:pymarkdown_lint"
+pkgdevx-typing-hook = "pkgdevx.__main__:mypy_typing"
 
 [project.urls]
-Repository = "https://gitlab.com/andyrids/pkgdev"
-Issues = "https://gitlab.com/python-standards/pkgdev/issues"
-Changelog = "https://gitlab.com/python-standards/pkgdev/blob/main/CHANGELOG.md"
+Repository = "https://gitlab.com/andyrids/pkgdevx"
+Issues = "https://gitlab.com/andyrids/pkgdevx/issues"
+Changelog = "https://gitlab.com/andyrids/pkgdevx/blob/main/CHANGELOG.md"
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]

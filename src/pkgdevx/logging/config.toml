@@ -3,7 +3,7 @@ incremental = false
 disable_existing_loggers = false
 
 [formatters.json]
-"()" = "pkgdev.logging.JSONFormatter"
+"()" = "pkgdevx.logging.JSONFormatter"
 
 [formatters.standard]
 format = "%(levelname)s: %(message)s"

@@ -1,4 +1,4 @@
-"""Main entry point for pkgdev pre-commit hooks."""
+"""Main entry point for pkgdevx pre-commit hooks."""
 
 import argparse
 import logging
@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import NoReturn
 
 import tomlkit
-from pkgdev import exceptions, standards
+from pkgdevx import exceptions, standards
 from tomlkit import TOMLDocument
 from tomlkit.items import Table
 
@@ -21,8 +21,8 @@ logger = logging.getLogger(__package__)
 def ruff_format() -> None:
     """Runs ruff formatting with the configured settings.
 
-    NOTE: Relates to pre-commit hook ID `pkgdev-format`, with
-    entry point `pkgdev-format-hook`.
+    NOTE: Relates to pre-commit hook ID `pkgdevx-format`, with
+    entry point `pkgdevx-format-hook`.
     """
     config = standards.RUFF_CONFIG.as_posix()
     cmd = ["ruff", "format", "--config", config] + sys.argv[1:]
@@ -33,8 +33,8 @@ def ruff_format() -> None:
 def ruff_lint() -> NoReturn:
     """Runs ruff linting with the configured settings.
 
-    NOTE: Relates to pre-commit hook ID `pkgdev-lint`, with
-    entry point `pkgdev-lint-hook`.
+    NOTE: Relates to pre-commit hook ID `pkgdevx-lint`, with
+    entry point `pkgdevx-lint-hook`.
     """
     config = standards.RUFF_CONFIG.as_posix()
     cmd = ["ruff", "check", "--config", config] + sys.argv[1:]
@@ -45,8 +45,8 @@ def ruff_lint() -> NoReturn:
 def mypy_typing() -> None:
     """Runs mypy type checking with the configured settings.
 
-    NOTE: Relates to pre-commit hook ID `pkgdev-typing`, with
-    entry point `pkgdev-typing-hook`.
+    NOTE: Relates to pre-commit hook ID `pkgdevx-typing`, with
+    entry point `pkgdevx-typing-hook`.
     """
     config = standards.MYPY_CONFIG.as_posix()
     cmd = ["mypy", "--config-file", config] + sys.argv[1:]
@@ -57,8 +57,8 @@ def mypy_typing() -> None:
 def detect_secrets() -> None:
     """Runs detect-secrets with the provided arguments.
 
-    NOTE: Relates to pre-commit hook ID `pkgdev-secrets`, with
-    entry point `pkgdev-secrets-hook`.
+    NOTE: Relates to pre-commit hook ID `pkgdevx-secrets`, with
+    entry point `pkgdevx-secrets-hook`.
     """
     args = sys.argv[1:]
     if "--baseline" not in args:
@@ -71,8 +71,8 @@ def detect_secrets() -> None:
 def pymarkdown_lint() -> None:
     """Runs pymarkdown linting with the configured settings.
 
-    NOTE: Relates to pre-commit hook ID `pkgdev-markdown`, with
-    entry point `pkgdev-markdown-hook`.
+    NOTE: Relates to pre-commit hook ID `pkgdevx-markdown`, with
+    entry point `pkgdevx-markdown-hook`.
     """
     config = standards.PYMARKDOWN_CONFIG.as_posix()
     cmd = ["pymarkdown", "--config", config, "scan"] + sys.argv[1:]
@@ -144,28 +144,32 @@ def install_prek_hooks(root: Path) -> None:
 
 
 def update_prek_hooks(root: Path) -> None:
-    """Auto-update pre-commit hooks.
+    """Checks for pre-commit hook updates.
 
     NOTE: Updates the pre-commit hooks based on available tagged versions in
-    the remote `pkgdev` repo.
+    the remote `pkgdevx` repo.
 
     Args:
         root: The root path of the consuming repo.
     """
     try:
         subprocess.run(
-            ["uv", "run", "prek", "auto-update"],
+            ["uv", "run", "prek", "update", "--check"],
             cwd=root,
             capture_output=True,
             check=True,
             text=True,
         )
     except subprocess.CalledProcessError as e:
-        logger.error(e.stderr or e.stdout)
+        if e.stdout:
+            logger.warning(re.sub(f"\n", "", e.stdout))
+            logger.warning("Run `uv run prek update`")
+        if e.stderr:
+            logger.error(str(e))
     except FileNotFoundError as e:
         logger.exception(e)
     else:
-        logger.debug("Prek auto-update process completed")
+        logger.debug("Prek check updates process completed")
 
 
 def setup_prek_config(root: Path, reset: bool = False) -> None:
@@ -258,8 +262,8 @@ def setup_prek_config(root: Path, reset: bool = False) -> None:
                 table["hooks"].append(hook_table)
                 changed = True
 
-    doc_pkgdev: TOMLDocument = tomlkit.parse(config_template.read_text())
-    for table in doc_pkgdev.get("repos", []):
+    doc_pkgdevx: TOMLDocument = tomlkit.parse(config_template.read_text())
+    for table in doc_pkgdevx.get("repos", []):
         name = table.get("repo")
         revision = table.get("rev")
 
@@ -278,10 +282,10 @@ def setup_prek_config(root: Path, reset: bool = False) -> None:
 
 
 def command_setup(args: argparse.Namespace) -> None:
-    """Configures a consuming repo with `pkgdev` standards.
+    """Configures a consuming repo with `pkgdevx` standards.
 
     Attempts to identify the root of the consuming repo and ensures that
-    `Prek` is configured with the expected `pkgdev` hooks.
+    `Prek` is configured with the expected `pkgdevx` hooks.
 
     Args:
         args: Namespace object with command-line arguments as attributes.
@@ -330,9 +334,9 @@ def command_setup(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
-    """Provides CLI entrypoint for `pkgdev`."""
+    """Provides CLI entrypoint for `pkgdevx`."""
     parser = argparse.ArgumentParser(
-        description="`pkgdev` - Canonical standards management"
+        description="`pkgdevx` - Canonical standards management"
     )
 
     parser.add_argument(

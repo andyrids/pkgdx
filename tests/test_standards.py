@@ -6,7 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 import pytest
-from pkgdev import exceptions, standards
+from pkgdevx import exceptions, standards
 
 
 def test_validate_manifest() -> None:
@@ -35,7 +35,7 @@ def test_validate_manifest() -> None:
 def test_prek_revision_update() -> None:
     """Ensures the Prek config has the latest revision version."""
     import shutil
-    from pkgdev.standards import PREK_CONFIG
+    from pkgdevx.standards import PREK_CONFIG
 
     prek = shutil.which("prek")
     assert prek is not None

@@ -1,24 +1,28 @@
 variables:
-  DS_STATIC_REACHABILITY_ENABLED: true
   UV_CACHE_DIR: .uv-cache
   UV_LINK_MODE: copy
-  UV_VERSION: "0.11.26-trixie"
+  # UV_PUBLISH_INDEX: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/pypi"
+  UV_PUBLISH_URL: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/pypi"
+  UV_PUBLISH_PASSWORD: "$CI_JOB_TOKEN"
+  UV_PUBLISH_TOKEN: "$CI_JOB_TOKEN"
+  UV_PUBLISH_USERNAME: gitlab-ci-token
+  UV_VERSION: 0.11.26-trixie
   GIT_DEPTH: 0
 
-# Include the GitLab managed templates
+# Include the GitLab-managed templates
 include:
   - template: Security/Container-Scanning.gitlab-ci.yml
-  # - template: Jobs/Dependency-Scanning.v2.gitlab-ci.yml
-  #   inputs:
-  #     job_name: dependency-scanning
-  #     enable_static_reachability: true
-  #     stage: Scan
 
 stages:
   - Lint
   - Test
   - Build
   - Scan
+  - Publish
+
+# ---------------------------------------------------------
+# Workflow Customisation
+# ---------------------------------------------------------
 
 workflow:
   name: "$CI_COMMIT_TIMESTAMP $CI_PIPELINE_SOURCE $CI_COMMIT_REF_NAME"
@@ -35,7 +39,7 @@ workflow:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_PROTECTED == "true"'
     - if: '$CI_COMMIT_REF_PROTECTED == "true" && $CI_PIPELINE_SOURCE == "push"'
 
-.image-job-rules: &image-job-rules
+.build-image-rules: &build-image-rules
   rules:
     # MR develop --> main: pkgdev:develop
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "develop" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
@@ -57,6 +61,13 @@ workflow:
         export CS_IMAGE="$CI_REGISTRY_IMAGE:${CI_COMMIT_TAG#v}"
       fi
 
+.package-tag: &package-tag
+  before_script:
+    - |
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        export SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PKGDEV="${CI_COMMIT_TAG#v}"
+      fi
+
 # ---------------------------------------------------------
 # Job Definitions
 # ---------------------------------------------------------
@@ -64,7 +75,7 @@ workflow:
 .astral-uv:
   image:
     name: ghcr.io/astral-sh/uv:$UV_VERSION
-    entrypoint: [""]
+    # entrypoint: [""]
   cache:
   - key:
       files:
@@ -72,6 +83,10 @@ workflow:
     paths:
       - $UV_CACHE_DIR
   before_script:
+    - |
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        export SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PKGDEV="${CI_COMMIT_TAG#v}"
+      fi
     - git fetch --tags origin || true
     - uv sync
     - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/".insteadOf "https://gitlab.com/"
@@ -104,14 +119,40 @@ pytest-job:
         coverage_format: cobertura
         path: coverage.xml
 
+build-package-job:
+  extends: .astral-uv
+  stage: Build
+  interruptible: true
+  rules:
+    - if: "$CI_COMMIT_TAG"
+  script:
+    - uv build --out-dir dist --package pkgdev --verbose
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 day
+
+publish-package-job:
+  extends: .astral-uv
+  stage: Publish
+  interruptible: true
+  needs:
+    - job: build-package-job
+      artifacts: true
+  rules:
+    - if: "$CI_COMMIT_TAG"
+  # Skip .astral-uv `before_script`
+  before_script: []
+  script:
+    - uv publish dist/*
+
 build-image-job:
   extends: .image-tag
   stage: Build
   interruptible: true
-  <<: *image-job-rules
+  <<: *build-image-rules
   script:
     - echo "Executing multi-stage container build..."
-    - make build-image
 
 # Override the default rules of the included container_scanning job
 container_scanning:
@@ -119,9 +160,6 @@ container_scanning:
   stage: Scan
   needs: ["build-image-job"]
   interruptible: false
-  <<: *image-job-rules
+  <<: *build-image-rules
   variables:
     CS_DEFAULT_BRANCH_IMAGE: "$CI_REGISTRY_IMAGE:latest"
-
-# dependency-scanning:
-#   <<: *protected-branch-rules

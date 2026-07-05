@@ -17,9 +17,7 @@ setup: && secrets-baseline
 [doc("Test pkgdev setup in workspace member")]
 [group("DEV")]
 test *FLAGS:
-    uv run --directory consumers/testing pkgdev -v setup {{FLAGS}}
-    # uv run prek install
-
+    uv run --directory consumers/testing pkgdevx -v setup {{FLAGS}}
 
 [doc("Create `coverage` report")]
 [group("DEV")]
