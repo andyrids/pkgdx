@@ -13,3 +13,17 @@ secrets-baseline:
 setup: && secrets-baseline
     uv sync
     uv run -m prek install
+
+[doc("Test pkgdev setup in workspace member")]
+[group("DEV")]
+test *FLAGS:
+    uv run --directory consumers/testing pkgdev -v setup {{FLAGS}}
+    # uv run prek install
+
+
+[doc("Create `coverage` report")]
+[group("DEV")]
+coverage *FLAGS:
+    @uv run coverage run -m pytest {{FLAGS}}
+    @uv run coverage report
+    @uv run coverage xml

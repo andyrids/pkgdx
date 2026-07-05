@@ -1,9 +1,7 @@
 #:schema https://raw.githubusercontent.com/j178/prek/refs/heads/master/prek.schema.json
 
-# PKGDEV REPO HOOKS
-
 [[repos]]
-repo = "https://gitlab.com/python-standards/pkgdev"
+repo = "https://gitlab.com/andyrids/pkgdev"
 rev = "v0.1.0rc3"
 
 [[repos.hooks]]
@@ -25,8 +23,6 @@ name = "Typing [Mypy]"
 [[repos.hooks]]
 id = "pkgdev-secrets"
 name = "Detect Secrets [detect-secrets]"
-
-# BUILTIN REPO HOOKS
 
 [[repos]]
 repo = "builtin"
