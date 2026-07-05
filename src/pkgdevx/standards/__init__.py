@@ -1,4 +1,4 @@
-"""__init__ for pkgdev.standards.
+"""__init__ for pkgdevx.standards.
 
 Provides access to configuration files for supported tools such as; `mypy`,
 `prek`, `pymarkdown`, and `ruff`.
@@ -16,8 +16,8 @@ RUFF_CONFIG: Path = MODULE_ROOT / "ruff.toml"
 
 
 @lru_cache(maxsize=1)
-def get_pkgdev_repository() -> str:
-    """Get repository URL from pkgdev metadata.
+def get_pkgdevx_repository() -> str:
+    """Get repository URL from pkgdevx metadata.
 
     Raises:
         ProjectRepoURLMissingError: On missing repository URL in metadata.
@@ -29,15 +29,15 @@ def get_pkgdev_repository() -> str:
     from importlib.metadata import metadata
     from pkgdevx.exceptions import ProjectRepoURLMissingError
 
-    pkgdev_metadata = metadata("pkgdev")
+    pkgdevx_metadata = metadata("pkgdevx")
 
-    for entry in pkgdev_metadata.get_all("Project-URL", failobj=[]):
+    for entry in pkgdevx_metadata.get_all("Project-URL", failobj=[]):
         if entry.lower().startswith("repository"):
             _, URL = entry.split()
             parsed = urllib.parse.urlparse(URL)
             if parsed.scheme and parsed.netloc:
                 return URL
-    msg = "Missing repository URL in `pkgdev` metadata (`pyproject.toml`)"
+    msg = "Missing repository URL in `pkgdevx` metadata (`pyproject.toml`)"
     raise ProjectRepoURLMissingError(msg)
 
 
@@ -57,7 +57,7 @@ def get_config_revision() -> str:
     with PREK_CONFIG.open("rb") as f:
         config = tomllib.load(f)
 
-    REPO_URL = get_pkgdev_repository()
+    REPO_URL = get_pkgdevx_repository()
 
     for repo in config.get("repos", []):
         if repo.get("repo") == REPO_URL:
@@ -67,7 +67,7 @@ def get_config_revision() -> str:
             else:
                 msg = "Missing `rev` key in Prek config"
                 raise PrekRepoRevisionError(msg)
-    msg = "`pkgdev` metadata URL missing/mismatch for Prek config"
+    msg = "`pkgdevx` metadata URL missing/mismatch for Prek config"
     raise PrekRepoRevisionError(msg)
 
 
@@ -87,13 +87,13 @@ def get_config_repository() -> str:
     with PREK_CONFIG.open("rb") as f:
         config = tomllib.load(f)
 
-    REPO_URL = get_pkgdev_repository()
+    REPO_URL = get_pkgdevx_repository()
 
     for repo in config.get("repos", []):
         if repo.get("repo") == REPO_URL:
             return REPO_URL
 
-    msg = "`pkgdev` repository URL from metadata not found in Prek config"
+    msg = "`pkgdevx` repository URL from metadata not found in Prek config"
     raise PrekRepoRevisionError(msg)
 
 

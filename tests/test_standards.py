@@ -68,8 +68,8 @@ def test_prek_repo_url() -> None:
         pytest.fail(str(e))
 
     try:
-        pkgdev_repository = standards.get_pkgdev_repository
+        pkgdevx_repository = standards.get_pkgdevx_repository
     except exceptions.PrekRepoURLMissingError as e:
         pytest.fail(str(e))
 
-    assert config_repository == pkgdev_repository()
+    assert config_repository == pkgdevx_repository()

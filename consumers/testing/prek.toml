@@ -2,11 +2,15 @@
 
 [[repos]]
 repo = "https://gitlab.com/andyrids/pkgdevx"
-rev = "v0.1.0rc3"
+rev = "v0.1.0rc4"
 
 [[repos.hooks]]
 id = "pkgdevx-lint"
 name = "Lint [Ruff]"
+
+[[repos.hooks]]
+id = "pkgdevx-format"
+name = "Format [Ruff]"
 
 [[repos.hooks]]
 id = "pkgdevx-markdown"

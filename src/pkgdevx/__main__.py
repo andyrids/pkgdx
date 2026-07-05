@@ -136,9 +136,9 @@ def install_prek_hooks(root: Path) -> None:
             check=True,
         )
     except subprocess.CalledProcessError as e:
-        logger.exception(e)
+        logger.exception(str(e))
     except FileNotFoundError as e:
-        logger.exception(e)
+        logger.exception(str(e))
     else:
         logger.debug("Prek pre-commit hooks installed")
 
@@ -169,7 +169,7 @@ def update_prek_hooks(root: Path) -> None:
     except FileNotFoundError as e:
         logger.exception(e)
     else:
-        logger.debug("Prek check updates process completed")
+        logger.info("Prek pre-commit hooks are up-to-date")
 
 
 def setup_prek_config(root: Path, reset: bool = False) -> None:
@@ -177,21 +177,29 @@ def setup_prek_config(root: Path, reset: bool = False) -> None:
 
     Args:
         root: The root path of the consuming repo.
+        reset: Clean installation flag. Defaults to False.
     """
     changed = False
     config_existing = root / "prek.toml"
     config_template = standards.PREK_CONFIG
 
+    if reset:
+        logger.info(f"Clean install `./{config_existing.name}`")
+        logger.info(f"Creating `./{config_existing.name}` from template")
+        config_existing.write_text(config_template.read_text())
+        return
+
     # Config file missing | empty | `--reset` option
-    if reset or not config_existing.exists() or not config_existing.stat().st_size:
-        logger.debug(f"Existing `./{config_existing.name}` not found")
+    if not config_existing.exists() or not config_existing.stat().st_size:
+        logger.info(f"Existing `./{config_existing.name}` missing/empty")
+        logger.info(f"Creating `./{config_existing.name}` from template")
         config_existing.write_text(config_template.read_text())
         return
 
     doc: TOMLDocument = tomlkit.parse(config_existing.read_text())
 
     if "repos" not in doc:
-        logger.debug(f"Existing `./{config_existing.name}` is missing `[repos]` AoT")
+        logger.debug(f"Existing `./{config_existing.name}` missing `[repos]`")
         doc["repos"] = tomlkit.aot()
         changed = True
 
@@ -276,9 +284,9 @@ def setup_prek_config(root: Path, reset: bool = False) -> None:
         config_text = re.sub(r"\n+\[\[repos", "\n\n[[repos", config_text)
 
         config_existing.write_text(config_text)
-        logger.debug(
-            f"Updated existing `./{config_existing.name}` with missing pre-commit hooks"
-        )
+        logger.debug(f"Injected `./{config_existing.name}` missing pre-commit hooks")
+    else:
+        logger.info(f"Existing `./{config_existing.name}` correct & unchanged")
 
 
 def command_setup(args: argparse.Namespace) -> None:

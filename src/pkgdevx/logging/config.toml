@@ -45,7 +45,7 @@ level = "WARNING"
 formatter = "standard"
 stream = "ext://sys.stderr"
 
-[loggers.pkgdev]
+[loggers.pkgdevx]
 level = "WARNING"
 handlers = ["stdout-verbose"]
 propagate = false

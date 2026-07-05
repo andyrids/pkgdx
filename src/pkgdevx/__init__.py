@@ -1,4 +1,4 @@
-"""__init__ for pkgdev."""
+"""__init__ for pkgdevx."""
 
 import contextlib
 from importlib import metadata
@@ -13,4 +13,4 @@ PKGDEV_ROOT: Path = Path(__file__).parent
 configure_logging()
 
 with contextlib.suppress(metadata.PackageNotFoundError):
-    __version__: str = metadata.version("pkgdev")
+    __version__: str = metadata.version("pkgdevx")
