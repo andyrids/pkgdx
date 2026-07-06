@@ -127,4 +127,28 @@ every pipeline without replicating the toolchain configuration in every project
 ## Adopting Your Own Standards (External Users)
 
 If you wish to use the `pkgdevx` framework, but want to apply your own rules,
-you should fork this repository.
+follow the guidence below you should fork this repository.
+
+### (1) Fork the Repo
+
+Start by forking the repo to your own namespace.
+
+### (2) Modify the Configuration Files
+
+Modify the configuration files located in `src/pkgdev/standards/`.
+
+- `mypy.ini` - Mypy static typing rules
+- `pymarkdown.toml` - PyMarkdown linting rules
+- `ruff.toml` - Ruff linting & formatting rules
+
+### (3) Update Hook Configuration URL
+
+Edit the `src/pkgdev/standards/hooks.toml` and change the `repo` to your
+forked repo URL and the `rev` to the new tag you will create once you have
+finished.
+
+### (4) Tag a New Release
+
+Tag a new release and the CI/CD pipeline will build and publish the package
+to your Package Regstry. You can install your fork as a dev dependency in your
+projects via the repo URL or Package Registry URL.
