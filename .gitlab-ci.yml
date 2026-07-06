@@ -4,7 +4,6 @@ variables:
   # UV_PUBLISH_INDEX: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/pypi"
   UV_PUBLISH_URL: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/pypi"
   UV_PUBLISH_PASSWORD: "$CI_JOB_TOKEN"
-  UV_PUBLISH_TOKEN: "$CI_JOB_TOKEN"
   UV_PUBLISH_USERNAME: gitlab-ci-token
   UV_VERSION: 0.11.26-trixie
   GIT_DEPTH: 0
