@@ -4,6 +4,7 @@ __pycache__/
 
 # uv — virtual environment
 .venv/
+.uv-cache/
 
 # hatchling — build output
 dist/
