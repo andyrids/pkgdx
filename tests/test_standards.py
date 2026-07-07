@@ -41,7 +41,7 @@ def test_prek_revision_update() -> None:
     assert prek is not None
 
     result = subprocess.run(
-        [prek, "auto-update", "--check", "--config", str(PREK_CONFIG)],
+        [prek, "update", "--check", "--config", str(PREK_CONFIG)],
         capture_output=True,
         check=False,
         text=True,
