@@ -2,9 +2,6 @@ version = 1
 incremental = false
 disable_existing_loggers = false
 
-[formatters.json]
-"()" = "pkgdevx.logging.JSONFormatter"
-
 [formatters.standard]
 format = "%(levelname)s: %(message)s"
 datefmt = "%Y-%m-%dT%H:%M:%S%z"
@@ -22,7 +19,7 @@ format = "[%(funcName)s] %(message)s"
 datefmt = "[%Y-%m-%dT%H:%M:%S%z]"
 
 [filters]
-# Kept empty to match the original dictionary structure
+# Kept empty to match the expected dictionary structure
 
 [handlers.stdout]
 class = "rich.logging.RichHandler"

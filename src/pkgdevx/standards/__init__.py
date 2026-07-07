@@ -6,6 +6,7 @@ Provides access to configuration files for supported tools such as; `mypy`,
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 
 MODULE_ROOT: Path = Path(__file__).parent
@@ -13,6 +14,18 @@ MYPY_CONFIG: Path = MODULE_ROOT / "mypy.ini"
 PREK_CONFIG: Path = MODULE_ROOT / "hooks.toml"
 PYMARKDOWN_CONFIG: Path = MODULE_ROOT / "pymarkdown.toml"
 RUFF_CONFIG: Path = MODULE_ROOT / "ruff.toml"
+
+
+@lru_cache(maxsize=1)
+def _load_prek_config() -> dict[str, Any]:
+    """Loads Prek config.
+
+    Returns:
+        The Prek hooks TOML as a dict."""
+    import tomllib
+
+    with PREK_CONFIG.open("rb") as f:
+        return tomllib.load(f)
 
 
 @lru_cache(maxsize=1)
@@ -33,7 +46,7 @@ def get_pkgdevx_repository() -> str:
 
     for entry in pkgdevx_metadata.get_all("Project-URL", failobj=[]):
         if entry.lower().startswith("repository"):
-            _, URL = entry.split()
+            _, URL = entry.split(", ", 1)
             parsed = urllib.parse.urlparse(URL)
             if parsed.scheme and parsed.netloc:
                 return URL
@@ -51,12 +64,9 @@ def get_config_revision() -> str:
     Returns:
         Revision tag.
     """
-    import tomllib
     from pkgdevx.exceptions import PrekRepoRevisionError
 
-    with PREK_CONFIG.open("rb") as f:
-        config = tomllib.load(f)
-
+    config = _load_prek_config()
     REPO_URL = get_pkgdevx_repository()
 
     for repo in config.get("repos", []):
@@ -81,12 +91,9 @@ def get_config_repository() -> str:
     Returns:
         Repository URL.
     """
-    import tomllib
     from pkgdevx.exceptions import PrekRepoRevisionError
 
-    with PREK_CONFIG.open("rb") as f:
-        config = tomllib.load(f)
-
+    config = _load_prek_config()
     REPO_URL = get_pkgdevx_repository()
 
     for repo in config.get("repos", []):

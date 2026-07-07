@@ -6,7 +6,7 @@
   language: python
   types_or: ["python", "pyi"]
   require_serial: true
-  pass_filenames: true
+  pass_filenames: false
   
 - id: pkgdevx-lint
   name: Lint [Ruff]
@@ -16,7 +16,7 @@
   language: python
   types_or: ["python", "pyi"]
   require_serial: true
-  pass_filenames: true
+  pass_filenames: false
   
 - id: pkgdevx-typing
   name: Typing [Mypy]

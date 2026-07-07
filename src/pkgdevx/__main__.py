@@ -18,7 +18,7 @@ from tomlkit.items import Table
 logger = logging.getLogger(__package__)
 
 
-def ruff_format() -> None:
+def ruff_format() -> NoReturn:
     """Runs ruff formatting with the configured settings.
 
     NOTE: Relates to pre-commit hook ID `pkgdevx-format`, with
@@ -42,7 +42,7 @@ def ruff_lint() -> NoReturn:
     sys.exit(result.returncode)
 
 
-def mypy_typing() -> None:
+def mypy_typing() -> NoReturn:
     """Runs mypy type checking with the configured settings.
 
     NOTE: Relates to pre-commit hook ID `pkgdevx-typing`, with
@@ -54,7 +54,7 @@ def mypy_typing() -> None:
     sys.exit(result.returncode)
 
 
-def detect_secrets() -> None:
+def detect_secrets() -> NoReturn:
     """Runs detect-secrets with the provided arguments.
 
     NOTE: Relates to pre-commit hook ID `pkgdevx-secrets`, with
@@ -68,7 +68,7 @@ def detect_secrets() -> None:
     sys.exit(result.returncode)
 
 
-def pymarkdown_lint() -> None:
+def pymarkdown_lint() -> NoReturn:
     """Runs pymarkdown linting with the configured settings.
 
     NOTE: Relates to pre-commit hook ID `pkgdevx-markdown`, with
@@ -127,6 +127,7 @@ def install_prek_hooks(root: Path) -> None:
     """
     precommit_config = root / ".git" / "hooks" / "pre-commit"
     if precommit_config.exists():
+        logger.debug("Prek pre-commit hooks already installed")
         return
     try:
         subprocess.run(
@@ -135,10 +136,8 @@ def install_prek_hooks(root: Path) -> None:
             capture_output=True,
             check=True,
         )
-    except subprocess.CalledProcessError as e:
-        logger.exception(str(e))
-    except FileNotFoundError as e:
-        logger.exception(str(e))
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        logger.exception("Failed to install pre-commit hooks")
     else:
         logger.debug("Prek pre-commit hooks installed")
 
@@ -165,11 +164,91 @@ def update_prek_hooks(root: Path) -> None:
             logger.warning(re.sub("\n", "", e.stdout))
             logger.warning("Run `uv run prek update`")
         if e.stderr:
-            logger.error(str(e))
-    except FileNotFoundError as e:
-        logger.exception(e)
+            logger.error("Failed to check for hook updates")
+    except FileNotFoundError:
+        logger.exception("Check `prek.toml` exists")
     else:
         logger.info("Prek pre-commit hooks are up-to-date")
+
+
+def _create_repo_table(
+    doc: TOMLDocument, name: str, revision: str | None = None
+) -> Table:
+    """Creates a new repository table in the pre-commit configuration.
+
+    Args:
+        doc: The TOMLDocument to parse.
+        name: The name of the repository.
+        revision: The revision of the repository.
+    """
+    new_repo = tomlkit.table()
+    new_repo["repo"] = name
+    if revision:
+        new_repo["rev"] = revision
+
+    new_repo.add(tomlkit.nl())
+
+    new_repo["hooks"] = tomlkit.aot()
+    doc["repos"].append(new_repo)
+
+    logger.debug(f"Created new `[repo]` table - {name=} | {revision=}")
+    return new_repo
+
+
+def _get_repo_table(
+    doc: TOMLDocument, name: str, revision: str | None = None
+) -> tuple[Table, bool]:
+    """Gets an existing or creates a new repository table.
+
+    Args:
+        doc: The TOMLDocument to parse.
+        name: The name of the repository.
+        revision: The revision of the repository.
+
+    Returns:
+        A tuple containing the table and a boolean indicating any changes.
+    """
+    for repo in doc["repos"]:
+        if repo.get("repo") == name:
+            if "hooks" not in repo:
+                repo["hooks"] = tomlkit.aot()
+                return repo, True
+            return repo, False
+    return _create_repo_table(doc, name, revision), True
+
+
+def _inject_missing_hooks(
+    table: dict, expected_hooks: tuple[dict[str, str], ...]
+) -> bool:
+    """Injects missing hooks into the repository table.
+
+    Args:
+        table: The repository table.
+        expected_hooks: The expected hooks to be present in the table.
+
+    Returns:
+        A boolean indicating if the table was modified.
+    """
+    changed = False
+    existing_id_set = {hook.get("id") for hook in table.get("hooks", [])}
+
+    for expected in expected_hooks:
+        if expected["id"] not in existing_id_set:
+            logger.debug(f"Detected missing hook `{expected['id']=}`")
+            hook_table = tomlkit.table()
+            for key, value in expected.items():
+                if isinstance(value, list):
+                    array = tomlkit.array()
+                    for item in value:
+                        array.append(item)
+                    hook_table[key] = array
+                else:
+                    hook_table[key] = value
+
+            hook_table.add(tomlkit.nl())
+            table["hooks"].append(hook_table)
+            changed = True
+    return changed
 
 
 def setup_prek_config(root: Path, reset: bool = False) -> None:
@@ -183,110 +262,38 @@ def setup_prek_config(root: Path, reset: bool = False) -> None:
     config_existing = root / "prek.toml"
     config_template = standards.PREK_CONFIG
 
-    if reset:
-        logger.info(f"Clean install `./{config_existing.name}`")
-        logger.info(f"Creating `./{config_existing.name}` from template")
+    if reset or not config_existing.exists():
+        logger.info("Clean install" if reset else "Missing `prek.toml`")
+        logger.info("Creating `prek.toml` from template")
         config_existing.write_text(config_template.read_text())
         return
 
-    # Config file missing | empty | `--reset` option
-    if not config_existing.exists() or not config_existing.stat().st_size:
-        logger.info(f"Existing `./{config_existing.name}` missing/empty")
-        logger.info(f"Creating `./{config_existing.name}` from template")
-        config_existing.write_text(config_template.read_text())
-        return
+    doc_consumer: TOMLDocument = tomlkit.parse(config_existing.read_text())
 
-    doc: TOMLDocument = tomlkit.parse(config_existing.read_text())
-
-    if "repos" not in doc:
-        logger.debug(f"Existing `./{config_existing.name}` missing `[repos]`")
-        doc["repos"] = tomlkit.aot()
+    if "repos" not in doc_consumer:
+        logger.debug("Existing `prek.toml` missing `[repos]`")
+        doc_consumer["repos"] = tomlkit.aot()
         changed = True
-
-    def create_repo_table(name: str, revision: str | None = None) -> Table:
-        """Creates a new repository table in the pre-commit configuration.
-
-        Args:
-            name: The name of the repository.
-            revision: The revision of the repository.
-        """
-        nonlocal changed
-        new_repo = tomlkit.table()
-        new_repo["repo"] = name
-        if revision:
-            new_repo["rev"] = revision
-
-        new_repo.add(tomlkit.nl())
-
-        new_repo["hooks"] = tomlkit.aot()
-        doc["repos"].append(new_repo)
-        changed = True
-        logger.debug(f"Created new `[repo]` table - {name=} | {revision=}")
-        return new_repo
-
-    def get_repo_table(name: str, revision: str | None = None) -> Table:
-        """Gets an existing or creates a new repository table.
-
-        Args:
-            name: The name of the repository.
-            revision: The revision of the repository.
-        """
-        nonlocal changed
-
-        for repo in doc["repos"]:
-            if repo.get("repo") == name:
-                if "hooks" not in repo:
-                    repo["hooks"] = tomlkit.aot()
-                    changed = True
-                return repo
-        return create_repo_table(name, revision)
-
-    def inject_missing_hooks(
-        table: dict, expected_hooks: tuple[dict[str, str], ...]
-    ) -> None:
-        """Injects missing hooks into the repository table.
-
-        Args:
-            table: The repository table.
-            expected_hooks: The expected hooks to be present in the table.
-        """
-        nonlocal changed
-        existing_id_set = {hook.get("id") for hook in table.get("hooks", [])}
-
-        for expected in expected_hooks:
-            if expected["id"] not in existing_id_set:
-                logger.debug(f"Detected missing hook `{expected['id']=}`")
-                hook_table = tomlkit.table()
-                for key, value in expected.items():
-                    if isinstance(value, list):
-                        array = tomlkit.array()
-                        for item in value:
-                            array.append(item)
-                        hook_table[key] = array
-                    else:
-                        hook_table[key] = value
-
-                hook_table.add(tomlkit.nl())
-                table["hooks"].append(hook_table)
-                changed = True
 
     doc_pkgdevx: TOMLDocument = tomlkit.parse(config_template.read_text())
     for table in doc_pkgdevx.get("repos", []):
-        name = table.get("repo")
-        revision = table.get("rev")
+        name, rev = table.get("repo"), table.get("rev")
+        table_consumer, tchanged = _get_repo_table(doc_consumer, name, rev)
 
-        existing_table = get_repo_table(name, revision)
-        inject_missing_hooks(existing_table, table.get("hooks", []))
+        table_pkgdevx = table.get("hooks", [])
+        hchanged = _inject_missing_hooks(table_consumer, table_pkgdevx)
+
+        changed = changed or tchanged or hchanged
 
     if changed:
-        config_text = tomlkit.dumps(doc)
+        config_text = tomlkit.dumps(doc_consumer)
         # Normalise spacing between tables
         config_text = re.sub(r"\n+\[\[repos", "\n\n[[repos", config_text)
 
         config_existing.write_text(config_text)
-        logger.debug(f"Injected `./{config_existing.name}` missing pre-commit hooks")
+        logger.debug(f"Added missing pre-commit hooks to `prek.toml`")
     else:
-        logger.info(f"Existing `./{config_existing.name}` correct & unchanged")
+        logger.info(f"Existing `prek.toml` correct & unchanged")
 
 
 def command_setup(args: argparse.Namespace) -> None:
@@ -300,8 +307,8 @@ def command_setup(args: argparse.Namespace) -> None:
     """
     try:
         root = get_project_root()
-    except exceptions.ProjectRootNotFoundError as e:
-        logger.exception(e)
+    except exceptions.ProjectRootNotFoundError:
+        logger.exception("Failed to find project root")
         sys.exit(1)
 
     git_toplevel = None
@@ -333,11 +340,9 @@ def command_setup(args: argparse.Namespace) -> None:
                     stdout=f,
                     check=True,
                 )
-        except subprocess.CalledProcessError as e:
-            logger.exception(e)
-            sys.exit(1)
-        except FileNotFoundError as e:
-            logger.exception(e)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            logger.exception("Error creating `.secrets.baseline`")
+            secrets_baseline.unlink(missing_ok=True)
             sys.exit(1)
 
 
@@ -351,7 +356,7 @@ def main() -> None:
         "-v",
         "--verbose",
         action="store_true",
-        help="Enable verbose logging [INFO]",
+        help="Enable verbose logging [DEBUG]",
     )
 
     # Require a subcommand ('setup')
@@ -362,7 +367,9 @@ def main() -> None:
         help="Available commands",
     )
 
-    parser_setup = subparsers.add_parser("setup", help="Setup pre-commit hooks")
+    parser_setup = subparsers.add_parser(
+        "setup", help="Setup pre-commit hooks"
+    )
 
     parser_setup.add_argument(
         "--reset", action="store_true", help="Reset existing pre-commit hooks"

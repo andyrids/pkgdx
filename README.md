@@ -1,7 +1,7 @@
 # Canonical Standards Management Tool [`pkgdevx`]
 
 I created `pkgdevx` as a strategic approach designed to centralise and enforce
-coding standards accross my Python projects. `pkgdevx` provides a standardised
+coding standards across my Python projects. `pkgdevx` provides a standardised
 and opinionated workflow, which could be used as is or forked and modified to
 suit individual requirements and preferences.
 
@@ -45,7 +45,7 @@ pre-commit hook defined in `.pre-commit-hooks.yaml`. `pkgdevx` uses a CLI to
 automate hook installation into a consuming repository via `Prek` and a
 `prek.toml` file created/modified at the project root.
 
->[!info]
+>[!NOTE]
 >[`Prek`](https://prek.j178.dev/) is a Rust-based, drop-in replacement for
 >[`pre-commit`](https://pre-commit.com/) that maintains compatibility with
 >existing `.pre-commit-config.yaml`.
@@ -63,13 +63,13 @@ embedded within the virtual environment.
 ### Auto-update Feature
 
 Because `pkgdevx` is versioned and tagged, you can update standards across all
-projects via standard dependency updates and `prek auto-update`.
+projects via standard dependency updates and `prek update`.
 
 ### Flexibility
 
 Consuming projects get standardised tooling without a single line of
 configuration in their own repository, but can still enter project-specific
-requirements in their local `pyproject.toml`, which are implimented by
+requirements in their local `pyproject.toml`, which are implemented by
 executing commands such as; `uv run mypy` or `uv run ruff check`.
 
 This means that all visible configuration in the `pyproject.toml` is project
@@ -110,7 +110,7 @@ The `setup` command automates the entire ['golden path'](https://www.redhat.com/
 4. Checks for hook updates based on tagged versions in the remote pkgdevx repository
 5. Runs detect-secrets to create a `.secrets.baseline` file at the project root
 
-To overwright or reset an existing `prek.toml` in the project root, use the
+To overwrite or reset an existing `prek.toml` in the project root, use the
 `--reset` option:
 
 ```bash
@@ -122,12 +122,12 @@ uv run pkgdevx setup --reset
 `pkgdevx` is designed to run automatically within custom CI/CD jobs. By
 including `pkgdevx` as part of a GitLab CI/CD components library or GitHub
 Actions, linting, formatting, and typing standards can be strictly enforced on
-every pipeline without replicating the toolchain configuration in every project
+every pipeline without replicating the toolchain configuration in every project.
 
 ## Adopting Your Own Standards (External Users)
 
 If you wish to use the `pkgdevx` framework, but want to apply your own rules,
-follow the guidence below you should fork this repository.
+follow the guidance below.
 
 ### (1) Fork the Repo
 
@@ -135,7 +135,7 @@ Start by forking the repo to your own namespace.
 
 ### (2) Modify the Configuration Files
 
-Modify the configuration files located in `src/pkgdev/standards/`.
+Modify the configuration files located in `src/pkgdevx/standards/`.
 
 - `mypy.ini` - Mypy static typing rules
 - `pymarkdown.toml` - PyMarkdown linting rules
@@ -143,12 +143,12 @@ Modify the configuration files located in `src/pkgdev/standards/`.
 
 ### (3) Update Hook Configuration URL
 
-Edit the `src/pkgdev/standards/hooks.toml` and change the `repo` to your
+Edit the `src/pkgdevx/standards/hooks.toml` and change the `repo` to your
 forked repo URL and the `rev` to the new tag you will create once you have
 finished.
 
 ### (4) Tag a New Release
 
 Tag a new release and the CI/CD pipeline will build and publish the package
-to your Package Regstry. You can install your fork as a dev dependency in your
+to your Package Registry. You can install your fork as a dev dependency in your
 projects via the repo URL or Package Registry URL.

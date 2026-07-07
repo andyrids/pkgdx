@@ -1,8 +1,8 @@
-"""Custom exceptions for `pkgdev`."""
+"""Custom exceptions for `pkgdevx`."""
 
 
 class Error(Exception):
-    """Base-class for all exceptions raised by `pkgdev`."""
+    """Base-class for all exceptions raised by `pkgdevx`."""
 
 
 class ProjectRootNotFoundError(Error):
@@ -18,7 +18,7 @@ class PrekRepoURLMissingError(Error):
 
 
 class ProjectRepoURLMissingError(Error):
-    """Raised on missing `repository` key in `pkgdev` metadata."""
+    """Raised on missing `repository` key in `pkgdevx` metadata."""
 
 
 class GitTopLevelError(Error):
