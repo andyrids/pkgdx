@@ -14,10 +14,10 @@ setup: && secrets-baseline
     uv sync
     uv run -m prek install
 
-[doc("Test pkgdev setup in workspace member")]
+[doc("Test `pkgdev` setup in workspace member")]
 [group("DEV")]
 test *FLAGS:
-    uv run --directory consumers/testing pkgdevx -v setup {{FLAGS}}
+    uv run --directory consumers/testing pkgdevx setup {{FLAGS}}
 
 [doc("Create `coverage` report")]
 [group("DEV")]

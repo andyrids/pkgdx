@@ -1,0 +1,40 @@
+#:schema https://raw.githubusercontent.com/j178/prek/refs/heads/master/prek.schema.json
+
+[[repos]]
+repo = "https://gitlab.com/andyrids/pkgdevx"
+rev = "v0.1.0rc4"
+
+[[repos.hooks]]
+id = "pkgdevx-lint"
+name = "Lint [Ruff]"
+
+[[repos.hooks]]
+id = "pkgdevx-format"
+name = "Format [Ruff]"
+
+[[repos.hooks]]
+id = "pkgdevx-markdown"
+name = "Check Markdown [PyMarkdown]"
+
+[[repos.hooks]]
+id = "pkgdevx-typing"
+name = "Typing [Mypy]"
+
+[[repos.hooks]]
+id = "pkgdevx-secrets"
+name = "Detect Secrets [detect-secrets]"
+
+[[repos]]
+repo = "builtin"
+
+[[repos.hooks]]
+id = "check-toml"
+name = "Check TOML [Builtin]"
+
+[[repos.hooks]]
+id = "check-yaml"
+name = "Check YAML [Builtin]"
+
+[[repos.hooks]]
+id = "detect-private-key"
+name = "Detect PEM [Builtin]"

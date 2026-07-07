@@ -263,11 +263,11 @@ def setup_prek_config(root: Path, reset: bool = False) -> None:
     config_template = standards.PREK_CONFIG
 
     if reset or not config_existing.exists():
-        logger.info("Clean install" if reset else "Missing `prek.toml`")
         logger.info("Creating `prek.toml` from template")
         config_existing.write_text(config_template.read_text())
         return
 
+    # Consuming project `prek.toml`
     doc_consumer: TOMLDocument = tomlkit.parse(config_existing.read_text())
 
     if "repos" not in doc_consumer:
@@ -275,6 +275,7 @@ def setup_prek_config(root: Path, reset: bool = False) -> None:
         doc_consumer["repos"] = tomlkit.aot()
         changed = True
 
+    # `pkgdevx` template `prek.toml`
     doc_pkgdevx: TOMLDocument = tomlkit.parse(config_template.read_text())
     for table in doc_pkgdevx.get("repos", []):
         name, rev = table.get("repo"), table.get("rev")
@@ -352,13 +353,6 @@ def main() -> None:
         description="`pkgdevx` - Canonical standards management"
     )
 
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Enable verbose logging [DEBUG]",
-    )
-
     # Require a subcommand ('setup')
     subparsers = parser.add_subparsers(
         title="commands",
@@ -369,6 +363,13 @@ def main() -> None:
 
     parser_setup = subparsers.add_parser(
         "setup", help="Setup pre-commit hooks"
+    )
+
+    parser_setup.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable verbose logging [DEBUG]",
     )
 
     parser_setup.add_argument(

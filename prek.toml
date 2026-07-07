@@ -57,6 +57,7 @@ pass_filenames = false
 id = "markdown"
 name = "Check Markdown [PyMarkdown]"
 entry = "uv run -m pymarkdown scan"
+args = ["--config", "src/pkgdevx/standards/pymarkdown.toml"]
 language = "system"
 types_or = ["markdown"]
 require_serial = true

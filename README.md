@@ -99,7 +99,7 @@ uv run pkgdevx setup
 To see verbose output, use the `--verbose` or `-v` option:
 
 ```bash
-uv run pkgdevx -v setup
+uv run pkgdevx setup -v
 ```
 
 The `setup` command automates the entire ['golden path'](https://www.redhat.com/en/topics/platform-engineering/golden-paths):
