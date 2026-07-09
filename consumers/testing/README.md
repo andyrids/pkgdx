@@ -24,13 +24,13 @@ just test --reset
 This test could be run manually with the following command:
 
 ```sh
-uv run --directory consumers/testing pkgdevx -v setup
+uv run --directory consumers/testing pkgdevx setup -v
 ```
 
 To run a full reset and setup, add the `--reset` option:
 
 ```sh
-uv run --directory consumers/testing pkgdevx -v setup --reset
+uv run --directory consumers/testing pkgdevx setup -v --reset
 ```
 
 >[!tip]

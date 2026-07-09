@@ -56,8 +56,8 @@ pass_filenames = false
 [[repos.hooks]]
 id = "markdown"
 name = "Check Markdown [PyMarkdown]"
-entry = "uv run -m pymarkdown scan"
-args = ["--config", "src/pkgdevx/standards/pymarkdown.toml"]
+entry = "uv run -m pymarkdown"
+args = ["--config", "src/pkgdevx/standards/pymarkdown.toml", "scan"]
 language = "system"
 types_or = ["markdown"]
 require_serial = true

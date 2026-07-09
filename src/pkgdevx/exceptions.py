@@ -23,3 +23,7 @@ class ProjectRepoURLMissingError(Error):
 
 class GitTopLevelError(Error):
     """Raised on failed `git rev-parse --show-toplevel` command."""
+
+
+class RichHandlerNotFound(Error):
+    """Raised on missing Rich logging handler."""

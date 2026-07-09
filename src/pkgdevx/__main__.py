@@ -3,19 +3,71 @@
 import argparse
 import logging
 import re
-import sys
 import subprocess
+import sys
+from collections.abc import Iterator
+from contextlib import contextmanager
 from itertools import chain
 from pathlib import Path
 from typing import NoReturn
 
 import tomlkit
+import tomlkit.exceptions
 from pkgdevx import exceptions, standards
+from rich.console import Console
+from rich.logging import RichHandler
+from rich.progress import Progress, TaskID
 from tomlkit import TOMLDocument
 from tomlkit.items import Table
 
 
 logger = logging.getLogger(__package__)
+
+
+@contextmanager
+def _setup_progress() -> Iterator[Progress]:
+    """Create a TTY-aware Rich progress bar for the setup command.
+
+    The progress bar shares a Console with any RichHandler attached to the
+    ``pkgdevx`` logger so that log messages render above the live progress
+    display. In non-TTY environments the progress bar is disabled and output
+    falls back to plain logging.
+    """
+
+    handlers = [h for h in logger.handlers if isinstance(h, RichHandler)]
+    if not handlers:
+        logger.error("Failed to find logging handlers")
+        raise exceptions.RichHandlerNotFound
+
+    is_tty = sys.stdout.isatty()
+    console = Console(force_terminal=is_tty)
+
+    original_consoles = {h: h.console for h in handlers}
+
+    for h in handlers:
+        h.console = console
+
+    progress = Progress(
+        *Progress.get_default_columns(),
+        console=console,
+        disable=not is_tty,
+    )
+
+    try:
+        with progress:
+            yield progress
+    finally:
+        for handler, original_console in original_consoles.items():
+            handler.console = original_console
+
+
+def _advance_progress(
+    progress: Progress,
+    task_id: TaskID,
+    description: str,
+) -> None:
+    """Update the description & advance a progress task by one step."""
+    progress.update(task_id, description=description, advance=1)
 
 
 def ruff_format() -> NoReturn:
@@ -164,7 +216,7 @@ def update_prek_hooks(root: Path) -> None:
             logger.warning(re.sub("\n", "", e.stdout))
             logger.warning("Run `uv run prek update`")
         if e.stderr:
-            logger.error("Failed to check for hook updates")
+            logger.exception("Failed to check for hook updates")
     except FileNotFoundError:
         logger.exception("Check `prek.toml` exists")
     else:
@@ -191,7 +243,7 @@ def _create_repo_table(
     new_repo["hooks"] = tomlkit.aot()
     doc["repos"].append(new_repo)
 
-    logger.debug(f"Created new `[repo]` table - {name=} | {revision=}")
+    logger.debug(f"Created `[repo]` - {name=} | {revision=}")
     return new_repo
 
 
@@ -270,6 +322,7 @@ def setup_prek_config(root: Path, reset: bool = False) -> None:
     # Consuming project `prek.toml`
     doc_consumer: TOMLDocument = tomlkit.parse(config_existing.read_text())
 
+    tomlkit.exceptions.TOMLKitError
     if "repos" not in doc_consumer:
         logger.debug("Existing `prek.toml` missing `[repos]`")
         doc_consumer["repos"] = tomlkit.aot()
@@ -306,45 +359,81 @@ def command_setup(args: argparse.Namespace) -> None:
     Args:
         args: Namespace object with command-line arguments as attributes.
     """
-    try:
-        root = get_project_root()
-    except exceptions.ProjectRootNotFoundError:
-        logger.exception("Failed to find project root")
-        sys.exit(1)
+    with _setup_progress() as progress:
+        task = progress.add_task("[cyan]pkgdev setup", total=6)
 
-    git_toplevel = None
-    try:
-        git_toplevel = get_git_toplevel()
-    except exceptions.GitTopLevelError as e:
-        logger.warning(str(e))
-
-    setup_prek_config(root, reset=args.reset)
-    install_prek_hooks(git_toplevel or root)
-    update_prek_hooks(root)
-
-    secrets_baseline = root / ".secrets.baseline"
-    if not secrets_baseline.exists():
-        logger.info(f"Creating `.secrets.baseline` at {root}.")
+        _advance_progress(progress, task, "[cyan]Find project root")
         try:
-            # Open `.secrets.baseline` for stdout redirect
-            with open(secrets_baseline, "w") as f:
-                subprocess.run(
-                    [
-                        "uv",
-                        "run",
-                        "detect-secrets",
-                        "scan",
-                        "--exclude-files",
-                        r"(.*\.lock)",
-                    ],
-                    cwd=root,
-                    stdout=f,
-                    check=True,
-                )
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            logger.exception("Error creating `.secrets.baseline`")
-            secrets_baseline.unlink(missing_ok=True)
+            root = get_project_root()
+        except exceptions.ProjectRootNotFoundError:
+            progress.update(
+                task,
+                description="[red]Failed to find project root",
+            )
+            logger.exception("Failed to find project root")
             sys.exit(1)
+
+        _advance_progress(progress, task, "[cyan]Find Git top-level")
+        git_toplevel = None
+        try:
+            git_toplevel = get_git_toplevel()
+        except exceptions.GitTopLevelError as e:
+            logger.warning(str(e))
+
+        _advance_progress(progress, task, "[cyan]Configure pre-commit hooks")
+        try:
+            setup_prek_config(root, reset=args.reset)
+        except tomlkit.exceptions.TOMLKitError:
+            progress.update(
+                task,
+                description="[red][strike]Configure pre-commit hooks",
+            )
+            logger.exception("Failed to configure pre-commit hooks")
+            sys.exit(1)
+
+        _advance_progress(
+            progress, task, "[cyan]Prek install pre-commit hooks"
+        )
+        install_prek_hooks(git_toplevel or root)
+
+        _advance_progress(progress, task, "[cyan]Prek check updates")
+        update_prek_hooks(root)
+
+        _advance_progress(progress, task, "[cyan]Create `.secrets.baseline`")
+        secrets_baseline = root / ".secrets.baseline"
+        if not secrets_baseline.exists():
+            logger.info("Creating `.secrets.baseline` at %s" % root)
+            try:
+                # Open `.secrets.baseline` for stdout redirect
+                with open(secrets_baseline, "w") as f:
+                    subprocess.run(
+                        [
+                            "uv",
+                            "run",
+                            "detect-secrets",
+                            "scan",
+                            "--exclude-files",
+                            r"(.*\.lock)",
+                        ],
+                        cwd=root,
+                        stdout=f,
+                        check=True,
+                    )
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                progress.update(
+                    task,
+                    description="[red][strike]Create `.secrets.baseline`",
+                )
+                logger.exception("Error creating `.secrets.baseline`")
+                secrets_baseline.unlink(missing_ok=True)
+                sys.exit(1)
+        else:
+            logger.debug("Using existing `.secrets.baseline`")
+
+        progress.update(
+            task,
+            description="[green]pkgdevx complete",
+        )
 
 
 def main() -> None:
@@ -386,4 +475,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

@@ -1,3 +1,4 @@
+<!-- pyml disable MD024 -->
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -14,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > - `Removed` for now removed features.
 > - `Fixed` for any bug fixes.
 > - `Security` in case of vulnerabilities.
+
+## [Unreleased]
+
+### Added
+
+- Rich progress bar to the `setup` command, tracking the setup stages.
+- Automatic disabling of the progress bar in non-TTY environments.
+- Render log messages above the live progress display.
 
 ## [0.1.0] - 2026-07-05
 

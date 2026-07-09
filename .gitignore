@@ -37,3 +37,7 @@ ehthumbs.db
 
 # VSCode - settings
 .vscode/
+
+# ICM
+workspaces/**/output/*
+!workspaces/**/output/.gitkeep

@@ -25,7 +25,7 @@ from evolved templates, but injection of a large toolchain configuration can
 create a lot of boilerplate.
 
 `pkgdevx` compartmentalises common, canonical standards and facilitates their
-implimentation locally, with pre-commit hooks and in CI/CD pipelines as an
+implementation locally, with pre-commit hooks and in CI/CD pipelines as an
 installable package.
 
 Projects can implement additional configuration in their `pyproject.toml`, which
@@ -101,6 +101,11 @@ To see verbose output, use the `--verbose` or `-v` option:
 ```bash
 uv run pkgdevx setup -v
 ```
+
+The `setup` command displays a Rich progress bar that tracks the six high-level
+stages of the golden path. The progress bar is automatically disabled in
+non-TTY environments such as CI/CD pipelines or when output is piped, falling
+back to the standard log output.
 
 The `setup` command automates the entire ['golden path'](https://www.redhat.com/en/topics/platform-engineering/golden-paths):
 
