@@ -10,6 +10,7 @@ Analyse the incoming task and generate a comprehensive technical specification.
 
 - Feature request
 - `01-planning/references/*` (any relevant reference material)
+- `workspaces/_config/*` (any relevant reference material)
 
 ## Process
 
@@ -19,6 +20,7 @@ Analyse the incoming task and generate a comprehensive technical specification.
 4. Draft the specification
    - Focus on robust design
    - Highlight additional dependencies
+5. CHECKPOINT - await user review in accordance with acceptance criteria
 
 ## Outputs
 

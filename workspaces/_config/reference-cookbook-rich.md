@@ -2,7 +2,7 @@
 context-hierarchy: Layer 3
 ---
 
-# `rich`
+# Cookbook - `rich`
 
 ## Progress Bars
 

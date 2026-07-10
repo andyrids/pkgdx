@@ -11,6 +11,8 @@ Finalise the workflow by updating project documentation to reflect the new featu
 - `01-planning/output/[slug]-spec.md`
 - `02-implementation/output/[slug]-code.md`
 - `03-verification/output/[slug]-test.md`
+- `04-documentation/references/*` (any relevant reference material)
+- `workspaces/_config/*` (any relevant reference material)
 
 ## Process
 
@@ -19,6 +21,7 @@ Finalise the workflow by updating project documentation to reflect the new featu
    - Adhere to 'Keep a Changelog' format
    - Categorise changes appropriately
 3. Update `README.md` if necessary
+4. CHECKPOINT - await user review in accordance with acceptance criteria
 
 ## Outputs
 

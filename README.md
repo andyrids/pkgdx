@@ -2,7 +2,7 @@
 
 This package was created as part of an approach designed to centralise the implementation of coding
 standards across my Python projects. `pkgdevx` provides a standardised and opinionated workflow,
-swhich could be used as is or forked and modified to suit individual requirements.
+which could be used as is or forked and modified to suit individual requirements.
 
 When `pkgdevx` is installed as a development dependency, the consuming repo gains a single source
 of truth for several toolchain configurations:

@@ -82,9 +82,18 @@ workspaces/
 
 ## Naming Conventions
 
-| Output                | Pattern                   | Example                          |
-| --------------------- | ------------------------- | -------------------------------- |
-| Feature specification | `[slug]-spec.md`          | `rich-progress-bar-spec.md`      |
-| Implementation report | `[slug]-code.md`          | `rich-progress-bar-code.md`      |
-| Verification report   | `[slug]-test.md`          | `rich-progress-bar-test.md`      |
-| Documentation report  | `[slug]-docs.md`          | `rich-progress-bar-docs.md`      |
+### References
+
+| Reference        | Pattern                    | Example                          |
+| ---------------- | -------------------------- | -------------------------------- |
+| Toolchain        | `reference-tool-[tool].md` | `reference-tool-mypy.md`         |
+| Code snippets    | `cookbook-[package].md`    | `reference-cookbook-rich.md`     |
+
+### Output
+
+| Output                | Pattern                | Example                       |
+| --------------------- | ---------------------- | ----------------------------- |
+| Feature specification | `[slug]-spec.md`       | `rich-progress-bar-spec.md`   |
+| Implementation report | `[slug]-code.md`       | `rich-progress-bar-code.md`   |
+| Verification report   | `[slug]-test.md`       | `rich-progress-bar-test.md`   |
+| Documentation report  | `[slug]-docs.md`       | `rich-progress-bar-docs.md`   |

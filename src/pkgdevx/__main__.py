@@ -184,7 +184,7 @@ def install_prek_hooks(root: Path) -> None:
         return
     try:
         subprocess.run(
-            [sys.executable, "prek", "install"],
+            [sys.executable, "-m", "prek", "install"],
             cwd=root,
             capture_output=True,
             check=True,
@@ -206,7 +206,7 @@ def update_prek_hooks(root: Path) -> None:
     """
     try:
         subprocess.run(
-            [sys.executable, "prek", "update", "--check"],
+            [sys.executable, "-m", "prek", "update", "--check", "-v"],
             cwd=root,
             capture_output=True,
             check=True,
@@ -215,9 +215,10 @@ def update_prek_hooks(root: Path) -> None:
     except subprocess.CalledProcessError as e:
         if e.stdout:
             logger.warning(re.sub("\n", "", e.stdout))
-            logger.warning("Run `uv run prek update`")
         if e.stderr:
-            logger.exception("Failed to check for hook updates")
+            logger.error(re.sub("\n", "", e.stderr))
+        logger.exception("Failed to check for hook updates")
+        logger.warning("Run `uv run prek update`")
     except FileNotFoundError:
         logger.exception("Check `prek.toml` exists")
     else:
