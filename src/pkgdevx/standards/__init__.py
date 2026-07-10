@@ -44,6 +44,7 @@ def get_pkgdevx_repository() -> str:
 
     pkgdevx_metadata = metadata("pkgdevx")
 
+    entry: str
     for entry in pkgdevx_metadata.get_all("Project-URL", failobj=[]):
         if entry.lower().startswith("repository"):
             _, URL = entry.split(", ", 1)
@@ -67,11 +68,11 @@ def get_config_revision() -> str:
     from pkgdevx.exceptions import PrekRepoRevisionError
 
     config = _load_prek_config()
-    REPO_URL = get_pkgdevx_repository()
+    REPO_URL: str = get_pkgdevx_repository()
 
     for repo in config.get("repos", []):
         if repo.get("repo") == REPO_URL:
-            revision = repo.get("rev")
+            revision: str | None = repo.get("rev", None)
             if revision:
                 return revision
             else:

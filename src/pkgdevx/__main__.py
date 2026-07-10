@@ -9,11 +9,12 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from itertools import chain
 from pathlib import Path
-from typing import NoReturn
+from typing import Any, NoReturn
 
 import tomlkit
 import tomlkit.exceptions
 from pkgdevx import exceptions, standards
+from pkgdevx._types import HookBuiltin, HookLocal, HookRemote
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.progress import Progress, TaskID
@@ -183,7 +184,7 @@ def install_prek_hooks(root: Path) -> None:
         return
     try:
         subprocess.run(
-            ["uv", "run", "prek", "install"],
+            [sys.executable, "prek", "install"],
             cwd=root,
             capture_output=True,
             check=True,
@@ -205,7 +206,7 @@ def update_prek_hooks(root: Path) -> None:
     """
     try:
         subprocess.run(
-            ["uv", "run", "prek", "update", "--check"],
+            [sys.executable, "prek", "update", "--check"],
             cwd=root,
             capture_output=True,
             check=True,
@@ -270,7 +271,8 @@ def _get_repo_table(
 
 
 def _inject_missing_hooks(
-    table: dict, expected_hooks: tuple[dict[str, str], ...]
+    table: dict[str, Any],
+    expected_hooks: list[HookBuiltin | HookLocal | HookRemote],
 ) -> bool:
     """Injects missing hooks into the repository table.
 
@@ -408,9 +410,9 @@ def command_setup(args: argparse.Namespace) -> None:
                 with open(secrets_baseline, "w") as f:
                     subprocess.run(
                         [
-                            "uv",
-                            "run",
-                            "detect-secrets",
+                            sys.executable,
+                            "-m",
+                            "detect_secrets",
                             "scan",
                             "--exclude-files",
                             r"(.*\.lock)",

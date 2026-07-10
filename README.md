@@ -1,22 +1,25 @@
 # Canonical Standards Management Tool [`pkgdevx`]
 
-I created `pkgdevx` as a strategic approach designed to centralise and enforce
-coding standards across my Python projects. `pkgdevx` provides a standardised
-and opinionated workflow, which could be used as is or forked and modified to
-suit individual requirements and preferences.
+This package was created as part of an approach designed to centralise the implementation of coding
+standards across my Python projects. `pkgdevx` provides a standardised and opinionated workflow,
+swhich could be used as is or forked and modified to suit individual requirements.
 
-When `pkgdevx` is installed as a development dependency, the consuming repo gains
-a single source of truth for several toolchain configurations:
+When `pkgdevx` is installed as a development dependency, the consuming repo gains a single source
+of truth for several toolchain configurations:
 
-1. Mypy (static type checker)
-2. Ruff (linter & code formatter)
-3. PyMarkdown (markdown linter)
-4. detect-secrets (prevent secret commits)
-5. Prek (framework to run hooks)
+1. Mypy (Python static type checking)
+2. Ruff (Python linting & formatting)
+3. PyMarkdown (Markdown linting)
+4. detect-secrets (secret detection)
+5. Prek (hook framework)
+
+>[!NOTE]
+> Personally, I prefer Astral uv to manage Python projects, but `pkgdevx` is package-manager
+> agnostic.
 
 ## Why `pkgdevx`?
 
-Previously, I maintained standards across multiple repositories using
+Other methods of maintaining standards across repositories use
 templating tools like `Copier` to inject `[tool.mypy]` or `[tool.ruff]`
 configurations directly into the `pyproject.toml`.
 
@@ -37,13 +40,12 @@ standards.
 
 ### The `pkgdevx` Approach
 
-`pkgdevx` maintains toolchain configurations in a `standards/` module and
-exposes console scripts (`[project.scripts]`), which implement them.
+`pkgdevx` maintains toolchain configurations in a `standards/` module and exposes console scripts
+(`[project.scripts]`), which implement them.
 
 Each script entrypoint utilises a specific tool and has a dedicated
-pre-commit hook defined in `.pre-commit-hooks.yaml`. `pkgdevx` uses a CLI to
-automate hook installation into a consuming repository via `Prek` and a
-`prek.toml` file created/modified at the project root.
+pre-commit hook in `.pre-commit-hooks.yaml`. The `pkgdevx` CLI automates hook installation into a
+consuming repository via `Prek` and a `prek.toml` file is created/modified at the project root.
 
 >[!NOTE]
 >[`Prek`](https://prek.j178.dev/) is a Rust-based, drop-in replacement for
@@ -62,19 +64,17 @@ embedded within the virtual environment.
 
 ### Auto-update Feature
 
-Because `pkgdevx` is versioned and tagged, you can update standards across all
-projects via standard dependency updates and `prek update`.
+Because `pkgdevx` is versioned and tagged, you can update standards across all projects via
+standard dependency updates and `prek update`.
 
 ### Flexibility
 
-Consuming projects get standardised tooling without a single line of
-configuration in their own repository, but can still enter project-specific
-requirements in their local `pyproject.toml`, which are implemented by
-executing commands such as; `uv run mypy` or `uv run ruff check`.
+Consuming projects get standardised tooling without any configuration, but can still maintain
+project-specific requirements in their `pyproject.toml`. These would be implemented through
+commands such as; `uv run mypy` or `poetry run ruff format`.
 
-This means that all visible configuration in the `pyproject.toml` is project
-specific and easy to read and recognise. The common, canonical standards that
-apply to all projects are compartmentalised behind `pkgdevx`.
+Any configuration in `pyproject.toml` would be project-specific and the common, canonical standards
+would be neatly compartmentalised behind `pkgdevx`.
 
 ## Installation
 
@@ -83,10 +83,6 @@ Install `pkgdevx` as a development dependency in your consuming project.
 ```bash
 uv add pkgdevx --dev
 ```
-
->[!warning]
->`pkgdevx` requires Astral uv package manager to be installed globally or in
->your project `venv`. See [installation instructions](https://docs.astral.sh/uv/getting-started/installation/).
 
 ## Setup & Usage
 

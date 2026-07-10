@@ -25,8 +25,8 @@ repo = "local"
 [[repos.hooks]]
 id = "format"
 name = "Format [Ruff]"
-entry = "uv run -m ruff format"
-args = ["--exit-non-zero-on-format"]
+entry = "ruff format"
+args = ["--config", "src/pkgdevx/standards/ruff.toml", "--exit-non-zero-on-format"]
 language = "system"
 types_or = ["python", "pyi"]
 require_serial = true
@@ -35,8 +35,8 @@ pass_filenames = false
 [[repos.hooks]]
 id = "lint"
 name = "Lint [Ruff]"
-entry = "uv run -m ruff check"
-args = ["--fix", "--exit-non-zero-on-fix"]
+entry = "ruff check"
+args = ["--config", "src/pkgdevx/standards/ruff.toml", "--fix", "--exit-non-zero-on-fix"]
 language = "system"
 types_or = ["python", "pyi"]
 require_serial = true
@@ -45,8 +45,8 @@ pass_filenames = false
 [[repos.hooks]]
 id = "typing"
 name = "Typing [Mypy]"
-entry = "uv run -m mypy"
-args = ["-m", "pkgdevx", "--config-file", "src/pkgdevx/standards/mypy.ini"]
+entry = "mypy"
+args = ["-p", "pkgdevx", "--config-file", "src/pkgdevx/standards/mypy.ini"]
 language = "system"
 types_or = ["python", "pyi"]
 exclude = "tests/"
@@ -56,7 +56,7 @@ pass_filenames = false
 [[repos.hooks]]
 id = "markdown"
 name = "Check Markdown [PyMarkdown]"
-entry = "uv run -m pymarkdown"
+entry = "pymarkdown"
 args = ["--config", "src/pkgdevx/standards/pymarkdown.toml", "scan"]
 language = "system"
 types_or = ["markdown"]
@@ -66,7 +66,7 @@ pass_filenames = true
 [[repos.hooks]]
 id = "secrets"
 name = "Detect Secrets [detect-secrets]"
-entry = "uv run detect-secrets-hook"
+entry = "detect-secrets-hook"
 args = ["--baseline", ".secrets.baseline", "--no-verify"]
 language = "system"
 exclude = "(\\.secrets\\.baseline|.*\\.lock)"
