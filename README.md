@@ -14,8 +14,7 @@ of truth for several toolchain configurations:
 5. Prek (hook framework)
 
 >[!NOTE]
-> Personally, I prefer Astral uv to manage Python projects, but `pkgdevx` is package-manager
-> agnostic.
+> This repository is mirrored from [GitLab](https://gitlab.com/andyrids/pkgdevx).
 
 ## Why `pkgdevx`?
 
