@@ -353,9 +353,9 @@ def setup_prek_config(root: Path, reset: bool = False) -> None:
         config_text = re.sub(r"\n+\[\[repos", "\n\n[[repos", config_text)
 
         config_existing.write_text(config_text)
-        logger.debug(f"Added missing pre-commit hooks to `prek.toml`")
+        logger.debug("Added missing pre-commit hooks to `prek.toml`")
     else:
-        logger.info(f"Existing `prek.toml` correct & unchanged")
+        logger.info("Existing `prek.toml` correct & unchanged")
 
 
 def command_setup(args: argparse.Namespace) -> None:

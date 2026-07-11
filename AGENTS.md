@@ -61,6 +61,7 @@ Each workspace has a `CONTEXT.md`, which is the main control point.
 
 ```text
 workspaces/
+├── _config/                  <-- Shared constraints & reference material
 └── features/                 <-- Create new feature
   ├── CONTEXT.md
   └── stages/                 <-- 4-stage pipeline

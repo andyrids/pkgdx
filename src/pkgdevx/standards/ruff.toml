@@ -21,6 +21,7 @@ select = [
     "D419",   # pydocstyle (empty-docstring)
     "E",      # pycodestyle (error ruleset)
     "ERA",    # commented out code
+    "F541",   # pyflakes (f-string-missing-placeholders)
     "F401",   # pyflakes (unused-import)
     "F841",   # pyflakes (unused-variable)
     "I002",   # isort (missing-required-import)

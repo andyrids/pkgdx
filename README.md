@@ -80,6 +80,10 @@ would be neatly compartmentalised behind `pkgdevx`.
 
 Install `pkgdevx` as a development dependency in your consuming project.
 
+>[!note]
+>`pkgdev` installation is package-manager agnostic. Use another manager like Poetry and replace the
+> `uv run` accordingly or omit entirely, with an activated virtual environment.
+
 ```bash
 uv add pkgdevx --dev
 ```
@@ -98,11 +102,6 @@ To see verbose output, use the `--verbose` or `-v` option:
 uv run pkgdevx setup -v
 ```
 
-The `setup` command displays a Rich progress bar that tracks the six high-level
-stages of the golden path. The progress bar is automatically disabled in
-non-TTY environments such as CI/CD pipelines or when output is piped, falling
-back to the standard log output.
-
 The `setup` command automates the entire ['golden path'](https://www.redhat.com/en/topics/platform-engineering/golden-paths):
 
 1. Finds the consuming project root
@@ -120,10 +119,8 @@ uv run pkgdevx setup --reset
 
 ## CI/CD Integration
 
-`pkgdevx` is designed to run automatically within custom CI/CD jobs. By
-including `pkgdevx` as part of a GitLab CI/CD components library or GitHub
-Actions, linting, formatting, and typing standards can be strictly enforced on
-every pipeline without replicating the toolchain configuration in every project.
+`pkgdevx` can be included in GitLab/Github CI/CD pipelines to enforce centralised standards without
+heavy boilerplate across each CI/CD YAML config.
 
 ## Adopting Your Own Standards (External Users)
 
@@ -153,3 +150,7 @@ finished.
 Tag a new release and the CI/CD pipeline will build and publish the package
 to your Package Registry. You can install your fork as a dev dependency in your
 projects via the repo URL or Package Registry URL.
+
+### Contribution
+
+Contributions are welcomed.
