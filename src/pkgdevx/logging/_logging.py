@@ -14,6 +14,20 @@ CONFIG_STR = CONFIG_PATH.read_text(encoding="utf-8")
 GLOBAL_CONSOLE = get_console()
 
 
-def configure_logging() -> None:
-    """Configures logging using the `config.toml` settings."""
+def configure_cli_logging(level: int = logging.WARNING) -> None:
+    """Configures CLI logging using the `config.toml` settings."""
     logging.config.dictConfig(tomllib.loads(CONFIG_STR))
+
+    package = __package__.split(".")[0] if __package__ else "pkgdevx"
+
+    logger = logging.getLogger(package)
+    logger.setLevel(level)
+
+    # Prevent CLI logs from propagating & being duplicated
+    logger.propagate = False
+
+
+def configure_pkg_logging() -> None:
+    """Configures package logging using a `NullHandler`."""
+    package = __package__.split(".")[0] if __package__ else "pkgdevx"
+    logging.getLogger(package).addHandler(logging.NullHandler())

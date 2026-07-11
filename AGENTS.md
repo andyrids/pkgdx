@@ -9,6 +9,9 @@ which implements canonical standards across consuming Python projects.
 
 ## Environment & Toolchain
 
+`pkgdevx` is developed and maintained with Astral uv, which MUST be installed globally or in the
+virtual environment.
+
 - **Language**: Python >=3.10
 - **OS**: Windows/Linux/WSL2
 
@@ -84,10 +87,10 @@ workspaces/
 
 ### References
 
-| Reference        | Pattern                    | Example                          |
-| ---------------- | -------------------------- | -------------------------------- |
-| Toolchain        | `reference-tool-[tool].md` | `reference-tool-mypy.md`         |
-| Code snippets    | `cookbook-[package].md`    | `reference-cookbook-rich.md`     |
+| Reference      | Pattern                           | Example                        |
+| -------------- | --------------------------------- | ------------------------------ |
+| Toolchain      | `reference-toolchain-[tool].md`   | `reference-tool-mypy.md`       |
+| Code snippets  | `reference-cookbook-[package].md` | `reference-cookbook-rich.md`   |
 
 ### Output
 

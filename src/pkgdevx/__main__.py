@@ -21,6 +21,8 @@ from rich.progress import Progress, TaskID
 from tomlkit import TOMLDocument
 from tomlkit.items import Table
 
+from pkgdevx.logging import configure_cli_logging
+
 
 logger = logging.getLogger(__package__)
 
@@ -213,12 +215,15 @@ def update_prek_hooks(root: Path) -> None:
             text=True,
         )
     except subprocess.CalledProcessError as e:
-        if e.stdout:
-            logger.warning(re.sub("\n", "", e.stdout))
-        if e.stderr:
-            logger.error(re.sub("\n", "", e.stderr))
-        logger.exception("Failed to check for hook updates")
-        logger.warning("Run `uv run prek update`")
+        msg = re.sub(r"\n\s|\n", "", e.stdout or e.stderr or "Unknown error")
+        match e.returncode:
+            case 1:
+                logger.warning(msg)
+                logger.warning("Update `pkgdevx` hooks with `prek update`")
+            case 2:
+                logger.error(msg)
+            case _:
+                logger.exception(msg)
     except FileNotFoundError:
         logger.exception("Check `prek.toml` exists")
     else:
@@ -471,7 +476,7 @@ def main() -> None:
     parser_setup.set_defaults(func=command_setup)
 
     args = parser.parse_args()
-    logger.setLevel(logging.DEBUG if args.verbose else logging.WARNING)
+    configure_cli_logging(logging.DEBUG if args.verbose else logging.WARNING)
 
     args.func(args)
     sys.exit(0)

@@ -77,9 +77,6 @@ log_cli = true
 log_cli_level = "INFO"
 tmp_path_retention_policy = "failed"
 
-[tool.ruff]
-extend = "src/pkgdevx/standards/ruff.toml"
-
 [tool.uv.workspace]
 members = [
     "consumers/testing",

@@ -27,6 +27,7 @@ formatter = "rich"
 show_path = false
 rich_tracebacks = true
 markup = true
+omit_repeated_times = true
 
 [handlers.stdout-verbose]
 class = "rich.logging.RichHandler"
@@ -45,8 +46,8 @@ stream = "ext://sys.stderr"
 [loggers.pkgdevx]
 level = "WARNING"
 handlers = ["stdout-verbose"]
-propagate = false
+propagate = true
 
-[root]
-level = "WARNING"
-handlers = []
+# [root]
+# level = "WARNING"
+# handlers = []
