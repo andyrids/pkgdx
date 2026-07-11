@@ -66,8 +66,8 @@ ruff-lint-job:
   interruptible: true
   <<: *protected-branch-rules
   script:
-    - uv run ruff check .
-    - uv run ruff format --check .
+    - uv run pkgdevx-lint-hook
+    - uv run pkgdevx-format-hook
 
 pytest-job:
   extends: .astral-uv
