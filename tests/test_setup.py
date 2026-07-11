@@ -7,17 +7,24 @@ from unittest import mock
 import pytest
 import tomlkit.exceptions
 from pkgdevx import exceptions
-from pkgdevx.__main__ import _setup_progress, command_setup
+from pkgdevx.__main__ import _setup_progress, command_setup, logger
+from rich.logging import RichHandler
 from rich.progress import Progress
 
 
-def test_setup_progress_disabled_in_non_tty(non_tty_stdout: None) -> None:
+def test_setup_progress_disabled_in_non_tty(
+    non_tty_stdout: None,
+    configured_logging: None,
+) -> None:
     """Progress is disabled when stdout is not a TTY."""
     with _setup_progress() as progress:
         assert progress.disable is True
 
 
-def test_setup_progress_enabled_in_tty(tty_stdout: None) -> None:
+def test_setup_progress_enabled_in_tty(
+    tty_stdout: None,
+    configured_logging: None,
+) -> None:
     """Progress is enabled when stdout is a TTY."""
     with _setup_progress() as progress:
         assert progress.disable is False
@@ -25,37 +32,24 @@ def test_setup_progress_enabled_in_tty(tty_stdout: None) -> None:
 
 def test_setup_progress_shares_console_with_rich_handler(
     tty_stdout: None,
+    configured_logging: None,
 ) -> None:
     """The progress instance shares a Console with RichHandler."""
-    from rich.logging import RichHandler
-
-    from pkgdevx.__main__ import logger
-
-    handler = RichHandler()
-    logger.addHandler(handler)
-    try:
-        with _setup_progress() as progress:
-            assert progress.console is handler.console
-    finally:
-        logger.removeHandler(handler)
+    handler = next(h for h in logger.handlers if isinstance(h, RichHandler))
+    with _setup_progress() as progress:
+        assert progress.console is handler.console
 
 
-def test_setup_progress_restores_console_after_exit(tty_stdout: None) -> None:
+def test_setup_progress_restores_console_after_exit(
+    tty_stdout: None,
+    configured_logging: None,
+) -> None:
     """RichHandler console is restored after the progress context exits."""
-    from rich.console import Console
-    from rich.logging import RichHandler
-
-    from pkgdevx.__main__ import logger
-
-    original_console = Console()
-    handler = RichHandler(console=original_console)
-    logger.addHandler(handler)
-    try:
-        with _setup_progress():
-            pass
-        assert handler.console is original_console
-    finally:
-        logger.removeHandler(handler)
+    handler = next(h for h in logger.handlers if isinstance(h, RichHandler))
+    original_console = handler.console
+    with _setup_progress():
+        pass
+    assert handler.console is original_console
 
 
 def test_command_setup_advances_all_steps(
@@ -110,10 +104,21 @@ def test_command_setup_exits_on_missing_project_root(
     """The setup command exits with code 1 when the project root is missing."""
     args = argparse.Namespace(verbose=False, reset=False)
 
-    with mock.patch(
-        "pkgdevx.__main__.get_project_root",
-        side_effect=exceptions.ProjectRootNotFoundError("not found"),
+    with (
+        mock.patch(
+            "pkgdevx.__main__.get_project_root",
+            side_effect=exceptions.ProjectRootNotFoundError("not found"),
+        ),
+        mock.patch("pkgdevx.__main__._setup_progress") as mock_setup_progress,
     ):
+        mock_progress = mock.MagicMock(spec=Progress)
+        mock_setup_progress.return_value.__enter__ = mock.MagicMock(
+            return_value=mock_progress
+        )
+        mock_setup_progress.return_value.__exit__ = mock.MagicMock(
+            return_value=None
+        )
+
         with pytest.raises(SystemExit) as exc_info:
             command_setup(args)
 
@@ -130,18 +135,29 @@ def test_command_setup_exits_on_prek_config_error(
 
     args = argparse.Namespace(verbose=False, reset=False)
 
-    with mock.patch(
-        "pkgdevx.__main__.get_project_root", return_value=project_root
-    ):
-        with mock.patch(
+    with (
+        mock.patch(
+            "pkgdevx.__main__.get_project_root", return_value=project_root
+        ),
+        mock.patch(
             "pkgdevx.__main__.get_git_toplevel", return_value=project_root
-        ):
-            with mock.patch(
-                "pkgdevx.__main__.setup_prek_config",
-                side_effect=tomlkit.exceptions.TOMLKitError("bad TOML"),
-            ):
-                with pytest.raises(SystemExit) as exc_info:
-                    command_setup(args)
+        ),
+        mock.patch(
+            "pkgdevx.__main__.setup_prek_config",
+            side_effect=tomlkit.exceptions.TOMLKitError("bad TOML"),
+        ),
+        mock.patch("pkgdevx.__main__._setup_progress") as mock_setup_progress,
+    ):
+        mock_progress = mock.MagicMock(spec=Progress)
+        mock_setup_progress.return_value.__enter__ = mock.MagicMock(
+            return_value=mock_progress
+        )
+        mock_setup_progress.return_value.__exit__ = mock.MagicMock(
+            return_value=None
+        )
+
+        with pytest.raises(SystemExit) as exc_info:
+            command_setup(args)
 
     assert exc_info.value.code == 1
 

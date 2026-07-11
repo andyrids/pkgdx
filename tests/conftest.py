@@ -1,9 +1,24 @@
 """Shared fixtures accross the `tests/` directory."""
 
+import logging
 from collections.abc import Iterator
 from unittest import mock
 
 import pytest
+
+from pkgdevx.logging import configure_cli_logging
+
+
+@pytest.fixture
+def configured_logging() -> Iterator[None]:
+    """Configures CLI logging for tests and cleans up handlers afterwards."""
+    configure_cli_logging()
+    try:
+        yield
+    finally:
+        logger = logging.getLogger("pkgdevx")
+        for handler in logger.handlers[:]:
+            logger.removeHandler(handler)
 
 
 @pytest.fixture

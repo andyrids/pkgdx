@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic disabling of the progress bar in non-TTY environments.
 - Render log messages above the live progress display.
 
+### Fixed
+
+- Unit tests for `setup` progress now configure logging before exercising `_setup_progress()`.
+
 ## [0.1.0] - 2026-07-05
 
 ### Added
