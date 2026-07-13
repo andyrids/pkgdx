@@ -4,7 +4,7 @@ context-hierarchy: Layer 3
 
 # Toolchain - `mypy`
 
-The `mypy` config is located at `src/pkgdevx/standards/mypy.ini`
+The `mypy` config is located at `src/pytack/standards/mypy.ini`
 
 ## Configuration
 

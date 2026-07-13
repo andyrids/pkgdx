@@ -51,7 +51,7 @@ workflow:
   before_script:
     - |
       if [ -n "$CI_COMMIT_TAG" ]; then
-        export SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PKGDEVX="${CI_COMMIT_TAG#v}"
+        export SETUPTOOLS_SCM_PRETEND_VERSION_FOR_pytack="${CI_COMMIT_TAG#v}"
       fi
     - git fetch --tags origin || true
     - uv sync
@@ -66,8 +66,8 @@ ruff-lint-job:
   interruptible: true
   <<: *protected-branch-rules
   script:
-    - uv run pkgdevx-lint-hook
-    - uv run pkgdevx-format-hook
+    - uv run pytack-lint-hook
+    - uv run pytack-format-hook
 
 pytest-job:
   extends: .astral-uv
@@ -92,7 +92,7 @@ build-package-job:
   rules:
     - if: "$CI_COMMIT_TAG"
   script:
-    - uv build --out-dir dist --package pkgdevx --verbose
+    - uv build --out-dir dist --package pytack --verbose
   artifacts:
     paths:
       - dist/

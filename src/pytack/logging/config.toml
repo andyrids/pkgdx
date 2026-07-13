@@ -43,7 +43,7 @@ level = "WARNING"
 formatter = "standard"
 stream = "ext://sys.stderr"
 
-[loggers.pkgdevx]
+[loggers.pytack]
 level = "WARNING"
 handlers = ["stdout-verbose"]
 propagate = true

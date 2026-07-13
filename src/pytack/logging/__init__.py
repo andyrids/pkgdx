@@ -1,4 +1,4 @@
-"""__init__ for pkgdevx logging module."""
+"""__init__ for pytack logging module."""
 
 from ._logging import configure_cli_logging, configure_pkg_logging
 

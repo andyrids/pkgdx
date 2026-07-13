@@ -8,18 +8,20 @@ Analyse the incoming task and generate a comprehensive technical specification.
 
 ## Inputs
 
-- Feature request
-- `01-planning/references/*` (any relevant reference material)
+- User feature request prompt
+- `01-specification/references/*` (any relevant reference material)
 - `workspaces/_config/*` (any relevant reference material)
 
 ## Process
 
 1. Read the provided feature request
-2. Consult `01-planning/references/` for additional context
-3. Define the architecture changes required within `src/pkgdevx/`
+2. Consult relevant reference material for additional context
+3. Define the architecture changes required within `src/`
 4. Draft the specification
    - Focus on robust design
-   - Highlight additional dependencies
+   - Reuse existing patterns in the codebase
+   - Prefer the standard library over additional dependencies
+   - Prefer existing dependencies over adding a new one
 5. CHECKPOINT - await user review in accordance with acceptance criteria
 
 ## Outputs

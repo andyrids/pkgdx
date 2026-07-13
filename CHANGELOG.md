@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - CLI setup script for automated project configuration.
 - `--reset` option for CLI setup script.
-- Detect missing hooks based on pkgdevx config.
+- Detect missing hooks based on pytack config.
 - Build & publish to GitLab package registry.
 - Unit tests.
 

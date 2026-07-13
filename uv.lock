@@ -8,7 +8,7 @@ resolution-markers = [
 
 [manifest]
 members = [
-    "pkgdevx",
+    "pytack",
     "testing",
 ]
 
@@ -477,7 +477,7 @@ wheels = [
 ]
 
 [[package]]
-name = "pkgdevx"
+name = "pytack"
 source = { editable = "." }
 dependencies = [
     { name = "detect-secrets" },
@@ -848,11 +848,11 @@ name = "testing"
 version = "0.1.0"
 source = { editable = "consumers/testing" }
 dependencies = [
-    { name = "pkgdevx" },
+    { name = "pytack" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pkgdevx", editable = "." }]
+requires-dist = [{ name = "pytack", editable = "." }]
 
 [[package]]
 name = "tomli"

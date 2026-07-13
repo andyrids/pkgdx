@@ -1,4 +1,4 @@
-"""Main entry point for pkgdevx pre-commit hooks."""
+"""Main entry point for pytack pre-commit hooks."""
 
 import argparse
 import logging
@@ -13,15 +13,15 @@ from typing import Any, NoReturn
 
 import tomlkit
 import tomlkit.exceptions
-from pkgdevx import exceptions, standards
-from pkgdevx._types import HookBuiltin, HookLocal, HookRemote
+from pytack import exceptions, standards
+from pytack._types import HookBuiltin, HookLocal, HookRemote
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.progress import Progress, TaskID
 from tomlkit import TOMLDocument
 from tomlkit.items import Table
 
-from pkgdevx.logging import configure_cli_logging
+from pytack.logging import configure_cli_logging
 
 
 logger = logging.getLogger(__package__)
@@ -32,7 +32,7 @@ def _setup_progress() -> Iterator[Progress]:
     """Create a TTY-aware Rich progress bar for the setup command.
 
     The progress bar shares a Console with any RichHandler attached to the
-    ``pkgdevx`` logger so that log messages render above the live progress
+    ``pytack`` logger so that log messages render above the live progress
     display. In non-TTY environments the progress bar is disabled and output
     falls back to plain logging.
     """
@@ -76,8 +76,8 @@ def _advance_progress(
 def ruff_format() -> NoReturn:
     """Runs ruff formatting with the configured settings.
 
-    NOTE: Relates to pre-commit hook ID `pkgdevx-format`, with
-    entry point `pkgdevx-format-hook`.
+    NOTE: Relates to pre-commit hook ID `pytack-format`, with
+    entry point `pytack-format-hook`.
     """
     config = standards.RUFF_CONFIG.as_posix()
     cmd = ["ruff", "format", "--config", config] + sys.argv[1:]
@@ -88,8 +88,8 @@ def ruff_format() -> NoReturn:
 def ruff_lint() -> NoReturn:
     """Runs ruff linting with the configured settings.
 
-    NOTE: Relates to pre-commit hook ID `pkgdevx-lint`, with
-    entry point `pkgdevx-lint-hook`.
+    NOTE: Relates to pre-commit hook ID `pytack-lint`, with
+    entry point `pytack-lint-hook`.
     """
     config = standards.RUFF_CONFIG.as_posix()
     cmd = ["ruff", "check", "--config", config] + sys.argv[1:]
@@ -100,8 +100,8 @@ def ruff_lint() -> NoReturn:
 def mypy_typing() -> NoReturn:
     """Runs mypy type checking with the configured settings.
 
-    NOTE: Relates to pre-commit hook ID `pkgdevx-typing`, with
-    entry point `pkgdevx-typing-hook`.
+    NOTE: Relates to pre-commit hook ID `pytack-typing`, with
+    entry point `pytack-typing-hook`.
     """
     config = standards.MYPY_CONFIG.as_posix()
     cmd = ["mypy", "--config-file", config] + sys.argv[1:]
@@ -112,8 +112,8 @@ def mypy_typing() -> NoReturn:
 def detect_secrets() -> NoReturn:
     """Runs detect-secrets with the provided arguments.
 
-    NOTE: Relates to pre-commit hook ID `pkgdevx-secrets`, with
-    entry point `pkgdevx-secrets-hook`.
+    NOTE: Relates to pre-commit hook ID `pytack-secrets`, with
+    entry point `pytack-secrets-hook`.
     """
     args = sys.argv[1:]
     if "--baseline" not in args:
@@ -126,8 +126,8 @@ def detect_secrets() -> NoReturn:
 def pymarkdown_lint() -> NoReturn:
     """Runs pymarkdown linting with the configured settings.
 
-    NOTE: Relates to pre-commit hook ID `pkgdevx-markdown`, with
-    entry point `pkgdevx-markdown-hook`.
+    NOTE: Relates to pre-commit hook ID `pytack-markdown`, with
+    entry point `pytack-markdown-hook`.
     """
     config = standards.PYMARKDOWN_CONFIG.as_posix()
     cmd = ["pymarkdown", "--config", config, "scan"] + sys.argv[1:]
@@ -201,7 +201,7 @@ def update_prek_hooks(root: Path) -> None:
     """Checks for pre-commit hook updates.
 
     NOTE: Updates the pre-commit hooks based on available tagged versions in
-    the remote `pkgdevx` repo.
+    the remote `pytack` repo.
 
     Args:
         root: The root path of the consuming repo.
@@ -219,7 +219,7 @@ def update_prek_hooks(root: Path) -> None:
         match e.returncode:
             case 1:
                 logger.warning(msg)
-                logger.warning("Update `pkgdevx` hooks with `prek update`")
+                logger.warning("Update `pytack` hooks with `prek update`")
             case 2:
                 logger.error(msg)
             case _:
@@ -336,14 +336,14 @@ def setup_prek_config(root: Path, reset: bool = False) -> None:
         doc_consumer["repos"] = tomlkit.aot()
         changed = True
 
-    # `pkgdevx` template `prek.toml`
-    doc_pkgdevx: TOMLDocument = tomlkit.parse(config_template.read_text())
-    for table in doc_pkgdevx.get("repos", []):
+    # `pytack` template `prek.toml`
+    doc_pytack: TOMLDocument = tomlkit.parse(config_template.read_text())
+    for table in doc_pytack.get("repos", []):
         name, rev = table.get("repo"), table.get("rev")
         table_consumer, tchanged = _get_repo_table(doc_consumer, name, rev)
 
-        table_pkgdevx = table.get("hooks", [])
-        hchanged = _inject_missing_hooks(table_consumer, table_pkgdevx)
+        table_pytack = table.get("hooks", [])
+        hchanged = _inject_missing_hooks(table_consumer, table_pytack)
 
         changed = changed or tchanged or hchanged
 
@@ -359,10 +359,10 @@ def setup_prek_config(root: Path, reset: bool = False) -> None:
 
 
 def command_setup(args: argparse.Namespace) -> None:
-    """Configures a consuming repo with `pkgdevx` standards.
+    """Configures a consuming repo with `pytack` standards.
 
     Attempts to identify the root of the consuming repo and ensures that
-    `Prek` is configured with the expected `pkgdevx` hooks.
+    `Prek` is configured with the expected `pytack` hooks.
 
     Args:
         args: Namespace object with command-line arguments as attributes.
@@ -440,14 +440,14 @@ def command_setup(args: argparse.Namespace) -> None:
 
         progress.update(
             task,
-            description="[green]pkgdevx complete",
+            description="[green]pytack complete",
         )
 
 
 def main() -> None:
-    """Provides CLI entrypoint for `pkgdevx`."""
+    """Provides CLI entrypoint for `pytack`."""
     parser = argparse.ArgumentParser(
-        description="`pkgdevx` - Canonical standards management"
+        description="`pytack` - Canonical standards management"
     )
 
     # Require a subcommand ('setup')

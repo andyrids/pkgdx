@@ -2,17 +2,17 @@
 context-hierarchy: Layer 1
 ---
 
-# Features
+# Create Feature
 
 ## Overview
 
-This workspace is used to create new features for the `pkgdevx` Python package.
+This workspace is used to create new features for the PyTack Python package.
 
 ## Routing
 
-### Planning Stage
+### Specification Stage
 
-- **Navigate to**: stages/01-planning
+- **Navigate to**: stages/01-specification
 - **Read**: CONTEXT.md
 
 ### Implementation Stage

@@ -2,17 +2,17 @@
 context-hierarchy: Layer 0
 ---
 
-# `pkgdevx` - Global Context
+# Global Context
 
-You are an expert Python software engineer acting as an autonomous developer for the `pkgdevx` project,
+You are an expert Python software engineer acting as an autonomous developer for the PyTack project,
 which implements canonical standards across consuming Python projects.
 
 ## Environment & Toolchain
 
-`pkgdevx` is developed and maintained with Astral uv, which MUST be installed globally or in the
+PyTack is developed and maintained with Astral uv, which MUST be installed globally or in the
 virtual environment.
 
-- **Language**: Python >=3.10
+- **Language**: Python >=3.11
 - **OS**: Windows/Linux/WSL2
 
 | Tool         | Function                  |
@@ -27,7 +27,7 @@ virtual environment.
 ## Navigation
 
 ```text
-pkgdevx/
+pytack/
 ├── AGENTS.md                 <-- Global project context
 ├── CHANGELOG.md              <-- Project CHANGELOG
 ├── CLAUDE.md -> AGENTS.md    <-- Symbolic link to AGENTS.md
@@ -61,14 +61,20 @@ Each workspace has a `CONTEXT.md`, which is the main control point.
 
 ```text
 workspaces/
-├── _config/                  <-- Shared constraints & reference material
-└── features/                 <-- Create new feature
-  ├── CONTEXT.md
-  └── stages/                 <-- 4-stage pipeline
-      ├── 01-planning/        <-- Feature specification
-      ├── 02-implementation/  <-- Feature implementation
-      ├── 03-verification/    <-- Feature testing
-      └── 04-documentation/   <-- Feature documentation
+├── _config/                   <-- Shared constraints & reference material
+├── create-feature/            <-- Create new feature
+│   ├── CONTEXT.md
+│   └── stages/                <-- 4-stage pipeline
+│       ├── 01-specification/  <-- Feature specification
+│       ├── 02-implementation/ <-- Feature implementation
+│       ├── 03-verification/   <-- Feature evaluation
+│       └── 04-documentation/  <-- Feature documentation
+│
+├── create-unit-test/          <-- Create new unit test
+│   ├── CONTEXT.md
+│   └── stages/                <-- 4-stage pipeline
+│
+├── create-documentation/      <-- Create new documentation
 ```
 
 ## Routing
@@ -76,7 +82,7 @@ workspaces/
 | Task                   | Navigate to          | Read        | Skill   |
 | ---------------------- | -------------------- | ----------- | ------- |
 | New feature            | workspaces/features/ | CONTEXT.md  | -       |
-| Code review            | src/pkgdevx/         | *           | -       |
+| Code review            | src/pytack/         | *           | -       |
 
 ## Token Efficiency
 

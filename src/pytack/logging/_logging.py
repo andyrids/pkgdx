@@ -1,6 +1,6 @@
-"""Logging configuration for `pkgdevx`.
+"""Logging configuration for `pytack`.
 
-NOTE: All logging handlers are on the `pkgdevx` logger.
+NOTE: All logging handlers are on the `pytack` logger.
 """
 
 import logging.config
@@ -18,7 +18,7 @@ def configure_cli_logging(level: int = logging.WARNING) -> None:
     """Configures CLI logging using the `config.toml` settings."""
     logging.config.dictConfig(tomllib.loads(CONFIG_STR))
 
-    package = __package__.split(".")[0] if __package__ else "pkgdevx"
+    package = __package__.split(".")[0] if __package__ else "pytack"
 
     logger = logging.getLogger(package)
     logger.setLevel(level)
@@ -29,5 +29,5 @@ def configure_cli_logging(level: int = logging.WARNING) -> None:
 
 def configure_pkg_logging() -> None:
     """Configures package logging using a `NullHandler`."""
-    package = __package__.split(".")[0] if __package__ else "pkgdevx"
+    package = __package__.split(".")[0] if __package__ else "pytack"
     logging.getLogger(package).addHandler(logging.NullHandler())

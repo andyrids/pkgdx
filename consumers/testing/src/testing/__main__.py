@@ -1,4 +1,4 @@
-"""Main entry point for pkgdevx consumer testing package."""
+"""Main entry point for pytack consumer testing package."""
 
 
 def main() -> None:

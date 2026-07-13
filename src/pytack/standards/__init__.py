@@ -1,4 +1,4 @@
-"""__init__ for pkgdevx.standards.
+"""__init__ for pytack.standards.
 
 Provides access to configuration files for supported tools such as; `mypy`,
 `prek`, `pymarkdown`, and `ruff`.
@@ -29,8 +29,8 @@ def _load_prek_config() -> dict[str, Any]:
 
 
 @lru_cache(maxsize=1)
-def get_pkgdevx_repository() -> str:
-    """Get repository URL from pkgdevx metadata.
+def get_pytack_repository() -> str:
+    """Get repository URL from pytack metadata.
 
     Raises:
         ProjectRepoURLMissingError: On missing repository URL in metadata.
@@ -40,18 +40,18 @@ def get_pkgdevx_repository() -> str:
     """
     import urllib.parse
     from importlib.metadata import metadata
-    from pkgdevx.exceptions import ProjectRepoURLMissingError
+    from pytack.exceptions import ProjectRepoURLMissingError
 
-    pkgdevx_metadata = metadata("pkgdevx")
+    pytack_metadata = metadata("pytack")
 
     entry: str
-    for entry in pkgdevx_metadata.get_all("Project-URL", failobj=[]):
+    for entry in pytack_metadata.get_all("Project-URL", failobj=[]):
         if entry.lower().startswith("repository"):
             _, URL = entry.split(", ", 1)
             parsed = urllib.parse.urlparse(URL)
             if parsed.scheme and parsed.netloc:
                 return URL
-    msg = "Missing repository URL in `pkgdevx` metadata (`pyproject.toml`)"
+    msg = "Missing repository URL in `pytack` metadata (`pyproject.toml`)"
     raise ProjectRepoURLMissingError(msg)
 
 
@@ -65,10 +65,10 @@ def get_config_revision() -> str:
     Returns:
         Revision tag.
     """
-    from pkgdevx.exceptions import PrekRepoRevisionError
+    from pytack.exceptions import PrekRepoRevisionError
 
     config = _load_prek_config()
-    REPO_URL: str = get_pkgdevx_repository()
+    REPO_URL: str = get_pytack_repository()
 
     for repo in config.get("repos", []):
         if repo.get("repo") == REPO_URL:
@@ -78,7 +78,7 @@ def get_config_revision() -> str:
             else:
                 msg = "Missing `rev` key in Prek config"
                 raise PrekRepoRevisionError(msg)
-    msg = "`pkgdevx` metadata URL missing/mismatch for Prek config"
+    msg = "`pytack` metadata URL missing/mismatch for Prek config"
     raise PrekRepoRevisionError(msg)
 
 
@@ -92,16 +92,16 @@ def get_config_repository() -> str:
     Returns:
         Repository URL.
     """
-    from pkgdevx.exceptions import PrekRepoRevisionError
+    from pytack.exceptions import PrekRepoRevisionError
 
     config = _load_prek_config()
-    REPO_URL = get_pkgdevx_repository()
+    REPO_URL = get_pytack_repository()
 
     for repo in config.get("repos", []):
         if repo.get("repo") == REPO_URL:
             return REPO_URL
 
-    msg = "`pkgdevx` repository URL from metadata not found in Prek config"
+    msg = "`pytack` repository URL from metadata not found in Prek config"
     raise PrekRepoRevisionError(msg)
 
 

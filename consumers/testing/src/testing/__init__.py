@@ -1,3 +1,3 @@
-"""__init__ for pkgdevx consumer testing package."""
+"""__init__ for pytack consumer testing package."""
 
 __all__: list[str] = []

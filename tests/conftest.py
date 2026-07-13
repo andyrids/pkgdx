@@ -6,7 +6,7 @@ from unittest import mock
 
 import pytest
 
-from pkgdevx.logging import configure_cli_logging
+from pytack.logging import configure_cli_logging
 
 
 @pytest.fixture
@@ -16,7 +16,7 @@ def configured_logging() -> Iterator[None]:
     try:
         yield
     finally:
-        logger = logging.getLogger("pkgdevx")
+        logger = logging.getLogger("pytack")
         for handler in logger.handlers[:]:
             logger.removeHandler(handler)
 

@@ -1,4 +1,4 @@
-"""Unit tests for the `pkgdevx setup` command."""
+"""Unit tests for the `pytack setup` command."""
 
 import argparse
 from pathlib import Path
@@ -6,8 +6,8 @@ from unittest import mock
 
 import pytest
 import tomlkit.exceptions
-from pkgdevx import exceptions
-from pkgdevx.__main__ import _setup_progress, command_setup, logger
+from pytack import exceptions
+from pytack.__main__ import _setup_progress, command_setup, logger
 from rich.logging import RichHandler
 from rich.progress import Progress
 
@@ -73,12 +73,12 @@ def test_command_setup_advances_all_steps(
 
     with (
         mock.patch(
-            "pkgdevx.__main__.get_project_root", return_value=project_root
+            "pytack.__main__.get_project_root", return_value=project_root
         ),
         mock.patch(
-            "pkgdevx.__main__.get_git_toplevel", return_value=project_root
+            "pytack.__main__.get_git_toplevel", return_value=project_root
         ),
-        mock.patch("pkgdevx.__main__._setup_progress") as mock_setup_progress,
+        mock.patch("pytack.__main__._setup_progress") as mock_setup_progress,
     ):
         mock_progress = mock.MagicMock(spec=Progress)
         mock_task_id = mock.MagicMock()
@@ -106,10 +106,10 @@ def test_command_setup_exits_on_missing_project_root(
 
     with (
         mock.patch(
-            "pkgdevx.__main__.get_project_root",
+            "pytack.__main__.get_project_root",
             side_effect=exceptions.ProjectRootNotFoundError("not found"),
         ),
-        mock.patch("pkgdevx.__main__._setup_progress") as mock_setup_progress,
+        mock.patch("pytack.__main__._setup_progress") as mock_setup_progress,
     ):
         mock_progress = mock.MagicMock(spec=Progress)
         mock_setup_progress.return_value.__enter__ = mock.MagicMock(
@@ -137,16 +137,16 @@ def test_command_setup_exits_on_prek_config_error(
 
     with (
         mock.patch(
-            "pkgdevx.__main__.get_project_root", return_value=project_root
+            "pytack.__main__.get_project_root", return_value=project_root
         ),
         mock.patch(
-            "pkgdevx.__main__.get_git_toplevel", return_value=project_root
+            "pytack.__main__.get_git_toplevel", return_value=project_root
         ),
         mock.patch(
-            "pkgdevx.__main__.setup_prek_config",
+            "pytack.__main__.setup_prek_config",
             side_effect=tomlkit.exceptions.TOMLKitError("bad TOML"),
         ),
-        mock.patch("pkgdevx.__main__._setup_progress") as mock_setup_progress,
+        mock.patch("pytack.__main__._setup_progress") as mock_setup_progress,
     ):
         mock_progress = mock.MagicMock(spec=Progress)
         mock_setup_progress.return_value.__enter__ = mock.MagicMock(
@@ -183,12 +183,12 @@ def test_command_setup_non_tty_runs_without_progress(
 
     with (
         mock.patch(
-            "pkgdevx.__main__.get_project_root", return_value=project_root
+            "pytack.__main__.get_project_root", return_value=project_root
         ),
         mock.patch(
-            "pkgdevx.__main__.get_git_toplevel", return_value=project_root
+            "pytack.__main__.get_git_toplevel", return_value=project_root
         ),
-        mock.patch("pkgdevx.__main__._setup_progress") as mock_setup_progress,
+        mock.patch("pytack.__main__._setup_progress") as mock_setup_progress,
     ):
         mock_progress = mock.MagicMock(spec=Progress)
         mock_task_id = mock.MagicMock()

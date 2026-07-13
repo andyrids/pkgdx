@@ -1,27 +1,27 @@
 #:schema https://raw.githubusercontent.com/j178/prek/refs/heads/master/prek.schema.json
 
 [[repos]]
-repo = "https://gitlab.com/andyrids/pkgdevx"
+repo = "https://gitlab.com/andyrids/pytack"
 rev = "v0.1.0rc5"
 
 [[repos.hooks]]
-id = "pkgdevx-lint"
+id = "pytack-lint"
 name = "Lint [Ruff]"
 
 [[repos.hooks]]
-id = "pkgdevx-format"
+id = "pytack-format"
 name = "Format [Ruff]"
 
 [[repos.hooks]]
-id = "pkgdevx-markdown"
+id = "pytack-markdown"
 name = "Check Markdown [PyMarkdown]"
 
 [[repos.hooks]]
-id = "pkgdevx-typing"
+id = "pytack-typing"
 name = "Typing [Mypy]"
 
 [[repos.hooks]]
-id = "pkgdevx-secrets"
+id = "pytack-secrets"
 name = "Detect Secrets [detect-secrets]"
 
 [[repos]]

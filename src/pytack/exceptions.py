@@ -1,8 +1,8 @@
-"""Custom exceptions for `pkgdevx`."""
+"""Custom exceptions for `pytack`."""
 
 
 class Error(Exception):
-    """Base-class for all exceptions raised by `pkgdevx`."""
+    """Base-class for all exceptions raised by `pytack`."""
 
 
 class ProjectRootNotFoundError(Error):
@@ -18,7 +18,7 @@ class PrekRepoURLMissingError(Error):
 
 
 class ProjectRepoURLMissingError(Error):
-    """Raised on missing `repository` key in `pkgdevx` metadata."""
+    """Raised on missing `repository` key in `pytack` metadata."""
 
 
 class GitTopLevelError(Error):

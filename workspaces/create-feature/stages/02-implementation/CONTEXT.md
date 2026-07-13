@@ -15,7 +15,7 @@ Write Python code for the technical specification from the planning stage.
 ## Process
 
 1. Read the specification in `01-planning/output/[slug]-spec.md`
-2. Implement the required logic within `src/pkgdevx/`
+2. Implement the required logic within `src/pytack/`
 3. Adhere to the workspace toolchain
    - Astral uv dependency management
    - Check typing, linting & formatting rules

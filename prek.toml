@@ -22,46 +22,46 @@ name = "Detect PEM [Builtin]"
 [[repos]]
 repo = "local"
 
-# Use `pkgdevx.standards` config
+# Use `pytack.standards` config
 [[repos.hooks]]
 id = "format"
 name = "Format [Ruff]"
 entry = "uv run ruff format"
-args = ["--config", "src/pkgdevx/standards/ruff.toml", "--exit-non-zero-on-format"]
+args = ["--config", "src/pytack/standards/ruff.toml", "--exit-non-zero-on-format"]
 language = "system"
 types_or = ["python", "pyi"]
 require_serial = true
 pass_filenames = false
 
-# Use `pkgdevx.standards` config
+# Use `pytack.standards` config
 [[repos.hooks]]
 id = "lint"
 name = "Lint [Ruff]"
 entry = "uv run ruff check"
-args = ["--config", "src/pkgdevx/standards/ruff.toml", "--fix", "--exit-non-zero-on-fix"]
+args = ["--config", "src/pytack/standards/ruff.toml", "--fix", "--exit-non-zero-on-fix"]
 language = "system"
 types_or = ["python", "pyi"]
 require_serial = true
 pass_filenames = false
 
-# Use `pkgdevx.standards` config
+# Use `pytack.standards` config
 [[repos.hooks]]
 id = "typing"
 name = "Typing [Mypy]"
 entry = "uv run mypy"
-args = ["-p", "pkgdevx", "--config-file", "src/pkgdevx/standards/mypy.ini"]
+args = ["-p", "pytack", "--config-file", "src/pytack/standards/mypy.ini"]
 language = "system"
 types_or = ["python", "pyi"]
 exclude = "tests/"
 require_serial = true
 pass_filenames = false
 
-# Use `pkgdevx.standards` config
+# Use `pytack.standards` config
 [[repos.hooks]]
 id = "markdown"
 name = "Check Markdown [PyMarkdown]"
 entry = "uv run pymarkdown"
-args = ["--config", "src/pkgdevx/standards/pymarkdown.toml", "scan"]
+args = ["--config", "src/pytack/standards/pymarkdown.toml", "scan"]
 language = "system"
 types_or = ["markdown"]
 require_serial = true
