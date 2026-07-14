@@ -150,3 +150,9 @@ Contributions are welcome and these should be made through the
 
 ## A Note on AI Usage
 
+> [!NOTE]
+> I try to use AI in a way that automates and streamlines tasks, but also generates enough friction
+> in the right areas to promote continued professional developement.
+
+This project is being used as a testbed for Interpretable Context Methodology (ICM), which uses folder structure as
+Agent Architecture. A copy of the research paper can be found at [docs/2603.16021v2.pdf](/docs/2603.16021v2.pdf).

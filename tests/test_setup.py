@@ -13,16 +13,16 @@ from rich.progress import Progress
 
 
 def test_setup_progress_disabled_in_non_tty(
-    non_tty_stdout: None,
+    tty_stdout_disable: None,
     configured_logging: None,
 ) -> None:
-    """Progress is disabled when stdout is not a TTY."""
+    """Progress is disabled when stdout is non-TTY."""
     with _setup_progress() as progress:
         assert progress.disable is True
 
 
 def test_setup_progress_enabled_in_tty(
-    tty_stdout: None,
+    tty_stdout_enable: None,
     configured_logging: None,
 ) -> None:
     """Progress is enabled when stdout is a TTY."""
@@ -31,20 +31,20 @@ def test_setup_progress_enabled_in_tty(
 
 
 def test_setup_progress_shares_console_with_rich_handler(
-    tty_stdout: None,
+    tty_stdout_enable: None,
     configured_logging: None,
 ) -> None:
-    """The progress instance shares a Console with RichHandler."""
+    """The Progress instance shares a Console with RichHandler."""
     handler = next(h for h in logger.handlers if isinstance(h, RichHandler))
     with _setup_progress() as progress:
         assert progress.console is handler.console
 
 
 def test_setup_progress_restores_console_after_exit(
-    tty_stdout: None,
+    tty_stdout_enable: None,
     configured_logging: None,
 ) -> None:
-    """RichHandler console is restored after the progress context exits."""
+    """RichHandler console is restored after the Progress context exits."""
     handler = next(h for h in logger.handlers if isinstance(h, RichHandler))
     original_console = handler.console
     with _setup_progress():
@@ -52,72 +52,62 @@ def test_setup_progress_restores_console_after_exit(
     assert handler.console is original_console
 
 
-def test_command_setup_advances_all_steps(
-    tmp_path: Path,
-    tty_stdout: None,
+def test_command_setup_complete(
+    mock_project: Path,
+    tty_stdout_enable: None,
     mock_subprocess_run: mock.MagicMock,
 ) -> None:
     """The setup command advances through all six progress steps."""
-    project_root = tmp_path / "project"
-    project_root.mkdir()
-    (project_root / "pyproject.toml").write_text("[project]\nname = 'test'\n")
-    git_dir = project_root / ".git"
-    git_dir.mkdir()
-    hooks_dir = git_dir / "hooks"
-    hooks_dir.mkdir()
-    (hooks_dir / "pre-commit").write_text("#!/bin/sh\n")
-    (project_root / "prek.toml").write_text("repos = []\n")
-    (project_root / ".secrets.baseline").write_text("{}")
 
     args = argparse.Namespace(verbose=False, reset=False)
 
+    MAIN = "pytack.__main__"
+
     with (
-        mock.patch(
-            "pytack.__main__.get_project_root", return_value=project_root
-        ),
-        mock.patch(
-            "pytack.__main__.get_git_toplevel", return_value=project_root
-        ),
-        mock.patch("pytack.__main__._setup_progress") as mock_setup_progress,
+        mock.patch(f"{MAIN}.get_project_root", return_value=mock_project),
+        mock.patch(f"{MAIN}.get_git_toplevel", return_value=mock_project),
+        mock.patch(f"{MAIN}._setup_progress") as msetup_progress,
     ):
-        mock_progress = mock.MagicMock(spec=Progress)
-        mock_task_id = mock.MagicMock()
-        mock_progress.add_task.return_value = mock_task_id
-        mock_setup_progress.return_value.__enter__ = mock.MagicMock(
-            return_value=mock_progress
-        )
-        mock_setup_progress.return_value.__exit__ = mock.MagicMock(
-            return_value=None
-        )
+        mprogress = mock.MagicMock(spec=Progress)
+        mprogress_enter = mock.MagicMock(return_value=mprogress)
+        mprogress_exit = mock.MagicMock(return_value=None)
+
+        mtask_id = mock.MagicMock()
+        mprogress.add_task.return_value = mtask_id
+
+        msetup_progress.return_value.__enter__ = mprogress_enter
+        msetup_progress.return_value.__exit__ = mprogress_exit
 
         command_setup(args)
 
-    assert mock_progress.add_task.call_count == 1
-    update_calls = mock_progress.update.call_args_list
-    assert len(update_calls) == 7  # 6 advances + final completion message
+    assert mprogress.add_task.call_count == 1
+    update_calls = mprogress.update.call_args_list
+    assert len(update_calls) == 7
+
 
 
 def test_command_setup_exits_on_missing_project_root(
-    tmp_path: Path,
-    tty_stdout: None,
+    mock_project: Path,
+    tty_stdout_disable: None,
 ) -> None:
     """The setup command exits with code 1 when the project root is missing."""
     args = argparse.Namespace(verbose=False, reset=False)
 
+    MAIN = "pytack.__main__"
+
     with (
         mock.patch(
-            "pytack.__main__.get_project_root",
-            side_effect=exceptions.ProjectRootNotFoundError("not found"),
+            f"{MAIN}.get_project_root",
+            side_effect=exceptions.ProjectRootNotFoundError(),
         ),
-        mock.patch("pytack.__main__._setup_progress") as mock_setup_progress,
+        mock.patch(f"{MAIN}._setup_progress") as msetup_progress,
     ):
-        mock_progress = mock.MagicMock(spec=Progress)
-        mock_setup_progress.return_value.__enter__ = mock.MagicMock(
-            return_value=mock_progress
-        )
-        mock_setup_progress.return_value.__exit__ = mock.MagicMock(
-            return_value=None
-        )
+        mprogress = mock.MagicMock(spec=Progress)
+        mprogress_enter = mock.MagicMock(return_value=mprogress)
+        mprogress_exit = mock.MagicMock(return_value=None)
+
+        msetup_progress.return_value.__enter__ = mprogress_enter
+        msetup_progress.return_value.__exit__ = mprogress_exit
 
         with pytest.raises(SystemExit) as exc_info:
             command_setup(args)
@@ -126,35 +116,30 @@ def test_command_setup_exits_on_missing_project_root(
 
 
 def test_command_setup_exits_on_prek_config_error(
-    tmp_path: Path,
-    tty_stdout: None,
+    mock_project: Path,
+    tty_stdout_enable: None,
 ) -> None:
     """The setup command exits with code 1 when prek.toml config fails."""
-    project_root = tmp_path / "project"
-    project_root.mkdir()
 
     args = argparse.Namespace(verbose=False, reset=False)
 
+    MAIN = "pytack.__main__"
+
     with (
+        mock.patch(f"{MAIN}.get_project_root", return_value=mock_project),
+        mock.patch(f"{MAIN}.get_git_toplevel", return_value=mock_project),
         mock.patch(
-            "pytack.__main__.get_project_root", return_value=project_root
-        ),
-        mock.patch(
-            "pytack.__main__.get_git_toplevel", return_value=project_root
-        ),
-        mock.patch(
-            "pytack.__main__.setup_prek_config",
+            f"{MAIN}.setup_prek_config",
             side_effect=tomlkit.exceptions.TOMLKitError("bad TOML"),
         ),
-        mock.patch("pytack.__main__._setup_progress") as mock_setup_progress,
+        mock.patch(f"{MAIN}._setup_progress") as msetup_progress,
     ):
-        mock_progress = mock.MagicMock(spec=Progress)
-        mock_setup_progress.return_value.__enter__ = mock.MagicMock(
-            return_value=mock_progress
-        )
-        mock_setup_progress.return_value.__exit__ = mock.MagicMock(
-            return_value=None
-        )
+        mprogress = mock.MagicMock(spec=Progress)
+        mprogress_enter = mock.MagicMock(return_value=mprogress)
+        mprogress_exit = mock.MagicMock(return_value=None)
+
+        msetup_progress.return_value.__enter__ = mprogress_enter
+        msetup_progress.return_value.__exit__ = mprogress_exit
 
         with pytest.raises(SystemExit) as exc_info:
             command_setup(args)
@@ -163,43 +148,32 @@ def test_command_setup_exits_on_prek_config_error(
 
 
 def test_command_setup_non_tty_runs_without_progress(
-    tmp_path: Path,
-    non_tty_stdout: None,
+    mock_project: Path,
+    tty_stdout_disable: None,
     mock_subprocess_run: mock.MagicMock,
 ) -> None:
     """The setup command runs without progress rendering in non-TTY mode."""
-    project_root = tmp_path / "project"
-    project_root.mkdir()
-    (project_root / "pyproject.toml").write_text("[project]\nname = 'test'\n")
-    git_dir = project_root / ".git"
-    git_dir.mkdir()
-    hooks_dir = git_dir / "hooks"
-    hooks_dir.mkdir()
-    (hooks_dir / "pre-commit").write_text("#!/bin/sh\n")
-    (project_root / "prek.toml").write_text("repos = []\n")
-    (project_root / ".secrets.baseline").write_text("{}")
 
     args = argparse.Namespace(verbose=False, reset=False)
 
+    MAIN = "pytack.__main__"
+
     with (
-        mock.patch(
-            "pytack.__main__.get_project_root", return_value=project_root
-        ),
-        mock.patch(
-            "pytack.__main__.get_git_toplevel", return_value=project_root
-        ),
-        mock.patch("pytack.__main__._setup_progress") as mock_setup_progress,
+        mock.patch(f"{MAIN}.get_project_root", return_value=mock_project),
+        mock.patch(f"{MAIN}.get_git_toplevel", return_value=mock_project),
+        mock.patch(f"{MAIN}._setup_progress") as msetup_progress,
     ):
-        mock_progress = mock.MagicMock(spec=Progress)
+        mprogress = mock.MagicMock(spec=Progress)
+
+        mprogress_enter = mock.MagicMock(return_value=mprogress)
+        mprogress_exit = mock.MagicMock(return_value=None)
+
+        msetup_progress.return_value.__enter__ = mprogress_enter
+        msetup_progress.return_value.__exit__ = mprogress_exit
+
         mock_task_id = mock.MagicMock()
-        mock_progress.add_task.return_value = mock_task_id
-        mock_setup_progress.return_value.__enter__ = mock.MagicMock(
-            return_value=mock_progress
-        )
-        mock_setup_progress.return_value.__exit__ = mock.MagicMock(
-            return_value=None
-        )
+        mprogress.add_task.return_value = mock_task_id
 
         command_setup(args)
 
-    mock_setup_progress.assert_called_once()
+    msetup_progress.assert_called_once()

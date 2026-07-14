@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > - `Fixed` for any bug fixes.
 > - `Security` in case of vulnerabilities.
 
-## [Unreleased]
+## [0.1.0rc6] - 2026-07-14
 
 ### Added
 
@@ -28,13 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Unit tests for `setup` progress now configure logging before exercising `_setup_progress()`.
 
-## [0.1.0] - 2026-07-05
+## [0.1.0rc5] - 2026-07-10
 
 ### Added
 
 - CLI setup script for automated project configuration.
 - `--reset` option for CLI setup script.
-- Detect missing hooks based on pytack config.
+- Detect missing hooks based on pkgdevx config.
 - Build & publish to GitLab package registry.
 - Unit tests.
 

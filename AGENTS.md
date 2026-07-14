@@ -75,20 +75,25 @@ workspaces/
 │   └── stages/                <-- 4-stage pipeline
 │
 ├── create-documentation/      <-- Create new documentation
+│   ├── CONTEXT.md
+│   └── stages/                <-- 4-stage pipeline
 ```
 
 ## Routing
 
-| Task                   | Navigate to          | Read        | Skill   |
-| ---------------------- | -------------------- | ----------- | ------- |
-| New feature            | workspaces/features/ | CONTEXT.md  | -       |
-| Code review            | src/pytack/         | *           | -       |
+| Task                 | Navigate to                      | Read        | Skill   |
+| -------------------- | -------------------------------- | ----------- | ------- |
+| Create feature       | workspaces/create-feature/       | CONTEXT.md  | -       |
+| Create unit test     | workspaces/create-unit-test/     | CONTEXT.md  | -       |
+| Create documentation | workspaces/create-documentation/ | CONTEXT.md  | -       |
+| Code review          | src/                             | *           | -       |
 
 ## Token Efficiency
 
 - Each task is performed within a specific workspace
 - Each workspace is compartmentalised
 - Each workspace `CONTEXT.md` provides all necessary context
+- Avoid unnecessary files in `__pycache__`
 
 ## Naming Conventions
 
@@ -101,9 +106,9 @@ workspaces/
 
 ### Output
 
-| Output                | Pattern                | Example                       |
-| --------------------- | ---------------------- | ----------------------------- |
-| Feature specification | `[slug]-spec.md`       | `rich-progress-bar-spec.md`   |
-| Implementation report | `[slug]-code.md`       | `rich-progress-bar-code.md`   |
-| Verification report   | `[slug]-test.md`       | `rich-progress-bar-test.md`   |
-| Documentation report  | `[slug]-docs.md`       | `rich-progress-bar-docs.md`   |
+| Output                | Pattern                  | Example                       |
+| --------------------- | ------------------------ | ----------------------------- |
+| Feature specification | `[feature-slug]-spec.md` | `rich-progress-bar-spec.md`   |
+| Implementation report | `[feature-slug]-code.md` | `rich-progress-bar-code.md`   |
+| Verification report   | `[feature-slug]-test.md` | `rich-progress-bar-test.md`   |
+| Documentation report  | `[feature-slug]-docs.md` | `rich-progress-bar-docs.md`   |
