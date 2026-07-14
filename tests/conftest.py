@@ -43,7 +43,8 @@ def mock_subprocess_run() -> Iterator[mock.MagicMock]:
         mocked.return_value.returncode = 0
         yield mocked
 
-@pytest.fixture(scope="session")
+
+@pytest.fixture(scope="function")
 def mock_project(tmp_path_factory: pytest.TempPathFactory) -> pathlib.Path:
     """Creates a temporary project directory for testing."""
 

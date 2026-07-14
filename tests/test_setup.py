@@ -85,7 +85,6 @@ def test_command_setup_complete(
     assert len(update_calls) == 7
 
 
-
 def test_command_setup_exits_on_missing_project_root(
     mock_project: Path,
     tty_stdout_disable: None,

@@ -330,9 +330,8 @@ def setup_prek_config(root: Path, reset: bool = False) -> None:
     # Consuming project `prek.toml`
     doc_consumer: TOMLDocument = tomlkit.parse(config_existing.read_text())
 
-    tomlkit.exceptions.TOMLKitError
-    if "repos" not in doc_consumer:
-        logger.debug("Existing `prek.toml` missing `[repos]`")
+    if "repos" not in doc_consumer or not doc_consumer.get("repos", []):
+        logger.debug("Existing `prek.toml` missing or has empty `[repos]`")
         doc_consumer["repos"] = tomlkit.aot()
         changed = True
 
