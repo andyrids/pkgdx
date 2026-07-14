@@ -2,7 +2,7 @@
 
 [[repos]]
 repo = "https://gitlab.com/andyrids/pytack"
-rev = "v0.1.0rc5"
+rev = "v0.1.0rc6"
 
 [[repos.hooks]]
 id = "pytack-lint"
