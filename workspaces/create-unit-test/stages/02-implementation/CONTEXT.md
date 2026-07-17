@@ -4,7 +4,7 @@ context-hierarchy: Layer 2
 
 # Implementation
 
-Write Python code for the technical specification from the Specification stage.
+Write unit tests for the test specification from the Specification stage.
 
 ## Inputs
 
@@ -15,11 +15,11 @@ Write Python code for the technical specification from the Specification stage.
 ## Process
 
 1. Read the specification
-2. Implement the required logic within `src/pytack/`
+2. Implement the required tests within `tests/`
 3. Adhere to the workspace toolchain
    - Astral uv dependency management
    - Check typing, linting & formatting rules
-4. Draft the implimentation report
+4. Draft the implementation report
    - List a command to generate a diff report
    - List each file modified
    - Explain reasoning behind each modification

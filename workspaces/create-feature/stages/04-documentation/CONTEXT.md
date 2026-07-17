@@ -8,7 +8,7 @@ Finalise the workflow by updating project documentation to reflect the new featu
 
 ## Inputs
 
-- `01-planning/output/[slug]-spec.md`
+- `01-specification/output/[slug]-spec.md`
 - `02-implementation/output/[slug]-code.md`
 - `03-verification/output/[slug]-test.md`
 - `04-documentation/references/*` (any relevant reference material)
@@ -17,14 +17,14 @@ Finalise the workflow by updating project documentation to reflect the new featu
 ## Process
 
 1. Review the output from previous stages
-2. Update `CHANGELOG.md`
-   - Adhere to 'Keep a Changelog' format
-   - Categorise changes appropriately
-3. Update `README.md` if necessary
-4. CHECKPOINT - await user review in accordance with acceptance criteria
+2. Create a documentation report
+   - List relevant documentation updates
+     - `README.md`, `CHANGELOG` etc.
+     - Provide sufficient detail for a `create-documentation` specification
+   - List unit test & compliance check updates
+     - Provide sufficient detail for a `create-unit-test` specification
+3. CHECKPOINT - await user review in accordance with acceptance criteria
 
 ## Outputs
-
-Create a final documentation update report.
 
 - [slug]-docs.md -> `04-documentation/output/`

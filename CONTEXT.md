@@ -2,19 +2,34 @@
 context-hierarchy: Layer 1
 ---
 
-# `pytack` - Workspace Routing
+# Workspace Routing
 
 ## Routing
 
 Each task category heading details necessary context and locations.
 
-### New Feature
+### Create Feature
 
-- **Navigate to**: workspaces/features
+- **Navigate to**: workspaces/create-feature
 - **Read**: CONTEXT.md
 - **Extra context**:
   - pyproject.toml
   - README.md
   - CHANGELOG.md
-  - Justfile
-  - prek.toml
+
+### Create Documentation
+
+- **Navigate to**: workspaces/create-documentation
+- **Read**: CONTEXT.md
+- **Extra context**:
+  - pyproject.toml
+  - README.md
+  - CHANGELOG.md
+
+### Create Unit Test
+
+- **Navigate to**: workspaces/create-unit-test
+- **Read**: CONTEXT.md
+- **Extra context**:
+  - tests/*
+  - pyproject.toml

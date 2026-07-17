@@ -2,13 +2,14 @@
 context-hierarchy: Layer 3
 ---
 
-# Toolchain - `mypy`
+# Toolchain - `Mypy`
 
-The `mypy` config is located at `src/pytack/standards/mypy.ini`
+Mypy is used to enforce standards for typing.
 
 ## Configuration
 
-Enforce the usage of the type hints for all function/method args and return values.
+The Mypy config is located at `src/pytack/standards/mypy.ini`. Enforce the usage of the type hints
+for all function/method args and return values.
 
 ```ini
 disallow_untyped_defs = true
@@ -20,7 +21,7 @@ Protect developers from falsely trusting that dependencies are typed correctly.
 disallow_any_unimported = true
 ```
 
-When something is imported from a dependency, it's resolved to Any if mypy can't resolve the import.
+When something is imported from a dependency, it's resolved to `Any` if Mypy can't resolve the import.
 
 - Missing stubs can sometimes be found at [typeshed/stubs](https://github.com/python/typeshed/tree/main/stubs)
 - A type ignore (`# type: ignore[no-any-unimported]`) can be used when stubs are unavailable

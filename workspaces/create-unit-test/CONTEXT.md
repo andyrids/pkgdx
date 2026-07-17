@@ -2,11 +2,11 @@
 context-hierarchy: Layer 1
 ---
 
-# Create Feature
+# Create Unit Test
 
 ## Overview
 
-This workspace is used to create new features for this project.
+This workspace is used to create new unit tests for this project.
 
 ## Routing
 
@@ -25,35 +25,25 @@ This workspace is used to create new features for this project.
 - **Navigate to**: stages/03-verification
 - **Read**: CONTEXT.md
 
-### Documentation Stage
-
-- **Navigate to**: stages/04-documentation
-- **Read**: CONTEXT.md
-
 ## Navigation
 
 ```text
-create-feature/
+create-unit-test/
 ├── CONTEXT.md
-└── stages/                  <-- 4-stage pipeline
-    ├── 01-specification/    <-- Feature specification
+└── stages/                  <-- 3-stage pipeline
+    ├── 01-specification/    <-- Test specification
     │   ├── CONTEXT.md       <-- Stage routing
     │   ├── output/          <-- Technical specification
     │   └── references/      <-- Stage reference material
     │
-    ├── 02-implementation/   <-- Feature implementation
+    ├── 02-implementation/   <-- Test implementation
     │   ├── CONTEXT.md       <-- Stage routing
-    │   ├── output/          <-- Implemented specification
+    │   ├── output/          <-- Implemented tests
     │   └── references/      <-- Stage reference material
     │
-    ├── 03-verification/     <-- Feature testing
-    │   ├── CONTEXT.md       <-- Stage routing
-    │   ├── output/          <-- Verification report
-    │   └── references/      <-- Stage reference material
-    │
-    └── 04-documentation/    <-- Feature documentation
+    └── 03-verification/     <-- Test verification
         ├── CONTEXT.md       <-- Stage routing
-        ├── output/          <-- Documentation report
+        ├── output/          <-- Verification report
         └── references/      <-- Stage reference material
 ```
 

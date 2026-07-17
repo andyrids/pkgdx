@@ -2,11 +2,11 @@
 context-hierarchy: Layer 1
 ---
 
-# Create Feature
+# Create Documentation
 
 ## Overview
 
-This workspace is used to create new features for this project.
+This workspace is used to create new project documentation.
 
 ## Routing
 
@@ -25,35 +25,25 @@ This workspace is used to create new features for this project.
 - **Navigate to**: stages/03-verification
 - **Read**: CONTEXT.md
 
-### Documentation Stage
-
-- **Navigate to**: stages/04-documentation
-- **Read**: CONTEXT.md
-
 ## Navigation
 
 ```text
-create-feature/
+create-documentation/
 ├── CONTEXT.md
-└── stages/                  <-- 4-stage pipeline
-    ├── 01-specification/    <-- Feature specification
+└── stages/                  <-- 3-stage pipeline
+    ├── 01-specification/    <-- Documentation specification
     │   ├── CONTEXT.md       <-- Stage routing
-    │   ├── output/          <-- Technical specification
+    │   ├── output/          <-- Documentation plan
     │   └── references/      <-- Stage reference material
     │
-    ├── 02-implementation/   <-- Feature implementation
+    ├── 02-implementation/   <-- Documentation implementation
     │   ├── CONTEXT.md       <-- Stage routing
-    │   ├── output/          <-- Implemented specification
+    │   ├── output/          <-- Drafted documentation
     │   └── references/      <-- Stage reference material
     │
-    ├── 03-verification/     <-- Feature testing
-    │   ├── CONTEXT.md       <-- Stage routing
-    │   ├── output/          <-- Verification report
-    │   └── references/      <-- Stage reference material
-    │
-    └── 04-documentation/    <-- Feature documentation
+    └── 03-verification/     <-- Documentation verification
         ├── CONTEXT.md       <-- Stage routing
-        ├── output/          <-- Documentation report
+        ├── output/          <-- Verification report
         └── references/      <-- Stage reference material
 ```
 
@@ -62,6 +52,6 @@ create-feature/
 - Artifact creation in accordance with stage guidance
 - Stage checkpoint review
   - User review & acceptance of each output artifact
-  - User review & acceptance of modified/created sourcecode
+  - User review & acceptance of modified/created documentation
   - User review & acceptance must be explicit before continuation
     - "approved" or "continue" response

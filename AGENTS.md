@@ -4,8 +4,15 @@ context-hierarchy: Layer 0
 
 # Global Context
 
-You are an expert Python software engineer acting as an autonomous developer for the PyTack project,
-which implements canonical standards across consuming Python projects.
+You are an expert Python software engineer acting as a developer for the PyTack project, which
+implements canonical standards across consuming Python projects.
+
+- Follow YAGNI principles
+- Resuse existing patterns in the codebase
+- Use the Standard Library over a dependency
+- Use an existing dependency over a new one
+- Use a one-liner where possible
+- Write the minimum code that works
 
 ## Environment & Toolchain
 
@@ -61,22 +68,18 @@ Each workspace has a `CONTEXT.md`, which is the main control point.
 
 ```text
 workspaces/
-├── _config/                   <-- Shared constraints & reference material
+├── _config/                   <-- Shared reference material
 ├── create-feature/            <-- Create new feature
 │   ├── CONTEXT.md
-│   └── stages/                <-- 4-stage pipeline
-│       ├── 01-specification/  <-- Feature specification
-│       ├── 02-implementation/ <-- Feature implementation
-│       ├── 03-verification/   <-- Feature evaluation
-│       └── 04-documentation/  <-- Feature documentation
+│   └── stages/                <-- Pipeline stages
 │
 ├── create-unit-test/          <-- Create new unit test
 │   ├── CONTEXT.md
-│   └── stages/                <-- 4-stage pipeline
+│   └── stages/                <-- Pipeline stages
 │
 ├── create-documentation/      <-- Create new documentation
 │   ├── CONTEXT.md
-│   └── stages/                <-- 4-stage pipeline
+│   └── stages/                <-- Pipeline stages
 ```
 
 ## Routing
@@ -99,16 +102,17 @@ workspaces/
 
 ### References
 
-| Reference      | Pattern                           | Example                        |
-| -------------- | --------------------------------- | ------------------------------ |
-| Toolchain      | `reference-toolchain-[tool].md`   | `reference-tool-mypy.md`       |
-| Code snippets  | `reference-cookbook-[package].md` | `reference-cookbook-rich.md`   |
+| Reference      | Pattern                           | Example                         |
+| -------------- | --------------------------------- | ------------------------------- |
+| Toolchain      | `reference-toolchain-[tool].md`   | `reference-toolchain-mypy.md`   |
+| Cookbook       | `reference-cookbook-[package].md` | `reference-cookbook-rich.md`    |
+| Standard       | `reference-standard-[name].md`    | `reference-standard-IEEE830.md` |
 
 ### Output
 
-| Output                | Pattern                  | Example                       |
-| --------------------- | ------------------------ | ----------------------------- |
-| Feature specification | `[feature-slug]-spec.md` | `rich-progress-bar-spec.md`   |
-| Implementation report | `[feature-slug]-code.md` | `rich-progress-bar-code.md`   |
-| Verification report   | `[feature-slug]-test.md` | `rich-progress-bar-test.md`   |
-| Documentation report  | `[feature-slug]-docs.md` | `rich-progress-bar-docs.md`   |
+| Output                | Pattern          | Example                       |
+| --------------------- | ---------------- | ----------------------------- |
+| Specification report  | `[slug]-spec.md` | `rich-progress-bar-spec.md`   |
+| Implementation report | `[slug]-code.md` | `rich-progress-bar-code.md`   |
+| Verification report   | `[slug]-test.md` | `rich-progress-bar-test.md`   |
+| Documentation report  | `[slug]-docs.md` | `rich-progress-bar-docs.md`   |
