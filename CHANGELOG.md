@@ -16,6 +16,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > - `Fixed` for any bug fixes.
 > - `Security` in case of vulnerabilities.
 
+## [0.1.0rc7]
+
+### Added
+
+- `venv-axi` (`pytack-venv-axi`) - an Agent eXperience Interface (AXI).
+  - Provides a CLI & MCP interface.
+  - Fetches venv package metadata for a consuming repo.
+  - Fetches public API/docstring introspection.
+  - Output uses a token-efficient TOON format.
+  - A `setup` command installs ambient context (`AGENTS.md`, `.vscode/mcp.json`, `.mcp.json`)
+
 ## [0.1.0rc6] - 2026-07-14
 
 ### Added

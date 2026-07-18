@@ -102,6 +102,31 @@ To overwrite or reset an existing `prek.toml` in the project root, use the `--re
 uv run pytack setup --reset
 ```
 
+## `venv-axi`
+
+`venv-axi` is an Agent eXperience Interface (AXI) tool for agents working in a `pytack`-consuming
+repo. It surfaces installed venv package metadata and public API/docstring introspection in a
+token-efficient [TOON](https://github.com/toon-format/spec) format, on STDOUT.
+
+```bash
+uv run venv-axi          # live status & next-step hints
+uv run venv-axi list      # installed, declared dependencies
+uv run venv-axi show rich --api   # a package's public API symbols
+```
+
+To install ambient context for agents (an `AGENTS.md` block plus MCP server entries in
+`.vscode/mcp.json` and `.mcp.json`), run:
+
+```bash
+uv run venv-axi setup
+```
+
+`venv-axi serve` runs the same tools over MCP (stdio), and requires the `venv-axi` extra:
+
+```bash
+uv add pytack --dev --extra venv-axi
+```
+
 ## CI/CD Integration
 
 PyTack can be included in GitLab/Github CI/CD pipelines to enforce centralised standards without
@@ -154,8 +179,17 @@ This project is being used as a testbed for Interpretable Context Methodology (I
 folder structure as Agent Architecture. A copy of the research paper can be found at
 [docs/2603.16021v2.pdf](/docs/2603.16021v2.pdf).
 
+ICM replaces framework-level orchestration with filesystem structure. Numbered folders represent
+stages. Plain markdown files carry prompts and context that tell a single AI agent what role to
+play at each step.
+
+The system is self-documenting - read `AGENTS.md` (symlink -> `CLAUDE.md`), which will provide
+PyTack development context. With a prompt to create a new feature in mind, navigate to
+`CONTEXT.md` as per `AGENTS.md` [`Routing`](AGENTS.md#routing) instructions to see the necessary
+routing, context and reference that an agent would follow with that prompt.
+
 A community dedicated to this methodology can be found at [https://www.skool.com/cliefnotes](https://www.skool.com/cliefnotes/about?ref=478219c6d94340bd984dde6a8d1046e6).
 
 > [!NOTE]
-> I try to use AI in a way that streamlines development, but also generates enough friction
-> in the right areas to promote continued professional developement.
+> ICM can leverage AI in a way that streamlines development, but also generates enough friction
+> in the right areas to promote continued development (Friction Doctrine).

@@ -27,3 +27,15 @@ class GitTopLevelError(Error):
 
 class RichHandlerNotFound(Error):
     """Raised on missing Rich logging handler."""
+
+
+class PackageNotFoundError(Error):
+    """Raised when a requested package is not installed in the venv."""
+
+
+class PackageImportError(Error):
+    """Raised when a package cannot be imported for API introspection."""
+
+
+class AmbientContextError(Error):
+    """Raised when `venv-axi` ambient context cannot be installed."""

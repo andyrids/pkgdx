@@ -48,6 +48,11 @@ level = "WARNING"
 handlers = ["stdout-verbose"]
 propagate = true
 
+[loggers."pytack.venvaxi"]
+level = "WARNING"
+handlers = ["stderr"]
+propagate = false
+
 # [root]
 # level = "WARNING"
 # handlers = []

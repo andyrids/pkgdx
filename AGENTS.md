@@ -104,7 +104,7 @@ workspaces/
 
 ## Routing
 
-User tasking and workspace routing information is in the project root `CONTEXT.md`.
+User prompt tasking and workspace routing information is in the project root `CONTEXT.md`.
 
 ## Token Efficiency
 

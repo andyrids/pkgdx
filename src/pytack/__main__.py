@@ -135,6 +135,18 @@ def pymarkdown_lint() -> NoReturn:
     sys.exit(result.returncode)
 
 
+def venv_axi() -> NoReturn:
+    """Provides CLI entrypoint for `venv-axi`.
+
+    NOTE: Relates to `[project.scripts]` entries `venv-axi` and
+    `pytack-venv-axi`. Implementation lives in `pytack.venvaxi`.
+    """
+    # Lazy import keeps this module import light
+    from pytack.venvaxi import main as _venv_axi_main
+
+    sys.exit(_venv_axi_main())
+
+
 def get_git_toplevel() -> Path:
     """Gets the root path of the consuming Git repository.
 
