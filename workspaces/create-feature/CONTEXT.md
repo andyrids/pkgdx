@@ -1,12 +1,14 @@
 ---
 context-hierarchy: Layer 1
+context-hierarchy-role: Workspace task routing
+maximum-context-tokens: 300
 ---
 
 # Create Feature
 
 ## Overview
 
-This workspace is used to create new features for this project.
+This workspace is used to create new features or refactor existing ones.
 
 ## Routing
 
@@ -39,22 +41,22 @@ create-feature/
     ├── 01-specification/    <-- Feature specification
     │   ├── CONTEXT.md       <-- Stage routing
     │   ├── output/          <-- Technical specification
-    │   └── references/      <-- Stage reference material
+    │   └── REFERENCE.md     <-- Stage reference material
     │
     ├── 02-implementation/   <-- Feature implementation
     │   ├── CONTEXT.md       <-- Stage routing
     │   ├── output/          <-- Implemented specification
-    │   └── references/      <-- Stage reference material
+    │   └── REFERENCE.md     <-- Stage reference material
     │
     ├── 03-verification/     <-- Feature testing
     │   ├── CONTEXT.md       <-- Stage routing
     │   ├── output/          <-- Verification report
-    │   └── references/      <-- Stage reference material
+    │   └── REFERENCE.md     <-- Stage reference material
     │
     └── 04-documentation/    <-- Feature documentation
         ├── CONTEXT.md       <-- Stage routing
         ├── output/          <-- Documentation report
-        └── references/      <-- Stage reference material
+        └── REFERENCE.md     <-- Stage reference material
 ```
 
 ## Acceptance Criteria

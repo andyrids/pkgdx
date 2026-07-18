@@ -1,5 +1,7 @@
 ---
 context-hierarchy: Layer 1
+context-hierarchy-role: Workspace task routing
+maximum-context-tokens: 300
 ---
 
 # Create Unit Test

@@ -1,5 +1,7 @@
 ---
 context-hierarchy: Layer 2
+context-hierarchy-role: Stage control point
+maximum-context-tokens: 500
 ---
 
 # Specification

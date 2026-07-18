@@ -1,5 +1,6 @@
 ---
 context-hierarchy: Layer 0
+maximum-context-tokens: 800
 ---
 
 # Global Context
@@ -14,7 +15,7 @@ implements canonical standards across consuming Python projects.
 - Use a one-liner where possible
 - Write the minimum code that works
 
-## Environment & Toolchain
+## Environment and Toolchain
 
 PyTack is developed and maintained with Astral uv, which MUST be installed globally or in the
 virtual environment.
@@ -22,14 +23,17 @@ virtual environment.
 - **Language**: Python >=3.11
 - **OS**: Windows/Linux/WSL2
 
-| Tool         | Function                  |
-| ------------ | ------------------------- |
-| uv           | Package manager           |
-| PyMarkdown   | linter/formatter          |
-| Ruff         | linter/formatter          |
-| Mypy         | Static type checker       |
-| Pytest       | Unit tests                |
-| Prek         | Pre-commit hook framework |
+| Tool              | Function                  |
+| ----------------- | ------------------------- |
+| uv                | Package manager           |
+| PyMarkdown        | linter/formatter          |
+| Ruff              | linter/formatter          |
+| Mypy              | Static type checker       |
+| Pytest            | Unit tests                |
+| Coverage          | Unit test coverage        |
+| Prek              | Pre-commit hook framework |
+| Logging (stdlib)  | Logging                   |
+| Argparse (stdlib) | CLI                       |
 
 ## Navigation
 
@@ -54,6 +58,22 @@ pytack/
 ├── README.md                 <-- Project README
 │
 ├── src/                      <-- Project sourcecode
+│    └── pytack
+│        ├── exceptions.py        <-- Exceptions
+│        ├── __init__.py
+│        ├── logging              <-- Logging
+│        │   ├── config.toml      <-- Logging config
+│        │   ├── __init__.py
+│        │   └── _logging.py
+│        ├── __main__.py          <-- Main CLI
+│        ├── py.typed
+│        ├── standards            <-- Canonical standards
+│        │   ├── hooks.toml       <-- Consuming repo Prek config
+│        │   ├── __init__.py
+│        │   ├── mypy.ini         <-- Consuming repo Mypy config
+│        │   ├── pymarkdown.toml  <-- Consuming repo PyMarkdown config
+│        │   └── ruff.toml        <-- Consuming repo Ruff config
+│        └── _types.py
 │
 ├── tests/                    <-- Project unit tests
 │
@@ -84,29 +104,24 @@ workspaces/
 
 ## Routing
 
-| Task                 | Navigate to                      | Read        | Skill   |
-| -------------------- | -------------------------------- | ----------- | ------- |
-| Create feature       | workspaces/create-feature/       | CONTEXT.md  | -       |
-| Create unit test     | workspaces/create-unit-test/     | CONTEXT.md  | -       |
-| Create documentation | workspaces/create-documentation/ | CONTEXT.md  | -       |
-| Code review          | src/                             | *           | -       |
+User tasking and workspace routing information is in the project root `CONTEXT.md`.
 
 ## Token Efficiency
 
 - Each task is performed within a specific workspace
 - Each workspace is compartmentalised
-- Each workspace `CONTEXT.md` provides all necessary context
-- Avoid unnecessary files in `__pycache__`
+- Each workspace `CONTEXT.md` provides necessary context
+- Avoid unnecessary files listed in `.gitignore`
 
 ## Naming Conventions
 
 ### References
 
-| Reference      | Pattern                           | Example                         |
-| -------------- | --------------------------------- | ------------------------------- |
-| Toolchain      | `reference-toolchain-[tool].md`   | `reference-toolchain-mypy.md`   |
-| Cookbook       | `reference-cookbook-[package].md` | `reference-cookbook-rich.md`    |
-| Standard       | `reference-standard-[name].md`    | `reference-standard-IEEE830.md` |
+| Reference      | Pattern                           | Example                          |
+| -------------- | --------------------------------- | -------------------------------- |
+| Toolchain      | `reference-toolchain-[tool].md`   | `reference-toolchain-mypy.md`    |
+| Cookbook       | `reference-cookbook-[package].md` | `reference-cookbook-rich.md`     |
+| Standard       | `reference-standard-[name].md`    | `reference-standard-techspec.md` |
 
 ### Output
 

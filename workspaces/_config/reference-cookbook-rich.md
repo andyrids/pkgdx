@@ -1,5 +1,6 @@
 ---
 context-hierarchy: Layer 3
+context-hierarchy-role: Rules, conventions and guidelines
 ---
 
 # Cookbook - `Rich`
@@ -36,3 +37,31 @@ with Progress() as progress:
         progress.update(task3, advance=0.9)
         time.sleep(0.02)
 ```
+
+### Persisting Per-Step Example
+
+Unlike the concurrent example above, sequential CLI steps are better represented by adding a
+*new* task per step rather than reusing a single task ID with `advance`. `Progress` keeps
+finished task rows visible by default (`transient=False`), so each completed step's bar remains
+on screen while the next step's bar is created below it.
+
+```python
+import time
+from rich.progress import Progress
+
+steps = ["Find project root", "Configure pre-commit hooks", "Install hooks"]
+
+with Progress() as progress:
+    for step in steps:
+        task_id = progress.add_task(f"[cyan]{step}", total=1)
+        # ... perform the step's work ...
+        time.sleep(0.5)
+        progress.update(task_id, completed=1, description=f"[green]{step}")
+```
+
+- Reusing one task ID and calling `advance=1` on it (e.g. a single 0-6 counter) produces a
+  single row whose description changes — prior steps are NOT individually persisted.
+- Adding one task per step and marking it `completed=<total>` when done persists a distinct,
+  finished row per step instead.
+- Combine with `console=<shared RichHandler console>` per `reference-toolchain-logging.md` when
+  the CLI also logs during the same command.

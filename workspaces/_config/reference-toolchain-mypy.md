@@ -1,5 +1,6 @@
 ---
 context-hierarchy: Layer 3
+context-hierarchy-role: Rules, conventions and guidelines
 ---
 
 # Toolchain - `Mypy`
@@ -11,17 +12,13 @@ Mypy is used to enforce standards for typing.
 The Mypy config is located at `src/pytack/standards/mypy.ini`. Enforce the usage of the type hints
 for all function/method args and return values.
 
-```ini
-disallow_untyped_defs = true
-```
+## Guidance
 
-Protect developers from falsely trusting that dependencies are typed correctly.
+When something is imported from a dependency, it's resolved to `Any` if Mypy can't resolve the import.
 
 ```ini
 disallow_any_unimported = true
 ```
-
-When something is imported from a dependency, it's resolved to `Any` if Mypy can't resolve the import.
 
 - Missing stubs can sometimes be found at [typeshed/stubs](https://github.com/python/typeshed/tree/main/stubs)
 - A type ignore (`# type: ignore[no-any-unimported]`) can be used when stubs are unavailable
@@ -37,18 +34,6 @@ Explicit is better than implicit - `arg: Optional[str] = None` over `arg: str = 
 
 ```ini
 no_implicit_optional = true
-```
-
-Check body of a function/method.
-
-```ini
-check_untyped_defs = true
-```
-
-Check for Any return when declared return type is different.
-
-```ini
-warn_return_any = true
 ```
 
 It is better to ignore only the specific type of an error. Prefer `# type: ignore[<error-code>]`

@@ -1,5 +1,7 @@
 ---
 context-hierarchy: Layer 2
+context-hierarchy-role: Stage control point
+maximum-context-tokens: 500
 ---
 
 # Specification
@@ -9,17 +11,17 @@ Analyse the incoming feature request and generate a comprehensive technical spec
 ## Inputs
 
 - User feature request prompt
-- `01-specification/references/*` (any relevant reference material)
-- `workspaces/_config/*` (any relevant reference material)
+- `REFERENCE.md`
 
 ## Process
 
 1. Read the provided feature request
 2. Consult relevant reference material for additional context
-3. Define the architecture changes required within `src/`
-4. Draft the specification
-   - Follow IEEE 830 standard
-5. CHECKPOINT - await user review in accordance with acceptance criteria
+3. Review existing related implementation and tests in `src/` and `tests/` for reusable patterns,
+   established conventions, and behavioral contracts that must be preserved
+4. Define the architecture changes required within `src/`
+5. Draft the specification
+6. CHECKPOINT - await user review in accordance with acceptance criteria
 
 ## Outputs
 

@@ -1,5 +1,7 @@
 ---
 context-hierarchy: Layer 2
+context-hierarchy-role: Stage control point
+maximum-context-tokens: 500
 ---
 
 # Verification
@@ -9,8 +11,7 @@ Validate code changes through unit testing, consumer testing and standard compli
 ## Inputs
 
 - `02-implementation/output/[slug]-code.md`
-- `03-verification/references/*` (any relevant reference material)
-- `workspaces/_config/*` (any relevant reference material)
+- `REFERENCE.md`
 
 ## Process
 
