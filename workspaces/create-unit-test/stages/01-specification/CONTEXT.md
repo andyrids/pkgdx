@@ -11,9 +11,7 @@ Analyse the incoming task and generate a comprehensive test specification.
 ## Inputs
 
 - User unit test request prompt
-- `workspaces/create-feature/stages/04-documentation/output/*` (any reference material)
-- `01-specification/references/*` (any relevant reference material)
-- `workspaces/_config/*` (any relevant reference material)
+- `REFERENCE.md`
 
 ## Process
 

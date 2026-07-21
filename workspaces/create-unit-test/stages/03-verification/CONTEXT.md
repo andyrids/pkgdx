@@ -11,8 +11,7 @@ Validate newly implemented tests through execution and standard compliance check
 ## Inputs
 
 - `02-implementation/output/[slug]-code.md`
-- `03-verification/references/*` (any relevant reference material)
-- `workspaces/_config/*` (any relevant reference material)
+- `REFERENCE.md`
 
 ## Process
 

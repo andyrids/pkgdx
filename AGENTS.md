@@ -1,5 +1,6 @@
 ---
 context-hierarchy: Layer 0
+context-hierarchy-role: Global identity
 maximum-context-tokens: 800
 ---
 
@@ -14,6 +15,9 @@ implements canonical standards across consuming Python projects.
 - Use an existing dependency over a new one
 - Use a one-liner where possible
 - Write the minimum code that works
+- For technical decisions
+  - Do not give much weight to development cost
+  - Prefer quality, simplicity, robustness & scalability
 
 ## Environment and Toolchain
 
@@ -39,47 +43,56 @@ virtual environment.
 
 ```text
 pytack/
-├── AGENTS.md                 <-- Global project context
-├── CHANGELOG.md              <-- Project CHANGELOG
-├── CLAUDE.md -> AGENTS.md    <-- Symbolic link to AGENTS.md
-│
 ├── consumers/                <-- Astral workspace members
 │   └── testing/              <-- Testing package
 │
-├── CONTEXT.md                <-- Task routing
-├── COPYRIGHT                 <-- Project COPYRIGHT
-│
 ├── docs/                     <-- Project documentation
-│
-├── Justfile                  <-- Just recipes
-├── LICENSE                   <-- Project LICENSE
-├── prek.toml                 <-- Prek pre-commit hook configuration
-├── pyproject.toml            <-- Project configuration
-├── README.md                 <-- Project README
 │
 ├── src/                      <-- Project sourcecode
 │    └── pytack
-│        ├── exceptions.py        <-- Exceptions
-│        ├── __init__.py
 │        ├── logging              <-- Logging
 │        │   ├── config.toml      <-- Logging config
 │        │   ├── __init__.py
 │        │   └── _logging.py
-│        ├── __main__.py          <-- Main CLI
-│        ├── py.typed
+│        │
 │        ├── standards            <-- Canonical standards
 │        │   ├── hooks.toml       <-- Consuming repo Prek config
 │        │   ├── __init__.py
 │        │   ├── mypy.ini         <-- Consuming repo Mypy config
 │        │   ├── pymarkdown.toml  <-- Consuming repo PyMarkdown config
 │        │   └── ruff.toml        <-- Consuming repo Ruff config
+│        │
+│        ├── venvaxi              <-- Agent eXperience Interface (venv-axi)
+│        │   ├── __init__.py
+│        │   ├── _ambient.py      <-- AXI principle 7 - Ambient Context
+│        │   ├── _cli.py          <-- venv-axi CLI
+│        │   ├── _introspect.py   <-- API & docstring introspection
+│        │   ├── _mcp.py          <-- FastMCP server
+│        │   ├── _packages.py     <-- Dependency discovery
+│        │   └── _toon.py_        <-- TOON (Token-Oriented Object Notation) encoder
+│        │
+│        ├── _core.py             <-- Core CLI logic
+│        ├── exceptions.py        <-- Exceptions
+│        ├── __init__.py
+│        ├── __main__.py          <-- Main CLI
+│        ├── py.typed
 │        └── _types.py
 │
 ├── tests/                    <-- Project unit tests
 │
-├── uv.lock                   <-- Project dependency lockfile
+├── workspaces/               <-- Task workspaces
 │
-└── workspaces/               <-- Task workspaces
+├── AGENTS.md                 <-- Global project context
+├── CHANGELOG.md              <-- Project CHANGELOG
+├── CLAUDE.md -> AGENTS.md    <-- Symbolic link to AGENTS.md
+├── CONTEXT.md                <-- Task routing
+├── COPYRIGHT                 <-- Project COPYRIGHT
+├── Justfile                  <-- Just recipes
+├── LICENSE                   <-- Project LICENSE
+├── prek.toml                 <-- Prek pre-commit hook configuration
+├── pyproject.toml            <-- Project configuration
+├── README.md                 <-- Project README
+└── uv.lock                   <-- Project dependency lockfile
 ```
 
 ## Workspaces

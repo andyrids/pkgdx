@@ -42,7 +42,10 @@ def test_command_home_prints_status(
     capsys: pytest.CaptureFixture,
 ) -> None:
     """The home view prints description, bin, venv and status fields."""
-    exit_code = _cli.command_home(argparse.Namespace())
+    ctx = _cli.CLIContext(
+        args=argparse.Namespace(), console=mock.MagicMock(), is_verbose=False
+    )
+    exit_code = _cli.command_home(ctx)
     out = capsys.readouterr().out
     assert exit_code == 0
     assert "description:" in out
@@ -55,11 +58,14 @@ def test_command_home_status_active_when_prefixes_differ(
     capsys: pytest.CaptureFixture,
 ) -> None:
     """Status is `active` when `sys.prefix != sys.base_prefix`."""
+    ctx = _cli.CLIContext(
+        args=argparse.Namespace(), console=mock.MagicMock(), is_verbose=False
+    )
     with (
         mock.patch(f"{CLI}.sys.prefix", "/repo/.venv"),
         mock.patch(f"{CLI}.sys.base_prefix", "/usr"),
     ):
-        _cli.command_home(argparse.Namespace())
+        _cli.command_home(ctx)
     out = capsys.readouterr().out
     assert "status: active" in out
 
@@ -68,11 +74,14 @@ def test_command_home_status_inactive_when_prefixes_match(
     capsys: pytest.CaptureFixture,
 ) -> None:
     """Status is `inactive` when `sys.prefix == sys.base_prefix`."""
+    ctx = _cli.CLIContext(
+        args=argparse.Namespace(), console=mock.MagicMock(), is_verbose=False
+    )
     with (
         mock.patch(f"{CLI}.sys.prefix", "/usr"),
         mock.patch(f"{CLI}.sys.base_prefix", "/usr"),
     ):
-        _cli.command_home(argparse.Namespace())
+        _cli.command_home(ctx)
     out = capsys.readouterr().out
     assert "status: inactive" in out
 
@@ -81,12 +90,16 @@ def test_command_list_empty(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
     """A repo with no resolvable dependencies prints the empty state."""
-    args = argparse.Namespace(all=False, fields="name,version")
+    ctx = _cli.CLIContext(
+        args=argparse.Namespace(all=False, fields="name,version"),
+        console=mock.MagicMock(),
+        is_verbose=False,
+    )
     with (
         mock.patch(f"{CLI}.get_project_root", return_value=tmp_path),
         mock.patch(f"{CLI}.list_packages", return_value=[]),
     ):
-        exit_code = _cli.command_list(args)
+        exit_code = _cli.command_list(ctx)
     out = capsys.readouterr().out
     assert exit_code == 0
     assert "count: 0" in out
@@ -99,12 +112,16 @@ def test_command_list_with_packages(
     packages = [
         PackageInfo(name="rich", version="15.0.0", location="/venv"),
     ]
-    args = argparse.Namespace(all=False, fields="name,version")
+    ctx = _cli.CLIContext(
+        args=argparse.Namespace(all=False, fields="name,version"),
+        console=mock.MagicMock(),
+        is_verbose=False,
+    )
     with (
         mock.patch(f"{CLI}.get_project_root", return_value=tmp_path),
         mock.patch(f"{CLI}.list_packages", return_value=packages),
     ):
-        exit_code = _cli.command_list(args)
+        exit_code = _cli.command_list(ctx)
     out = capsys.readouterr().out
     assert exit_code == 0
     assert "count: 1" in out
@@ -114,11 +131,15 @@ def test_command_list_with_packages(
 def test_command_show_metadata(capsys: pytest.CaptureFixture) -> None:
     """Package metadata is printed for a plain `show` invocation."""
     package = PackageInfo(name="rich", version="15.0.0", location="/venv")
-    args = argparse.Namespace(
-        package="rich", fields="name,version", api=False, full=False
+    ctx = _cli.CLIContext(
+        args=argparse.Namespace(
+            package="rich", fields="name,version", api=False, full=False
+        ),
+        console=mock.MagicMock(),
+        is_verbose=False,
     )
     with mock.patch(f"{CLI}.resolve_package", return_value=package):
-        exit_code = _cli.command_show(args)
+        exit_code = _cli.command_show(ctx)
     out = capsys.readouterr().out
     assert exit_code == 0
     assert "name: rich" in out
@@ -130,9 +151,13 @@ def test_command_show_api(capsys: pytest.CaptureFixture) -> None:
     symbols = [
         SymbolInfo(name="foo", kind="function", signature="()", doc="Foo."),
     ]
-    args = argparse.Namespace(package="rich", api=True, full=False)
+    ctx = _cli.CLIContext(
+        args=argparse.Namespace(package="rich", api=True, full=False),
+        console=mock.MagicMock(),
+        is_verbose=False,
+    )
     with mock.patch(f"{CLI}.get_public_api", return_value=symbols):
-        exit_code = _cli.command_show(args)
+        exit_code = _cli.command_show(ctx)
     out = capsys.readouterr().out
     assert exit_code == 0
     assert "count: 1" in out
@@ -141,9 +166,13 @@ def test_command_show_api(capsys: pytest.CaptureFixture) -> None:
 
 def test_command_show_api_empty(capsys: pytest.CaptureFixture) -> None:
     """A package with no public symbols prints the empty state."""
-    args = argparse.Namespace(package="rich", api=True, full=False)
+    ctx = _cli.CLIContext(
+        args=argparse.Namespace(package="rich", api=True, full=False),
+        console=mock.MagicMock(),
+        is_verbose=False,
+    )
     with mock.patch(f"{CLI}.get_public_api", return_value=[]):
-        exit_code = _cli.command_show(args)
+        exit_code = _cli.command_show(ctx)
     out = capsys.readouterr().out
     assert exit_code == 0
     assert "count: 0" in out
@@ -151,19 +180,25 @@ def test_command_show_api_empty(capsys: pytest.CaptureFixture) -> None:
 
 def test_command_serve_reports_missing_extra() -> None:
     """A missing `fastmcp` extra is reported as a handled error."""
+    ctx = _cli.CLIContext(
+        args=argparse.Namespace(), console=mock.MagicMock(), is_verbose=False
+    )
     with mock.patch("pytack.venvaxi._mcp.serve", side_effect=ImportError):
-        exit_code = _cli.command_serve(argparse.Namespace())
+        exit_code = _cli.command_serve(ctx)
     assert exit_code == 1
 
 
 def test_command_setup(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     """The setup command reports which artifacts changed."""
     changed = {"agents_md": True, "vscode_mcp": False, "repo_mcp": False}
+    ctx = _cli.CLIContext(
+        args=argparse.Namespace(), console=mock.MagicMock(), is_verbose=False
+    )
     with (
         mock.patch(f"{CLI}.get_project_root", return_value=tmp_path),
         mock.patch(f"{CLI}.setup_ambient_context", return_value=changed),
     ):
-        exit_code = _cli.command_setup(argparse.Namespace())
+        exit_code = _cli.command_setup(ctx)
     out = capsys.readouterr().out
     assert exit_code == 0
     assert "agents_md: true" in out

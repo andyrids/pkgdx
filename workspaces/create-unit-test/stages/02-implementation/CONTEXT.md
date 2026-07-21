@@ -11,8 +11,7 @@ Write unit tests for the test specification from the Specification stage.
 ## Inputs
 
 - `01-specification/output/[slug]-spec.md`
-- `02-implementation/references/*` (any relevant reference material)
-- `workspaces/_config/*` (any relevant reference material)
+- `REFERENCE.md`
 
 ## Process
 

@@ -4,7 +4,7 @@ import logging
 from dataclasses import asdict
 from typing import Any
 
-from pytack.__main__ import get_project_root
+from pytack._core import get_project_root
 from pytack.venvaxi._introspect import get_public_api
 from pytack.venvaxi._packages import list_packages, resolve_package
 from pytack.venvaxi._toon import encode_object, encode_table

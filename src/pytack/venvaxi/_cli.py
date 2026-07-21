@@ -6,8 +6,10 @@ import sys
 from dataclasses import asdict
 from pathlib import Path
 
+from rich.console import Console
+
 from pytack import exceptions
-from pytack.__main__ import get_project_root
+from pytack._core import get_project_root, CLIContext, ExitCode
 from pytack.logging import configure_venv_axi_logging
 from pytack.venvaxi._ambient import setup_ambient_context
 from pytack.venvaxi._introspect import get_public_api
@@ -60,16 +62,15 @@ def _error_output(message: str) -> str:
     return f"{body}\n{footer}"
 
 
-def command_home(args: argparse.Namespace) -> int:
+def command_home(_: CLIContext) -> int:
     """Prints live status and next-step hints (the content-first home view).
 
     Args:
-        args: The parsed CLI arguments.
+        _: The CLI context.
 
     Returns:
         The process exit code.
     """
-    del args
     bin_path = Path(sys.argv[0]).resolve()
     venv_path = Path(sys.prefix).resolve()
     active = sys.prefix != sys.base_prefix
@@ -89,20 +90,20 @@ def command_home(args: argparse.Namespace) -> int:
             ]
         )
     )
-    return 0
+    return ExitCode.EX_OK
 
 
-def command_list(args: argparse.Namespace) -> int:
+def command_list(ctx: CLIContext) -> int:
     """Lists the consuming repo's declared, installed venv packages.
 
     Args:
-        args: The parsed CLI arguments (`all`, `fields`).
+        ctx: The CLI context.
 
     Returns:
         The process exit code.
     """
     root = get_project_root()
-    packages = list_packages(root, include_dev=args.all)
+    packages = list_packages(root, include_dev=ctx.args.all)
 
     if not packages:
         _emit("count: 0")
@@ -114,119 +115,117 @@ def command_list(args: argparse.Namespace) -> int:
                 ]
             )
         )
-        return 0
+        return ExitCode.EX_OK
 
-    fields = [field.strip() for field in args.fields.split(",") if field]
+    fields = [field.strip() for field in ctx.args.fields.split(",") if field]
     rows = [asdict(package) for package in packages]
 
     _emit(f"count: {len(packages)}")
     _emit(encode_table("packages", rows, fields))
     _emit(format_help(["Run `venv-axi show <package>` for package info"]))
-    return 0
+    return ExitCode.EX_OK
 
 
-def _command_show_api(args: argparse.Namespace) -> int:
+def _command_show_api(ctx: CLIContext) -> int:
     """Shows a package's public, top-level API symbols.
 
     Args:
-        args: The parsed CLI arguments (`package`, `full`).
+        ctx: The CLI context.
 
     Returns:
         The process exit code.
     """
-    symbols = get_public_api(args.package, full=args.full)
+    symbols = get_public_api(ctx.args.package, full=ctx.args.full)
     if not symbols:
         _emit("count: 0")
-        return 0
+        return ExitCode.EX_OK
 
     rows = [asdict(symbol) for symbol in symbols]
     _emit(f"count: {len(symbols)}")
     _emit(encode_table("symbols", rows, ["name", "kind", "signature", "doc"]))
-    if not args.full:
+    if not ctx.args.full:
         _emit(
             format_help(
                 [
-                    f"Run `venv-axi show {args.package} --api --full`"
+                    f"Run `venv-axi show {ctx.args.package} --api --full`"
                     " for complete docstrings"
                 ]
             )
         )
-    return 0
+    return ExitCode.EX_OK
 
 
-def _command_show_metadata(args: argparse.Namespace) -> int:
+def _command_show_metadata(ctx: CLIContext) -> int:
     """Shows a package's installed metadata.
 
     Args:
-        args: The parsed CLI arguments (`package`, `fields`).
+        ctx: The CLI context.
 
     Returns:
         The process exit code.
     """
-    package = resolve_package(args.package)
-    fields = [field.strip() for field in args.fields.split(",") if field]
+    package = resolve_package(ctx.args.package)
+    fields = [field.strip() for field in ctx.args.fields.split(",") if field]
     data = asdict(package)
     selected = {field: data[field] for field in fields if field in data}
 
     _emit(encode_object(selected))
     _emit(
         format_help(
-            [f"Run `venv-axi show {args.package} --api` for public API"]
+            [f"Run `venv-axi show {ctx.args.package} --api` for public API"]
         )
     )
-    return 0
+    return ExitCode.EX_OK
 
 
-def command_show(args: argparse.Namespace) -> int:
+def command_show(ctx: CLIContext) -> int:
     """Shows a package's metadata or public API (dispatches on `--api`).
 
     Args:
-        args: The parsed CLI arguments.
+        ctx: The CLI context.
 
     Returns:
         The process exit code.
     """
-    if args.api:
-        return _command_show_api(args)
-    return _command_show_metadata(args)
+    if ctx.args.api:
+        return _command_show_api(ctx)
+    return _command_show_metadata(ctx)
 
 
-def command_serve(args: argparse.Namespace) -> int:
+def command_serve(_: CLIContext) -> int:
     """Runs the `venv-axi` MCP server over stdio.
 
     Args:
-        args: The parsed CLI arguments.
+        _: The CLI context.
 
     Returns:
         The process exit code.
     """
-    del args
     from pytack.venvaxi import _mcp
 
     try:
         _mcp.serve()
     except ImportError:
         logger.error("`venv-axi serve` requires the `pytack[venv-axi]` extra")
-        return 1
-    return 0
+        return ExitCode.EX_FAILURE
+    return ExitCode.EX_OK
 
 
-def command_setup(args: argparse.Namespace) -> int:
+def command_setup(_: CLIContext) -> int:
     """Installs `venv-axi` ambient context into the consuming repo.
 
     Args:
-        args: The parsed CLI arguments.
+        _: The CLI context.
 
     Returns:
         The process exit code.
     """
-    del args
     root = get_project_root()
     changed = setup_ambient_context(root)
 
     _emit(encode_object(changed))
     _emit(format_help(["Run `venv-axi` to confirm ambient context is live"]))
-    return 0
+    return ExitCode.EX_OK
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -307,16 +306,20 @@ def main() -> int:
     parser = _build_parser()
     args = parser.parse_args()
 
-    level = logging.DEBUG if args.verbose else logging.WARNING
+    is_verbose = args.verbose
+    level = logging.DEBUG if is_verbose else logging.WARNING
     configure_venv_axi_logging(level)
 
+    console = Console(stderr=True)
+    ctx = CLIContext(args=args, console=console, is_verbose=is_verbose)
+
     try:
-        return int(args.func(args))
+        return int(args.func(ctx))
     except exceptions.Error as err:
         _emit(_error_output(str(err)))
         logger.error(str(err))
-        return 1
+        return ExitCode.EX_FAILURE
     except Exception:
         _emit(_error_output("Unexpected error"))
         logger.exception("Unexpected error in venv-axi")
-        return 2
+        return ExitCode.EX_SYNTAX
