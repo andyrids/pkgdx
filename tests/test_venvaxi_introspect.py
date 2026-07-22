@@ -83,7 +83,7 @@ def fake_package(
     )
     (package_dir / "broken.py").write_text(
         '"""A submodule that fails to import."""\n\n'
-        'raise RuntimeError("boom")\n'
+        'raise RuntimeError("Error")\n'
     )
     sys.path.insert(0, str(src_dir))
     try:
@@ -99,16 +99,18 @@ def fake_package(
 def fake_module_with_none_module_attr(
     isolated_venv_axi_cache: Path,
 ) -> Iterator[types.ModuleType]:
-    """Registers a module containing a symbol whose `__module__` is
-    `None` (seen with some C-extension/builtin objects)."""
+    """Registers a module containing a symbol whose `__module__` is `None`.
+
+    NOTE: Sometimes seen with some C-extension/builtin objects.
+    """
     module = types.ModuleType("venvaxi_fixture_none_module_mod")
 
-    def quirky() -> str:
+    def unset() -> str:
         """A function whose `__module__` is explicitly unset."""
         return "ok"
 
-    quirky.__module__ = None  # type: ignore[assignment]
-    module.quirky = quirky  # type: ignore[attr-defined]
+    unset.__module__ = None  # type: ignore[assignment]
+    module.unset = unset  # type: ignore[attr-defined]
     sys.modules[module.__name__] = module
     try:
         yield module

@@ -168,9 +168,11 @@ def test_get_or_build_store_force_refresh(
 def test_get_or_build_store_wraps_database_error(
     tmp_path: Path, fake_module: types.ModuleType
 ) -> None:
-    """A mid-walk `sqlite3.DatabaseError` raises `StoreError` and clears
-    any partial state, so a failed build is never mistaken for a valid
-    cache on the next call."""
+    """A mid-walk `sqlite3.DatabaseError` raises `StoreError`.
+
+    NOTE: MUST clear any partial state to prevent a corrupted store from being
+    used on subsequent calls.
+    """
     root = tmp_path / "project"
     with (
         mock.patch(f"{CACHE}._installed_version", return_value="1.0.0"),

@@ -1,4 +1,4 @@
-"""Shared fixtures across the unit tests."""
+"""Shared unit test fixtures."""
 
 import logging
 import pathlib

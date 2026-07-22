@@ -7,12 +7,13 @@ from unittest import mock
 import pytest
 
 pytest.importorskip("fastmcp")
+# ruff: disable[E402]
+from pytack.venvaxi._introspect import SymbolInfo
+from pytack.venvaxi._mcp import build_server
+from pytack.venvaxi._packages import PackageInfo
+from pytack.venvaxi._store import NodeKind, SymbolNode
 
-from pytack.venvaxi._introspect import SymbolInfo  # noqa: E402
-from pytack.venvaxi._mcp import build_server  # noqa: E402
-from pytack.venvaxi._packages import PackageInfo  # noqa: E402
-from pytack.venvaxi._store import NodeKind, SymbolNode  # noqa: E402
-
+# ruff: enable[E402]
 MCP = "pytack.venvaxi._mcp"
 
 
