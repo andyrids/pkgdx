@@ -44,6 +44,21 @@ def mock_subprocess_run() -> Iterator[mock.MagicMock]:
         yield mocked
 
 
+@pytest.fixture
+def isolated_venv_axi_cache(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> pathlib.Path:
+    """Isolates the `venv-axi` `SymbolStore` cache dir to `tmp_path`.
+
+    Prevents tests from reading/writing the real `~/.pytack/venv-axi/`
+    cache directory.
+    """
+    monkeypatch.setattr(
+        "pytack.venvaxi._cache.get_cache_dir", lambda: tmp_path
+    )
+    return tmp_path
+
+
 @pytest.fixture(scope="function")
 def mock_project(tmp_path_factory: pytest.TempPathFactory) -> pathlib.Path:
     """Creates a temporary project directory for testing."""

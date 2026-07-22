@@ -112,6 +112,9 @@ token-efficient [TOON](https://github.com/toon-format/spec) format, on STDOUT.
 uv run venv-axi          # live status & next-step hints
 uv run venv-axi list      # installed, declared dependencies
 uv run venv-axi show rich --api   # a package's public API symbols
+uv run venv-axi find rich "Console"   # free-text symbol search
+uv run venv-axi tree rich --max-depth 1   # nested module tree
+uv run venv-axi inspect rich::Console.print   # a single symbol's full detail
 ```
 
 To install ambient context for agents (an `AGENTS.md` block plus MCP server entries in
@@ -126,6 +129,9 @@ uv run venv-axi setup
 ```bash
 uv add pytack --dev --extra venv-axi
 ```
+
+The MCP server exposes `list_packages`, `show_package`, `show_package_api`, `show_module`,
+`get_symbol`, `find_symbol`, `get_inheritors`, and `get_module_tree`.
 
 ## CI/CD Integration
 

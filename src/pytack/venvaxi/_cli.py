@@ -12,7 +12,12 @@ from pytack import exceptions
 from pytack._core import get_project_root, CLIContext, ExitCode
 from pytack.logging import configure_venv_axi_logging
 from pytack.venvaxi._ambient import setup_ambient_context
-from pytack.venvaxi._introspect import get_public_api
+from pytack.venvaxi._introspect import (
+    find_symbol,
+    get_module_tree,
+    get_public_api,
+    get_symbol,
+)
 from pytack.venvaxi._packages import list_packages, resolve_package
 from pytack.venvaxi._toon import encode_object, encode_table, format_help
 
@@ -192,6 +197,74 @@ def command_show(ctx: CLIContext) -> int:
     return _command_show_metadata(ctx)
 
 
+def command_find(ctx: CLIContext) -> int:
+    """Searches cached symbols by name/doc text.
+
+    Args:
+        ctx: The CLI context.
+
+    Returns:
+        The process exit code.
+    """
+    nodes = find_symbol(ctx.args.query, ctx.args.limit)
+    if not nodes:
+        _emit("count: 0")
+        return ExitCode.EX_OK
+
+    rows = [node.as_row() for node in nodes]
+    _emit(f"count: {len(nodes)}")
+    _emit(encode_table("symbols", rows, ["name", "kind", "qualified_name"]))
+    _emit(
+        format_help(
+            ["Run `venv-axi inspect <qualified_name>` for full detail"]
+        )
+    )
+    return ExitCode.EX_OK
+
+
+def command_tree(ctx: CLIContext) -> int:
+    """Shows a package's nested module tree.
+
+    Args:
+        ctx: The CLI context.
+
+    Returns:
+        The process exit code.
+    """
+    pairs = get_module_tree(ctx.args.package, ctx.args.max_depth)
+    if not pairs:
+        _emit("count: 0")
+        return ExitCode.EX_OK
+
+    rows = [{"depth": depth, **node.as_row()} for depth, node in pairs]
+    _emit(f"count: {len(pairs)}")
+    _emit(encode_table("tree", rows, ["depth", "qualified_name", "kind"]))
+    return ExitCode.EX_OK
+
+
+def command_inspect(ctx: CLIContext) -> int:
+    """Shows a single symbol's full detail.
+
+    Args:
+        ctx: The CLI context.
+
+    Returns:
+        The process exit code.
+    """
+    node = get_symbol(ctx.args.qualified_name)
+    _emit(
+        encode_object(
+            {
+                "qualified_name": node.qualified_name,
+                "kind": str(node.kind),
+                "signature": node.signature,
+                "doc": node.doc,
+            }
+        )
+    )
+    return ExitCode.EX_OK
+
+
 def command_serve(_: CLIContext) -> int:
     """Runs the `venv-axi` MCP server over stdio.
 
@@ -282,6 +355,36 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Show complete docstrings (no truncation)",
     )
     parser_show.set_defaults(func=command_show)
+
+    parser_find = subparsers.add_parser(
+        "find", help="Search cached symbols by name/doc text"
+    )
+    parser_find.add_argument("query", help="Free-text search query")
+    parser_find.add_argument(
+        "--limit", type=int, default=20, help="Maximum number of results"
+    )
+    parser_find.set_defaults(func=command_find)
+
+    parser_tree = subparsers.add_parser(
+        "tree", help="Show a package's nested module tree"
+    )
+    parser_tree.add_argument("package", help="Package (distribution) name")
+    parser_tree.add_argument(
+        "--max-depth",
+        type=int,
+        default=2,
+        dest="max_depth",
+        help="Maximum submodule recursion depth",
+    )
+    parser_tree.set_defaults(func=command_tree)
+
+    parser_inspect = subparsers.add_parser(
+        "inspect", help="Show a single symbol's full detail"
+    )
+    parser_inspect.add_argument(
+        "qualified_name", help="Fully qualified symbol name"
+    )
+    parser_inspect.set_defaults(func=command_inspect)
 
     parser_serve = subparsers.add_parser(
         "serve", help="Run the venv-axi MCP server"

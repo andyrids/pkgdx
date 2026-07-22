@@ -9,8 +9,7 @@ context-hierarchy-role: Rules, conventions and guidelines
   - `workspaces/_config/reference-standard-techspec.md`
   - `workspaces/_config/reference-toolchain-logging.md`
   - `workspaces/_config/reference-toolchain-mypy.md`
-  - `workspaces/_config/reference-toolchain-ruff.md`
   - `workspaces/_config/reference-toolchain-prek.md`
   - `workspaces/_config/reference-toolchain-pytest.md`
+  - `workspaces/_config/reference-toolchain-ruff.md`
   - `workspaces/_config/reference-cookbook-rich.md`
-  - `tests/*`

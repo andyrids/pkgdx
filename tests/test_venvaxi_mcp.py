@@ -11,12 +11,27 @@ pytest.importorskip("fastmcp")
 from pytack.venvaxi._introspect import SymbolInfo  # noqa: E402
 from pytack.venvaxi._mcp import build_server  # noqa: E402
 from pytack.venvaxi._packages import PackageInfo  # noqa: E402
+from pytack.venvaxi._store import NodeKind, SymbolNode  # noqa: E402
 
 MCP = "pytack.venvaxi._mcp"
 
 
+def _node(qualified_name: str, kind: NodeKind, name: str) -> SymbolNode:
+    """Builds a `SymbolNode` with sensible test defaults."""
+    return SymbolNode(
+        qualified_name=qualified_name,
+        kind=kind,
+        name=name,
+        module="rich",
+        signature="()",
+        doc="Doc.",
+        package="rich",
+        version="15.0.0",
+    )
+
+
 def test_build_server_registers_tools() -> None:
-    """`build_server` registers the three expected MCP tools."""
+    """`build_server` registers all eight expected MCP tools."""
     server = build_server()
     tools = asyncio.run(server.list_tools())
     names = {tool.name for tool in tools}
@@ -24,6 +39,11 @@ def test_build_server_registers_tools() -> None:
         "list_packages_tool",
         "show_package_tool",
         "show_package_api_tool",
+        "show_module_tool",
+        "get_symbol_tool",
+        "find_symbol_tool",
+        "get_inheritors_tool",
+        "get_module_tree_tool",
     }
 
 
@@ -40,7 +60,7 @@ def test_list_packages_tool_returns_toon(tmp_path: Path) -> None:
         tool = asyncio.run(server.get_tool("list_packages_tool"))
         result = tool.fn()
     assert "count: 1" in result
-    assert "rich,15.0.0" in result
+    assert "rich|15.0.0" in result
 
 
 def test_show_package_tool_returns_toon() -> None:
@@ -63,4 +83,83 @@ def test_show_package_api_tool_returns_toon() -> None:
         tool = asyncio.run(server.get_tool("show_package_api_tool"))
         result = tool.fn(name="rich")
     assert "count: 1" in result
-    assert "foo,function" in result
+    assert "foo|function" in result
+
+
+def test_show_module_tool_returns_toon() -> None:
+    """The module tool returns the module header plus a children table."""
+    server = build_server()
+    node = _node("rich", NodeKind.PACKAGE, "rich")
+    children = [_node("rich::Console", NodeKind.CLASS, "Console")]
+    with mock.patch(f"{MCP}.show_module", return_value=(node, children)):
+        tool = asyncio.run(server.get_tool("show_module_tool"))
+        result = tool.fn(name="rich")
+    assert "qualified_name: rich" in result
+    assert "children count: 1" in result
+    assert "Console|class" in result
+
+
+def test_show_module_tool_empty_children() -> None:
+    """No children still reports the module header and a zero count."""
+    server = build_server()
+    node = _node("rich", NodeKind.PACKAGE, "rich")
+    with mock.patch(f"{MCP}.show_module", return_value=(node, [])):
+        tool = asyncio.run(server.get_tool("show_module_tool"))
+        result = tool.fn(name="rich")
+    assert "children count: 0" in result
+
+
+def test_get_symbol_tool_returns_toon() -> None:
+    """The symbol tool returns a TOON-encoded object."""
+    server = build_server()
+    node = _node("rich::Console", NodeKind.CLASS, "Console")
+    with mock.patch(f"{MCP}.get_symbol", return_value=node):
+        tool = asyncio.run(server.get_tool("get_symbol_tool"))
+        result = tool.fn(qualified_name="rich::Console")
+    assert 'qualified_name: "rich::Console"' in result
+    assert "kind: class" in result
+
+
+def test_find_symbol_tool_returns_toon() -> None:
+    """The find tool returns a TOON-encoded symbol table."""
+    server = build_server()
+    nodes = [_node("rich::Console", NodeKind.CLASS, "Console")]
+    with mock.patch(f"{MCP}.find_symbol", return_value=nodes):
+        tool = asyncio.run(server.get_tool("find_symbol_tool"))
+        result = tool.fn(query="Console")
+    assert "count: 1" in result
+    assert 'Console|class|"rich::Console"' in result
+
+
+def test_find_symbol_tool_empty() -> None:
+    """No matches reports a zero count."""
+    server = build_server()
+    with mock.patch(f"{MCP}.find_symbol", return_value=[]):
+        tool = asyncio.run(server.get_tool("find_symbol_tool"))
+        result = tool.fn(query="nope")
+    assert result == "count: 0"
+
+
+def test_get_inheritors_tool_returns_toon() -> None:
+    """The inheritors tool returns a TOON-encoded subclass table."""
+    server = build_server()
+    nodes = [_node("rich::Dog", NodeKind.CLASS, "Dog")]
+    with mock.patch(f"{MCP}.get_inheritors", return_value=nodes):
+        tool = asyncio.run(server.get_tool("get_inheritors_tool"))
+        result = tool.fn(qualified_name="rich::Animal")
+    assert "count: 1" in result
+    assert 'Dog|class|"rich::Dog"' in result
+
+
+def test_get_module_tree_tool_returns_toon() -> None:
+    """The tree tool returns a TOON-encoded depth-annotated table."""
+    server = build_server()
+    pairs = [
+        (0, _node("rich", NodeKind.PACKAGE, "rich")),
+        (1, _node("rich.table", NodeKind.MODULE, "table")),
+    ]
+    with mock.patch(f"{MCP}.get_module_tree", return_value=pairs):
+        tool = asyncio.run(server.get_tool("get_module_tree_tool"))
+        result = tool.fn(name="rich")
+    assert "count: 2" in result
+    assert "1|rich.table|module" in result

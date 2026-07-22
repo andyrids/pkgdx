@@ -39,3 +39,11 @@ class PackageImportError(Error):
 
 class AmbientContextError(Error):
     """Raised when `venv-axi` ambient context cannot be installed."""
+
+
+class SymbolNotFoundError(Error):
+    """Raised when a qualified symbol name cannot be found in the store."""
+
+
+class StoreError(Error):
+    """Raised on `SymbolStore`-level failures."""

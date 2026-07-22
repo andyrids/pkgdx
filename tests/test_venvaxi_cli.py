@@ -10,8 +10,23 @@ from pytack import exceptions
 from pytack.venvaxi import _cli
 from pytack.venvaxi._introspect import SymbolInfo
 from pytack.venvaxi._packages import PackageInfo
+from pytack.venvaxi._store import NodeKind, SymbolNode
 
 CLI = "pytack.venvaxi._cli"
+
+
+def _node(qualified_name: str, kind: NodeKind, name: str) -> SymbolNode:
+    """Builds a `SymbolNode` with sensible test defaults."""
+    return SymbolNode(
+        qualified_name=qualified_name,
+        kind=kind,
+        name=name,
+        module="rich",
+        signature="()",
+        doc="Doc.",
+        package="rich",
+        version="15.0.0",
+    )
 
 
 def test_build_parser_defaults_to_home() -> None:
@@ -36,6 +51,34 @@ def test_build_parser_show_requires_package() -> None:
     parser = _cli._build_parser()
     with pytest.raises(SystemExit):
         parser.parse_args(["show"])
+
+
+def test_build_parser_find_defaults() -> None:
+    """The `find` subcommand has the documented default flags."""
+    parser = _cli._build_parser()
+    args = parser.parse_args(["find", "Console"])
+    assert args.func is _cli.command_find
+    assert args.query == "Console"
+    assert args.limit == 20
+
+
+def test_build_parser_tree_defaults() -> None:
+    """The `tree` subcommand has the documented default flags."""
+    parser = _cli._build_parser()
+    args = parser.parse_args(["tree", "rich"])
+    assert args.func is _cli.command_tree
+    assert args.package == "rich"
+    assert args.max_depth == 2
+
+
+def test_build_parser_inspect_requires_qualified_name() -> None:
+    """The `inspect` subcommand requires a positional qualified name."""
+    parser = _cli._build_parser()
+    with pytest.raises(SystemExit):
+        parser.parse_args(["inspect"])
+    args = parser.parse_args(["inspect", "rich::Console"])
+    assert args.func is _cli.command_inspect
+    assert args.qualified_name == "rich::Console"
 
 
 def test_command_home_prints_status(
@@ -125,7 +168,7 @@ def test_command_list_with_packages(
     out = capsys.readouterr().out
     assert exit_code == 0
     assert "count: 1" in out
-    assert "rich,15.0.0" in out
+    assert "rich|15.0.0" in out
 
 
 def test_command_show_metadata(capsys: pytest.CaptureFixture) -> None:
@@ -161,7 +204,7 @@ def test_command_show_api(capsys: pytest.CaptureFixture) -> None:
     out = capsys.readouterr().out
     assert exit_code == 0
     assert "count: 1" in out
-    assert "foo,function" in out
+    assert "foo|function" in out
 
 
 def test_command_show_api_empty(capsys: pytest.CaptureFixture) -> None:
@@ -186,6 +229,107 @@ def test_command_serve_reports_missing_extra() -> None:
     with mock.patch("pytack.venvaxi._mcp.serve", side_effect=ImportError):
         exit_code = _cli.command_serve(ctx)
     assert exit_code == 1
+
+
+def test_command_find_with_results(capsys: pytest.CaptureFixture) -> None:
+    """Search matches are printed as a TOON table with a help footer."""
+    nodes = [_node("rich::Console", NodeKind.CLASS, "Console")]
+    ctx = _cli.CLIContext(
+        args=argparse.Namespace(query="Console", limit=20),
+        console=mock.MagicMock(),
+        is_verbose=False,
+    )
+    with mock.patch(f"{CLI}.find_symbol", return_value=nodes):
+        exit_code = _cli.command_find(ctx)
+    out = capsys.readouterr().out
+    assert exit_code == 0
+    assert "count: 1" in out
+    assert "Console|class" in out
+    assert "help[1]:" in out
+
+
+def test_command_find_empty(capsys: pytest.CaptureFixture) -> None:
+    """No matches prints the empty state."""
+    ctx = _cli.CLIContext(
+        args=argparse.Namespace(query="nope", limit=20),
+        console=mock.MagicMock(),
+        is_verbose=False,
+    )
+    with mock.patch(f"{CLI}.find_symbol", return_value=[]):
+        exit_code = _cli.command_find(ctx)
+    out = capsys.readouterr().out
+    assert exit_code == 0
+    assert "count: 0" in out
+
+
+def test_command_tree_with_results(capsys: pytest.CaptureFixture) -> None:
+    """The module tree is printed as a depth-annotated TOON table."""
+    pairs = [
+        (0, _node("rich", NodeKind.PACKAGE, "rich")),
+        (1, _node("rich.table", NodeKind.MODULE, "table")),
+    ]
+    ctx = _cli.CLIContext(
+        args=argparse.Namespace(package="rich", max_depth=2),
+        console=mock.MagicMock(),
+        is_verbose=False,
+    )
+    with mock.patch(f"{CLI}.get_module_tree", return_value=pairs):
+        exit_code = _cli.command_tree(ctx)
+    out = capsys.readouterr().out
+    assert exit_code == 0
+    assert "count: 2" in out
+    assert "1|rich.table|module" in out
+
+
+def test_command_tree_empty(capsys: pytest.CaptureFixture) -> None:
+    """An empty tree prints the empty state."""
+    ctx = _cli.CLIContext(
+        args=argparse.Namespace(package="rich", max_depth=2),
+        console=mock.MagicMock(),
+        is_verbose=False,
+    )
+    with mock.patch(f"{CLI}.get_module_tree", return_value=[]):
+        exit_code = _cli.command_tree(ctx)
+    out = capsys.readouterr().out
+    assert exit_code == 0
+    assert "count: 0" in out
+
+
+def test_command_inspect_prints_symbol_detail(
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """A single symbol's full detail is printed as a TOON object."""
+    node = _node("rich::Console", NodeKind.CLASS, "Console")
+    ctx = _cli.CLIContext(
+        args=argparse.Namespace(qualified_name="rich::Console"),
+        console=mock.MagicMock(),
+        is_verbose=False,
+    )
+    with mock.patch(f"{CLI}.get_symbol", return_value=node):
+        exit_code = _cli.command_inspect(ctx)
+    out = capsys.readouterr().out
+    assert exit_code == 0
+    assert 'qualified_name: "rich::Console"' in out
+    assert "kind: class" in out
+
+
+def test_command_inspect_propagates_not_found(
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """A missing symbol propagates `SymbolNotFoundError`."""
+    ctx = _cli.CLIContext(
+        args=argparse.Namespace(qualified_name="rich::Nope"),
+        console=mock.MagicMock(),
+        is_verbose=False,
+    )
+    with (
+        mock.patch(
+            f"{CLI}.get_symbol",
+            side_effect=exceptions.SymbolNotFoundError("not found"),
+        ),
+        pytest.raises(exceptions.SymbolNotFoundError),
+    ):
+        _cli.command_inspect(ctx)
 
 
 def test_command_setup(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:

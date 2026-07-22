@@ -20,11 +20,13 @@ Each task category heading details necessary context and locations.
 
 - **Navigate to**: `workspaces/create-documentation`
 - **Read**: `CONTEXT.md`
+- **Exclude**: * in `.gitignore`
 
 ### Create Unit Test
 
 - **Navigate to**: `workspaces/create-unit-test`
 - **Read**: `CONTEXT.md`
+- **Exclude**: * in `.gitignore`
 
 ### Code Refactor
 

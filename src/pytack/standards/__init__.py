@@ -1,7 +1,7 @@
 """__init__ for pytack.standards.
 
 Provides access to configuration files for supported tools such as; `mypy`,
-`prek`, `pymarkdown`, and `ruff`.
+`prek`, `pymarkdown` and `ruff`.
 """
 
 from functools import lru_cache
