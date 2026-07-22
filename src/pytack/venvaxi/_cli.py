@@ -323,9 +323,7 @@ def _build_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(
         prog="venv-axi",
-        description=(
-            "Fetch dependency metadata & API information from a project venv"
-        ),
+        description="Fetch dependency metadata & API information from a venv",
     )
     parser.add_argument(
         "-v",
