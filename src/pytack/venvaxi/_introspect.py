@@ -1,4 +1,12 @@
-"""Public API and symbol-graph introspection for `venv-axi`."""
+"""Agent eXperience Interface (AXI) API and symbol-graph introspection.
+
+Attribution:
+    The recursive AST walking patterns used in this module are heavily
+    inspired by `code-review-graph`.
+
+    Repository: https://github.com/tirth8205/code-review-graph
+    License: MIT License - Copyright (c) 2026 Tirth Kanani
+"""
 
 import importlib
 import inspect
@@ -514,7 +522,7 @@ def find_symbol(query: str, limit: int = 20) -> list[SymbolNode]:
 def get_public_api(
     name: str,
     *,
-    full: bool = False,
+    docstring: bool = False,
     limit: int = DEFAULT_TRUNCATE_LIMIT,
 ) -> list[SymbolInfo]:
     """Extracts top-level public functions & classes from a package.
@@ -524,7 +532,7 @@ def get_public_api(
 
     Args:
         name: The package (distribution) name.
-        full: Return complete docstrings instead of the truncated
+        docstring: Return complete docstrings instead of the truncated
             first line. Defaults to False.
         limit: The docstring truncation limit. Defaults to 200.
 
@@ -558,7 +566,7 @@ def get_public_api(
         if node.kind not in (NodeKind.CLASS, NodeKind.FUNCTION):
             continue
         doc = node.doc
-        if full:
+        if docstring:
             doc_field = doc
         else:
             first_line = doc.splitlines()[0] if doc else ""

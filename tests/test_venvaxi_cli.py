@@ -94,7 +94,7 @@ def test_command_home_prints_status(
     assert "description:" in out
     assert "bin:" in out
     assert "status:" in out
-    assert "help[2]:" in out
+    assert "help[7]:" in out
 
 
 def test_command_home_status_active_when_prefixes_differ(
@@ -195,7 +195,7 @@ def test_command_show_api(capsys: pytest.CaptureFixture) -> None:
         SymbolInfo(name="foo", kind="function", signature="()", doc="Foo."),
     ]
     ctx = _cli.CLIContext(
-        args=argparse.Namespace(package="rich", api=True, full=False),
+        args=argparse.Namespace(package="rich", api=True, docstring=False),
         console=mock.MagicMock(),
         is_verbose=False,
     )
@@ -210,7 +210,7 @@ def test_command_show_api(capsys: pytest.CaptureFixture) -> None:
 def test_command_show_api_empty(capsys: pytest.CaptureFixture) -> None:
     """A package with no public symbols prints the empty state."""
     ctx = _cli.CLIContext(
-        args=argparse.Namespace(package="rich", api=True, full=False),
+        args=argparse.Namespace(package="rich", api=True, docstring=False),
         console=mock.MagicMock(),
         is_verbose=False,
     )

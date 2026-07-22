@@ -163,8 +163,8 @@ def test_get_public_api_truncates_doc_by_default(
 def test_get_public_api_full_returns_complete_docstring(
     fake_module: types.ModuleType,
 ) -> None:
-    """`full=True` returns the complete, untruncated docstring."""
-    symbols = get_public_api(fake_module.__name__, full=True)
+    """`docstring=True` returns the complete, untruncated docstring."""
+    symbols = get_public_api(fake_module.__name__, docstring=True)
     greet = next(symbol for symbol in symbols if symbol.name == "greet")
     assert "friendly greeting" in greet.doc
 
@@ -204,7 +204,7 @@ def test_walk_module_handles_none_module_attribute(
     NOT NULL constraint) and is not mistaken for a foreign symbol."""
     node, children = show_module(fake_module_with_none_module_attr.__name__)
     assert node.kind is NodeKind.PACKAGE
-    assert [child.name for child in children] == ["quirky"]
+    assert [child.name for child in children] == ["unset"]
 
 
 def test_get_symbol_returns_class_node(fake_package: str) -> None:

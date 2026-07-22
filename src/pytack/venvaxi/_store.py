@@ -1,19 +1,16 @@
-"""Graph-Based Symbol Registry for venv-axi.
+"""Agent eXperience Interface (AXI) Graph-Based Symbol Registry.
 
-Stores a structural graph of introspected Python symbols (packages,
-modules, classes, functions, methods, attributes) and their
-relationships, scoped to a single project's on-disk cache (see
-`pytack.venvaxi._cache`).
+Stores a structural graph of introspected Python symbols including; packages,
+modules, classes, functions, methods, attributes and their relationships,
+into a project-scoped on-disk cache (`pytack.venvaxi._cache`).
 
-NOTE: Deliberately narrow in scope relative to `code-review-graph`'s
-`GraphStore` - no call-graph/impact-radius/community-detection support,
-since `venv-axi` only reflects installed third-party package APIs, not a
-consuming repo's own call graph, tests or git history.
+NOTE: Adapted from `GraphStore` in `code-review-graph` package, but with a
+simplified schema and API surface, since this AXI focuses on installed
+packages within a project venv.
 
 Attribution:
-    The SQLite node/edge graph architecture and recursive AST walking
-    patterns used in this module are heavily inspired by
-    `code-review-graph`.
+    The SQLite Node|Edge graph architecture and recursive AST walking patterns
+    used in this module are heavily inspired by `code-review-graph`.
 
     Repository: https://github.com/tirth8205/code-review-graph
     License: MIT License - Copyright (c) 2026 Tirth Kanani
@@ -23,6 +20,8 @@ import logging
 import sqlite3
 from dataclasses import dataclass
 from enum import StrEnum
+from importlib import resources
+from functools import lru_cache
 from pathlib import Path
 from types import TracebackType
 
@@ -68,8 +67,7 @@ class SymbolNode:
 
         Returns:
             A dict keyed by every `SymbolNode` field, suitable for
-            `pytack.venvaxi._toon.encode_table`/`encode_object` (extra
-            keys not in a given `fields` selection are ignored).
+            `pytack.venvaxi._toon.encode_table` | `encode_object`.
         """
         return {
             "qualified_name": self.qualified_name,
@@ -109,6 +107,12 @@ def qualify(module: str, *parts: str) -> str:
     return f"{module}::{'.'.join(parts)}"
 
 
+@lru_cache(maxsize=None)
+def _read_sql(filename: str) -> str:
+    """Loads & caches SQL queries to prevent disk I/O on every execution."""
+    return (resources.files(__package__) / filename).read_text("UTF-8")
+
+
 class SymbolStore:
     """A SQLite-backed store for a project's introspected symbol graph."""
 
@@ -142,39 +146,11 @@ class SymbolStore:
 
     def _ensure_schema(self) -> None:
         """Creates the `nodes`/`edges` tables and FTS5 index if missing."""
-        self._connection.execute("PRAGMA journal_mode=WAL")
-        self._connection.execute(
-            """
-            CREATE TABLE IF NOT EXISTS nodes (
-                qualified_name TEXT PRIMARY KEY,
-                kind TEXT NOT NULL,
-                name TEXT NOT NULL,
-                module TEXT NOT NULL,
-                signature TEXT NOT NULL,
-                doc TEXT NOT NULL,
-                package TEXT NOT NULL,
-                version TEXT NOT NULL
-            )
-            """
-        )
-        self._connection.execute(
-            """
-            CREATE TABLE IF NOT EXISTS edges (
-                src TEXT NOT NULL,
-                dst TEXT NOT NULL,
-                kind TEXT NOT NULL,
-                PRIMARY KEY (src, dst, kind)
-            )
-            """
-        )
+
+        self._connection.executescript(_read_sql("schema.sql"))
+
         try:
-            self._connection.execute(
-                """
-                CREATE VIRTUAL TABLE IF NOT EXISTS symbols_fts USING fts5(
-                    qualified_name, name, doc
-                )
-                """
-            )
+            self._connection.executescript(_read_sql("schema_fts5.sql"))
         except sqlite3.OperationalError:
             logger.debug("FTS5 unavailable, falling back to LIKE search")
             self._fts_enabled = False
@@ -187,21 +163,7 @@ class SymbolStore:
             node: The `SymbolNode` to persist.
         """
         self._connection.execute(
-            """
-            INSERT INTO nodes (
-                qualified_name, kind, name, module, signature, doc,
-                package, version
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT (qualified_name) DO UPDATE SET
-                kind = excluded.kind,
-                name = excluded.name,
-                module = excluded.module,
-                signature = excluded.signature,
-                doc = excluded.doc,
-                package = excluded.package,
-                version = excluded.version
-            """,
+            _read_sql("upsert_node.sql"),
             (
                 node.qualified_name,
                 str(node.kind),
@@ -232,11 +194,7 @@ class SymbolStore:
             edge: The `SymbolEdge` to persist.
         """
         self._connection.execute(
-            """
-            INSERT INTO edges (src, dst, kind)
-            VALUES (?, ?, ?)
-            ON CONFLICT (src, dst, kind) DO NOTHING
-            """,
+            _read_sql("upsert_edge.sql"),
             (edge.src, edge.dst, str(edge.kind)),
         )
         self._connection.commit()
@@ -286,12 +244,7 @@ class SymbolStore:
             The child `SymbolNode`s, ordered by name.
         """
         cursor = self._connection.execute(
-            """
-            SELECT nodes.* FROM nodes
-            JOIN edges ON edges.dst = nodes.qualified_name
-            WHERE edges.src = ? AND edges.kind = ?
-            ORDER BY nodes.name
-            """,
+            _read_sql("get_children.sql"),
             (qualified_name, str(EdgeKind.CONTAINS)),
         )
         return [self._row_to_node(row) for row in cursor.fetchall()]
@@ -306,12 +259,7 @@ class SymbolStore:
             The inheriting `SymbolNode`s, ordered by name.
         """
         cursor = self._connection.execute(
-            """
-            SELECT nodes.* FROM nodes
-            JOIN edges ON edges.src = nodes.qualified_name
-            WHERE edges.dst = ? AND edges.kind = ?
-            ORDER BY nodes.name
-            """,
+            _read_sql("get_inheritors.sql"),
             (qualified_name, str(EdgeKind.INHERITS)),
         )
         return [self._row_to_node(row) for row in cursor.fetchall()]
@@ -363,7 +311,7 @@ class SymbolStore:
         return result
 
     def search_symbols(self, query: str, limit: int = 20) -> list[SymbolNode]:
-        """Searches symbols by name/doc, via FTS5 with a `LIKE` fallback.
+        """Searches symbols by name|docstring via FTS5 with a `LIKE` fallback.
 
         Args:
             query: The free-text search query.
@@ -376,52 +324,46 @@ class SymbolStore:
         if self._fts_enabled:
             try:
                 cursor = self._connection.execute(
-                    """
-                    SELECT nodes.* FROM symbols_fts
-                    JOIN nodes
-                        ON nodes.qualified_name = symbols_fts.qualified_name
-                    WHERE symbols_fts MATCH ?
-                    LIMIT ?
-                    """,
+                    _read_sql("search_fts.sql"),
                     (f"{query}*", limit),
                 )
                 return [self._row_to_node(row) for row in cursor.fetchall()]
             except sqlite3.OperationalError:
-                logger.debug(
-                    "FTS5 query failed for `%s`, falling back to LIKE", query
-                )
-        like = f"%{query}%"
+                logger.debug("FTS5 query failed (`%s`), using LIKE", query)
+
+        LIKE = f"%{query}%"
         cursor = self._connection.execute(
-            """
-            SELECT * FROM nodes
-            WHERE name LIKE ? OR qualified_name LIKE ?
-            ORDER BY qualified_name
-            LIMIT ?
-            """,
-            (like, like, limit),
+            _read_sql("search_like.sql"),
+            (LIKE, LIKE, limit),
         )
         return [self._row_to_node(row) for row in cursor.fetchall()]
 
     def clear_package(self, package: str) -> None:
-        """Deletes all nodes/edges belonging to a package.
+        """Deletes all nodes|edges belonging to a package.
+
+        NOTE: Avoids Python-to-C context switching and N+1 query problem with
+        sub-queries.
 
         Args:
-            package: The package (distribution/import) name to clear.
+            package: The package (distribution|import) name to clear.
         """
-        cursor = self._connection.execute(
-            "SELECT qualified_name FROM nodes WHERE package = ?", (package,)
-        )
-        qualified_names = [row["qualified_name"] for row in cursor.fetchall()]
-        for qualified_name in qualified_names:
-            if self._fts_enabled:
-                self._connection.execute(
-                    "DELETE FROM symbols_fts WHERE qualified_name = ?",
-                    (qualified_name,),
-                )
+        # Clear the FTS Index (if enabled)
+        if self._fts_enabled:
             self._connection.execute(
-                "DELETE FROM edges WHERE src = ? OR dst = ?",
-                (qualified_name, qualified_name),
+                "DELETE FROM symbols_fts WHERE qualified_name IN "
+                "(SELECT qualified_name FROM nodes WHERE package = ?)",
+                (package,),
             )
+
+        # Clear the Edges
+        self._connection.execute(
+            "DELETE FROM edges WHERE "
+            "src IN (SELECT qualified_name FROM nodes WHERE package = ?) OR "
+            "dst IN (SELECT qualified_name FROM nodes WHERE package = ?)",
+            (package, package),
+        )
+
+        # Clear the Nodes (MUST occur last)
         self._connection.execute(
             "DELETE FROM nodes WHERE package = ?", (package,)
         )

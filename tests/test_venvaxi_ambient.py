@@ -19,7 +19,13 @@ def test_inject_agents_md_creates_file(tmp_path: Path) -> None:
     text = (tmp_path / "AGENTS.md").read_text()
     assert changed is True
     assert "<!-- pytack:venv-axi:begin -->" in text
+    assert "<!-- pytack:venv-axi:end -->" in text
     assert "venv-axi" in text
+    assert "venv-axi find" in text
+    assert "venv-axi inspect" in text
+    assert "venv-axi tree" in text
+    assert "venv-axi serve" in text
+    assert "venv-axi setup" in text
 
 
 def test_inject_agents_md_appends_to_existing_file(tmp_path: Path) -> None:
@@ -119,5 +125,5 @@ def test_setup_ambient_context_reports_all_artifacts(
     ):
         changed = setup_ambient_context(tmp_path)
 
-    assert set(changed) == {"agents_md", "vscode_mcp", "repo_mcp"}
+    assert set(changed) == {"AGENTS.md", ".vscode", ".mcp.json"}
     assert all(changed.values())

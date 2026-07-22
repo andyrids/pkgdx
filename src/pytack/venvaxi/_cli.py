@@ -1,6 +1,7 @@
 """Argparse CLI for `venv-axi`."""
 
 import argparse
+from enum import StrEnum
 import logging
 import sys
 from dataclasses import asdict
@@ -28,8 +29,7 @@ def _emit(text: str) -> None:
     """Writes a line of structured output to STDOUT.
 
     NOTE: Uses `sys.stdout.write` (instead of `print`) so structural
-    TOON output is never subject to Rich console line-wrapping and to
-    avoid the `T201` (flake8-print) lint rule.
+    TOON output is never subject to Rich console line-wrapping.
 
     Args:
         text: The text to write, without a trailing newline.
@@ -38,7 +38,7 @@ def _emit(text: str) -> None:
 
 
 def _format_path(path: Path) -> str:
-    """Formats a path relative to the user's home directory.
+    """Formats a path relative to $HOME.
 
     Args:
         path: The absolute path to format.
@@ -91,7 +91,12 @@ def command_home(_: CLIContext) -> int:
         format_help(
             [
                 "Run `venv-axi list` for the venv package list",
-                "Run `venv-axi show <package>` for package info",
+                "Run `venv-axi show <package>` for metadata information",
+                "Run `venv-axi show <package> --api` for public API symbols",
+                "Run `venv-axi find <query>` to search cached symbols",
+                "Run `venv-axi tree <package>` for a nested module tree",
+                "Run `venv-axi inspect <qualified_name>` for symbol detail",
+                "Run `venv-axi setup` to install ambient context",
             ]
         )
     )
@@ -140,7 +145,7 @@ def _command_show_api(ctx: CLIContext) -> int:
     Returns:
         The process exit code.
     """
-    symbols = get_public_api(ctx.args.package, full=ctx.args.full)
+    symbols = get_public_api(ctx.args.package, docstring=ctx.args.docstring)
     if not symbols:
         _emit("count: 0")
         return ExitCode.EX_OK
@@ -148,11 +153,11 @@ def _command_show_api(ctx: CLIContext) -> int:
     rows = [asdict(symbol) for symbol in symbols]
     _emit(f"count: {len(symbols)}")
     _emit(encode_table("symbols", rows, ["name", "kind", "signature", "doc"]))
-    if not ctx.args.full:
+    if not ctx.args.docstring:
         _emit(
             format_help(
                 [
-                    f"Run `venv-axi show {ctx.args.package} --api --full`"
+                    f"Run `venv-axi show {ctx.args.package} --api --docstring`"
                     " for complete docstrings"
                 ]
             )
@@ -216,10 +221,18 @@ def command_find(ctx: CLIContext) -> int:
     _emit(encode_table("symbols", rows, ["name", "kind", "qualified_name"]))
     _emit(
         format_help(
-            ["Run `venv-axi inspect <qualified_name>` for full detail"]
+            ["Run `venv-axi inspect <qualified_name>` for complete metadata"]
         )
     )
     return ExitCode.EX_OK
+
+
+class TreeField(StrEnum):
+    """The fields for the `venv-axi tree` tabular output."""
+
+    DEPTH = "depth"
+    QUALIFIED_NAME = "qualified_name"
+    KIND = "kind"
 
 
 def command_tree(ctx: CLIContext) -> int:
@@ -238,12 +251,12 @@ def command_tree(ctx: CLIContext) -> int:
 
     rows = [{"depth": depth, **node.as_row()} for depth, node in pairs]
     _emit(f"count: {len(pairs)}")
-    _emit(encode_table("tree", rows, ["depth", "qualified_name", "kind"]))
+    _emit(encode_table("tree", rows, [item.value for item in TreeField]))
     return ExitCode.EX_OK
 
 
 def command_inspect(ctx: CLIContext) -> int:
-    """Shows a single symbol's full detail.
+    """Shows complete information for a qualified symbol name.
 
     Args:
         ctx: The CLI context.
@@ -266,7 +279,7 @@ def command_inspect(ctx: CLIContext) -> int:
 
 
 def command_serve(_: CLIContext) -> int:
-    """Runs the `venv-axi` MCP server over stdio.
+    """Serves a dedicated AXI MCP server over STDIO.
 
     Args:
         _: The CLI context.
@@ -310,7 +323,9 @@ def _build_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(
         prog="venv-axi",
-        description="Fetch dependency API info from a project's venv",
+        description=(
+            "Fetch dependency metadata & API information from a project venv"
+        ),
     )
     parser.add_argument(
         "-v",
@@ -322,11 +337,13 @@ def _build_parser() -> argparse.ArgumentParser:
 
     subparsers = parser.add_subparsers(title="commands", dest="command")
 
-    parser_list = subparsers.add_parser("list", help="List venv packages")
+    parser_list = subparsers.add_parser(
+        "list", help="Show installed venv packages"
+    )
     parser_list.add_argument(
         "--all",
         action="store_true",
-        help="Include dev/optional dependency groups",
+        help="Include dev|optional dependency groups",
     )
     parser_list.add_argument(
         "--fields",
@@ -336,13 +353,13 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_list.set_defaults(func=command_list)
 
     parser_show = subparsers.add_parser(
-        "show", help="Show package metadata or API"
+        "show", help="Show package metadata|API information"
     )
     parser_show.add_argument("package", help="Package (distribution) name")
     parser_show.add_argument(
         "--fields",
         default="name,version,location",
-        help="Comma-separated fields to display",
+        help="Comma-separated display fields",
     )
     parser_show.add_argument(
         "--api",
@@ -350,23 +367,30 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Show public API symbols instead of metadata",
     )
     parser_show.add_argument(
-        "--full",
+        "--docstring",
         action="store_true",
-        help="Show complete docstrings (no truncation)",
+        help="Show complete docstrings (with --api)",
     )
     parser_show.set_defaults(func=command_show)
 
     parser_find = subparsers.add_parser(
-        "find", help="Search cached symbols by name/doc text"
+        "find",
+        help="Search cached symbols by name|docstring text",
     )
-    parser_find.add_argument("query", help="Free-text search query")
     parser_find.add_argument(
-        "--limit", type=int, default=20, help="Maximum number of results"
+        "query",
+        help="Free-text search query",
+    )
+    parser_find.add_argument(
+        "--limit",
+        type=int,
+        default=20,
+        help="Maximum number of results",
     )
     parser_find.set_defaults(func=command_find)
 
     parser_tree = subparsers.add_parser(
-        "tree", help="Show a package's nested module tree"
+        "tree", help="Show nested module tree for a package"
     )
     parser_tree.add_argument("package", help="Package (distribution) name")
     parser_tree.add_argument(
@@ -379,20 +403,28 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_tree.set_defaults(func=command_tree)
 
     parser_inspect = subparsers.add_parser(
-        "inspect", help="Show a single symbol's full detail"
+        "inspect", help="Show complete details for a qualified symbol name"
     )
     parser_inspect.add_argument(
-        "qualified_name", help="Fully qualified symbol name"
+        "qualified_name",
+        help="Qualified symbol name (module::Symbol | module::Class.method)",
     )
     parser_inspect.set_defaults(func=command_inspect)
 
     parser_serve = subparsers.add_parser(
-        "serve", help="Run the venv-axi MCP server"
+        "serve",
+        help="Run a dedicated AXI MCP server (requires pytack[venv-axi])",
     )
     parser_serve.set_defaults(func=command_serve)
 
     parser_setup = subparsers.add_parser(
-        "setup", help="Install venv-axi ambient context"
+        "setup",
+        help=" ".join(
+            [
+                "Install AXI ambient context into the repo",
+                "(AGENTS.md & MCP config)",
+            ]
+        ),
     )
     parser_setup.set_defaults(func=command_setup)
 
@@ -400,10 +432,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    """Parses arguments and dispatches to the selected command.
+    """Parses arguments & dispatches to the selected command.
 
     Returns:
-        The process exit code: 0 on success, 1 on a handled
+        The process exit code; 0 on success, 1 on a handled
         `pytack.exceptions.Error`, 2 on an unexpected exception.
     """
     parser = _build_parser()

@@ -1,13 +1,12 @@
-"""Centralized constants for the `venv-axi` TOON encoder.
+"""Constants for the Token-Orientated Object Notation (TOON) encoder.
 
-Trimmed, encode-only subset of `toon-format/toon-python`'s `constants.py`.
-`pytack` only ever encodes TOON, never decodes it, so decode-side
-constants (e.g. header-length parsing patterns) are omitted.
+NOTE: This file is a trimmed, encode-only subset of the official
+`toon-format/toon-python` encoding/decoding constants (`constants.py`).
 
 Attribution:
-    The regex patterns, structural tokens and constant-extraction patterns
-    in this file are directly adapted from the official `toon-python`
-    reference implementation.
+    The regex patterns, structural tokens and constant-extraction patterns in
+    this file are directly adapted from the official `toon-python` reference
+    implementation.
 
     Repository: https://github.com/toon-format/toon-python
     License: MIT License - Copyright (c) 2025 TOON Format Organization

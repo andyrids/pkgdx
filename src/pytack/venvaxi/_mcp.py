@@ -44,7 +44,7 @@ def show_package_tool(name: str) -> str:
 
 def show_package_api_tool(name: str, full: bool = False) -> str:
     """Shows a package's public, top-level API symbols in TOON."""
-    symbols = get_public_api(name, full=full)
+    symbols = get_public_api(name, docstring=full)
     if not symbols:
         return "count: 0"
     rows = [asdict(symbol) for symbol in symbols]

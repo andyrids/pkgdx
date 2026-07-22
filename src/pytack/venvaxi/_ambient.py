@@ -1,6 +1,6 @@
-"""Ambient-context installation for `venv-axi`.
+"""Agent eXperience Interface (AXI) ambient-context installation.
 
-NOTE: AXI principle 7 (ambient context): Make visible to an agent from an
+AXI principle 7 (ambient context): Make visible to an agent from an
 explicit setup command so that every conversation starts with relevant state
 already visible - before the agent takes any action.
 
@@ -8,8 +8,8 @@ already visible - before the agent takes any action.
 - Register an MCP server entry in `.vscode/mcp.json`
 - Register an MCP server entry in a `.mcp.json`
 
-The above steps are idempotent, so running `venv-axi setup` multiple times has
-no adverse effect.
+NOTE: The above steps are idempotent - running `venv-axi setup` multiple times
+has no adverse effect.
 """
 
 import json
@@ -30,7 +30,15 @@ Agent-ergonomic venv package & API information is available via
 
 - Run `venv-axi` for live status and next-step hints.
 - Run `venv-axi list` for the installed dependency list.
-- Run `venv-axi show <package> --api` for a package's public API."""
+- Run `venv-axi show <package>` for package metadata.
+- Run `venv-axi show <package> --api` for a package's public API.
+- Run `venv-axi find <query>` to search cached symbols by name or doc.
+- Run `venv-axi inspect <qualified_name>` for full detail on one symbol
+  (qualified names use `module::Symbol` or `module::Class.method`).
+- Run `venv-axi tree <package>` to explore a package's module tree.
+- Run `venv-axi serve` to start the MCP server over stdio.
+- Run `venv-axi setup` to register the MCP server in `.vscode/mcp.json`
+  and `.mcp.json` and keep this block up to date."""
 
 
 def _venv_axi_command() -> str:
@@ -124,9 +132,7 @@ def setup_ambient_context(root: Path) -> dict[str, bool]:
         `agents_md`, `vscode_mcp` and `repo_mcp`.
     """
     return {
-        "agents_md": inject_agents_md(root),
-        "vscode_mcp": _update_mcp_json(
-            root / ".vscode" / "mcp.json", "servers"
-        ),
-        "repo_mcp": _update_mcp_json(root / ".mcp.json", "mcpServers"),
+        "AGENTS.md": inject_agents_md(root),
+        ".vscode": _update_mcp_json(root / ".vscode" / "mcp.json", "servers"),
+        ".mcp.json": _update_mcp_json(root / ".mcp.json", "mcpServers"),
     }
