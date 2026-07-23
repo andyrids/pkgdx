@@ -1,16 +1,16 @@
-"""Unit tests for `pytack.venvaxi._ambient`."""
+"""Unit tests for `pkgdx.venvaxi._ambient`."""
 
 import json
 from pathlib import Path
 from unittest import mock
 
-from pytack.venvaxi._ambient import (
+from pkgdx.venvaxi._ambient import (
     _update_mcp_json,
     inject_agents_md,
     setup_ambient_context,
 )
 
-AMBIENT = "pytack.venvaxi._ambient"
+AMBIENT = "pkgdx.venvaxi._ambient"
 
 
 def test_inject_agents_md_creates_file(tmp_path: Path) -> None:
@@ -18,8 +18,8 @@ def test_inject_agents_md_creates_file(tmp_path: Path) -> None:
     changed = inject_agents_md(tmp_path)
     text = (tmp_path / "AGENTS.md").read_text()
     assert changed is True
-    assert "<!-- pytack:venv-axi:begin -->" in text
-    assert "<!-- pytack:venv-axi:end -->" in text
+    assert "<!-- pkgdx:venv-axi:begin -->" in text
+    assert "<!-- pkgdx:venv-axi:end -->" in text
     assert "venv-axi" in text
     assert "venv-axi find" in text
     assert "venv-axi inspect" in text
@@ -36,7 +36,7 @@ def test_inject_agents_md_appends_to_existing_file(tmp_path: Path) -> None:
     text = path.read_text()
     assert changed is True
     assert "# My project" in text
-    assert "<!-- pytack:venv-axi:begin -->" in text
+    assert "<!-- pkgdx:venv-axi:begin -->" in text
 
 
 def test_inject_agents_md_idempotent(tmp_path: Path) -> None:
@@ -51,8 +51,8 @@ def test_inject_agents_md_replaces_stale_block(tmp_path: Path) -> None:
     path = tmp_path / "AGENTS.md"
     path.write_text(
         "# My project\n\n"
-        "<!-- pytack:venv-axi:begin -->\nstale content\n"
-        "<!-- pytack:venv-axi:end -->\n"
+        "<!-- pkgdx:venv-axi:begin -->\nstale content\n"
+        "<!-- pkgdx:venv-axi:end -->\n"
     )
     changed = inject_agents_md(tmp_path)
     text = path.read_text()

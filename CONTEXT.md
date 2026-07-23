@@ -38,7 +38,7 @@ Each task category heading details necessary context and locations.
 
 - **Navigate to**:
   - `src/`
-    **Read**: `pytack/*`
+    **Read**: `pkgdx/*`
   - `tests/`
     **Read**: `*`
   - `workspaces/_config/`

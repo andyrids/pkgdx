@@ -20,7 +20,7 @@ Pytest is used for unit testing, with tests colocated in `tests/`.
 
 ## Conventions
 
-- Test modules: `tests/test_<module>.py`, mirroring `src/pytack/<module>.py`
+- Test modules: `tests/test_<module>.py`, mirroring `src/pkgdx/<module>.py`
 - Shared fixtures live once in `tests/conftest.py` and are consumed via dependency injection
   (e.g. `configured_logging`, `tty_stdout_enable`/`tty_stdout_disable`, `mock_subprocess_run`,
   `mock_project`) rather than re-declared per test module

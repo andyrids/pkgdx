@@ -6,7 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 import pytest
-from pytack import exceptions, standards
+from pkgdx import exceptions, standards
 
 
 def test_validate_manifest() -> None:
@@ -35,7 +35,7 @@ def test_validate_manifest() -> None:
 def test_prek_revision_update() -> None:
     """Ensures the Prek config has the latest revision version."""
     import shutil
-    from pytack.standards import PREK_CONFIG
+    from pkgdx.standards import PREK_CONFIG
 
     prek = shutil.which("prek")
     assert prek is not None
@@ -68,8 +68,8 @@ def test_prek_repo_url() -> None:
         pytest.fail(str(e))
 
     try:
-        pytack_repository = standards.get_pytack_repository()
+        pkgdx_repository = standards.get_pkgdx_repository()
     except exceptions.PrekRepoURLMissingError as e:
         pytest.fail(str(e))
 
-    assert config_repository == pytack_repository
+    assert config_repository == pkgdx_repository

@@ -16,7 +16,7 @@ Write Python code for the technical specification from the Specification stage.
 ## Process
 
 1. Read the specification
-2. Implement the required logic within `src/pytack/`
+2. Implement the required logic within `src/pkgdx/`
 3. Adhere to the workspace toolchain
 4. Draft the implimentation report
    - List Git command to generate a diff report

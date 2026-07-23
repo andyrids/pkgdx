@@ -10,6 +10,7 @@ always instantiate loggers using the package name:
 
 ```python
 import logging
+
 logger = logging.getLogger(__package__)
 ```
 
@@ -23,14 +24,14 @@ consuming applications:
 By default, the package is configured with a `NullHandler`. This prevents the library from
 polluting STDOUT when imported as a dependency.
 
-- Setup: `configure_pkg_logging()` is called in `src/pytack/__init__.py`.
+- Setup: `configure_pkg_logging()` is called in `src/pkgdx/__init__.py`.
 
 ### (2) CLI Logging (Application)
 
 When executed as a CLI, logging is configured using the settings defined in
-`src/pytack/logging/config.toml`.
+`src/pkgdx/logging/config.toml`.
 
-- Setup: `configure_cli_logging(level)` is called in `src/pytack/__main__.py` after argument
+- Setup: `configure_cli_logging(level)` is called in `src/pkgdx/__main__.py` after argument
 parsing.
 - Handlers: Uses `rich.logging.RichHandler` for STDOUT and a standard `StreamHandler` for STDERR.
 

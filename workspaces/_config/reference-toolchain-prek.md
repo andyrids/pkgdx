@@ -19,7 +19,7 @@ Prek is used as a pre-commit hook manager and is installed as a dependency. Runn
 ## Configuration
 
 - Project config: `prek.toml`
-  - Root Prek config for the PyTack package
+  - Root Prek config for the Pkgdx package
   - MUST not be changed
-- Bundled config: `src/pytack/standards/hooks.toml`
-  - Used by repositories that consume PyTack
+- Bundled config: `src/pkgdx/standards/hooks.toml`
+  - Used by repositories that consume Pkgdx

@@ -1,5 +1,5 @@
 [project]
-name = "pytack"
+name = "pkgdx"
 dynamic = ["version"]
 description = "A package to centralise standards across Python projects."
 readme = "README.md"
@@ -42,19 +42,19 @@ dev = [
 ]
 
 [project.scripts]
-pytack = "pytack.__main__:main"
-pytack-secrets-hook = "pytack.__main__:detect_secrets"
-pytack-format-hook = "pytack.__main__:ruff_format"
-pytack-lint-hook = "pytack.__main__:ruff_lint"
-pytack-markdown-hook = "pytack.__main__:pymarkdown_lint"
-pytack-typing-hook = "pytack.__main__:mypy_typing"
-pytack-venv-axi = "pytack.__main__:venv_axi"
-venv-axi = "pytack.__main__:venv_axi"
+pkgdx = "pkgdx.__main__:main"
+pkgdx-secrets-hook = "pkgdx.__main__:detect_secrets"
+pkgdx-format-hook = "pkgdx.__main__:ruff_format"
+pkgdx-lint-hook = "pkgdx.__main__:ruff_lint"
+pkgdx-markdown-hook = "pkgdx.__main__:pymarkdown_lint"
+pkgdx-typing-hook = "pkgdx.__main__:mypy_typing"
+pkgdx-venv-axi = "pkgdx.__main__:venv_axi"
+venv-axi = "pkgdx.__main__:venv_axi"
 
 [project.urls]
-Repository = "https://gitlab.com/andyrids/pytack"
-Issues = "https://gitlab.com/andyrids/pytack/issues"
-Changelog = "https://gitlab.com/andyrids/pytack/blob/main/CHANGELOG.md"
+Repository = "https://gitlab.com/andyrids/pkgdx"
+Issues = "https://gitlab.com/andyrids/pkgdx/issues"
+Changelog = "https://gitlab.com/andyrids/pkgdx/blob/main/CHANGELOG.md"
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]

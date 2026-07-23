@@ -1,4 +1,4 @@
-"""Unit tests for `pytack.venvaxi._mcp`."""
+"""Unit tests for `pkgdx.venvaxi._mcp`."""
 
 import asyncio
 from pathlib import Path
@@ -8,13 +8,13 @@ import pytest
 
 pytest.importorskip("fastmcp")
 # ruff: disable[E402]
-from pytack.venvaxi._introspect import SymbolInfo
-from pytack.venvaxi._mcp import build_server
-from pytack.venvaxi._packages import PackageInfo
-from pytack.venvaxi._store import NodeKind, SymbolNode
+from pkgdx.venvaxi._introspect import SymbolInfo
+from pkgdx.venvaxi._mcp import build_server
+from pkgdx.venvaxi._packages import PackageInfo
+from pkgdx.venvaxi._store import NodeKind, SymbolNode
 
 # ruff: enable[E402]
-MCP = "pytack.venvaxi._mcp"
+MCP = "pkgdx.venvaxi._mcp"
 
 
 def _node(qualified_name: str, kind: NodeKind, name: str) -> SymbolNode:

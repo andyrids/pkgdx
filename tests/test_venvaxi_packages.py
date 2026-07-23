@@ -1,12 +1,12 @@
-"""Unit tests for `pytack.venvaxi._packages`."""
+"""Unit tests for `pkgdx.venvaxi._packages`."""
 
 from pathlib import Path
 from unittest import mock
 
 import pytest
 
-from pytack.exceptions import PackageNotFoundError
-from pytack.venvaxi._packages import (
+from pkgdx.exceptions import PackageNotFoundError
+from pkgdx.venvaxi._packages import (
     PackageInfo,
     _requirement_name,
     discover_direct_dependencies,
@@ -14,7 +14,7 @@ from pytack.venvaxi._packages import (
     resolve_package,
 )
 
-PACKAGES = "pytack.venvaxi._packages"
+PACKAGES = "pkgdx.venvaxi._packages"
 
 
 @pytest.mark.parametrize(

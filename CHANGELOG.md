@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `venv-axi` (`pytack-venv-axi`) - an Agent eXperience Interface (AXI).
+- `venv-axi` (`pkgdx-venv-axi`) - an Agent eXperience Interface (AXI).
   - Provides a CLI & MCP interface.
   - Fetches venv package metadata for a consuming repo.
   - Fetches public API/docstring introspection.
@@ -49,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A crash partway through building the symbol cache no longer leaves
   behind a partially-populated cache that is silently treated as
   valid on the next run; it now clears the partial state and raises
-  `pytack.exceptions.StoreError`.
+  `pkgdx.exceptions.StoreError`.
 
 ## [0.1.0rc6] - 2026-07-14
 
@@ -69,7 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - CLI setup script for automated project configuration.
 - `--reset` option for CLI setup script.
-- Detect missing hooks based on pkgdevx config.
+- Detect missing hooks based on pkgdx config.
 - Build & publish to GitLab package registry.
 - Unit tests.
 

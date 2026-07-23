@@ -27,7 +27,7 @@ function flow.}}
 ## (5) Toolchain and Error Handling
 
 {{Specify requirements to satisfy Mypy and Ruff strictness. Anticipate edge cases and define which
-`pytack.exceptions` should be raised.}}
+`pkgdx.exceptions` should be raised.}}
 
 ## (6) Verification Requirements
 

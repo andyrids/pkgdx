@@ -1,4 +1,4 @@
-"""Unit tests for `pytack.venvaxi._cache`."""
+"""Unit tests for `pkgdx.venvaxi._cache`."""
 
 import sqlite3
 import sys
@@ -9,11 +9,11 @@ from unittest import mock
 
 import pytest
 
-from pytack import exceptions
-from pytack.venvaxi import _cache
-from pytack.venvaxi._store import NodeKind, SymbolNode, SymbolStore
+from pkgdx import exceptions
+from pkgdx.venvaxi import _cache
+from pkgdx.venvaxi._store import NodeKind, SymbolNode, SymbolStore
 
-CACHE = "pytack.venvaxi._cache"
+CACHE = "pkgdx.venvaxi._cache"
 
 
 @pytest.fixture
@@ -34,11 +34,11 @@ def fake_module(isolated_venv_axi_cache: Path) -> Iterator[types.ModuleType]:
 
 
 def test_get_cache_dir_creates_directory(tmp_path: Path) -> None:
-    """`get_cache_dir` creates (and returns) `~/.pytack/venv-axi`."""
+    """`get_cache_dir` creates (and returns) `~/.pkgdx/venv-axi`."""
     fake_home = tmp_path / "home"
     with mock.patch(f"{CACHE}.Path.home", return_value=fake_home):
         cache_dir = _cache.get_cache_dir()
-    assert cache_dir == fake_home / ".pytack" / "venv-axi"
+    assert cache_dir == fake_home / ".pkgdx" / "venv-axi"
     assert cache_dir.is_dir()
 
 
@@ -125,7 +125,7 @@ def test_get_or_build_store_skips_rebuild_when_valid(
     with mock.patch(f"{CACHE}._installed_version", return_value="1.0.0"):
         first = _cache.get_or_build_store(root, fake_module.__name__)
         first.close()
-        with mock.patch("pytack.venvaxi._introspect._walk_module") as walk:
+        with mock.patch("pkgdx.venvaxi._introspect._walk_module") as walk:
             second = _cache.get_or_build_store(root, fake_module.__name__)
             second.close()
         walk.assert_not_called()
@@ -157,7 +157,7 @@ def test_get_or_build_store_force_refresh(
     with mock.patch(f"{CACHE}._installed_version", return_value="1.0.0"):
         first = _cache.get_or_build_store(root, fake_module.__name__)
         first.close()
-        with mock.patch("pytack.venvaxi._introspect._walk_module") as walk:
+        with mock.patch("pkgdx.venvaxi._introspect._walk_module") as walk:
             second = _cache.get_or_build_store(
                 root, fake_module.__name__, force_refresh=True
             )
@@ -177,7 +177,7 @@ def test_get_or_build_store_wraps_database_error(
     with (
         mock.patch(f"{CACHE}._installed_version", return_value="1.0.0"),
         mock.patch(
-            "pytack.venvaxi._introspect._walk_module",
+            "pkgdx.venvaxi._introspect._walk_module",
             side_effect=sqlite3.IntegrityError("NOT NULL constraint failed"),
         ),
         pytest.raises(exceptions.StoreError),
@@ -207,7 +207,7 @@ def test_get_or_build_store_non_database_error_not_poisoning(
     with (
         mock.patch(f"{CACHE}._installed_version", return_value="1.0.0"),
         mock.patch(
-            "pytack.venvaxi._introspect._walk_module",
+            "pkgdx.venvaxi._introspect._walk_module",
             side_effect=TypeError("boom"),
         ),
         mock.patch.object(SymbolStore, "close", autospec=True) as close_mock,

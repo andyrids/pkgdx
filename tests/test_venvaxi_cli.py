@@ -1,4 +1,4 @@
-"""Unit tests for `pytack.venvaxi._cli`."""
+"""Unit tests for `pkgdx.venvaxi._cli`."""
 
 import argparse
 from pathlib import Path
@@ -6,13 +6,13 @@ from unittest import mock
 
 import pytest
 
-from pytack import exceptions
-from pytack.venvaxi import _cli
-from pytack.venvaxi._introspect import SymbolInfo
-from pytack.venvaxi._packages import PackageInfo
-from pytack.venvaxi._store import NodeKind, SymbolNode
+from pkgdx import exceptions
+from pkgdx.venvaxi import _cli
+from pkgdx.venvaxi._introspect import SymbolInfo
+from pkgdx.venvaxi._packages import PackageInfo
+from pkgdx.venvaxi._store import NodeKind, SymbolNode
 
-CLI = "pytack.venvaxi._cli"
+CLI = "pkgdx.venvaxi._cli"
 
 
 def _node(qualified_name: str, kind: NodeKind, name: str) -> SymbolNode:
@@ -226,7 +226,7 @@ def test_command_serve_reports_missing_extra() -> None:
     ctx = _cli.CLIContext(
         args=argparse.Namespace(), console=mock.MagicMock(), is_verbose=False
     )
-    with mock.patch("pytack.venvaxi._mcp.serve", side_effect=ImportError):
+    with mock.patch("pkgdx.venvaxi._mcp.serve", side_effect=ImportError):
         exit_code = _cli.command_serve(ctx)
     assert exit_code == 1
 
@@ -351,7 +351,7 @@ def test_command_setup(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
 def test_main_maps_handled_error_to_exit_1(
     capsys: pytest.CaptureFixture,
 ) -> None:
-    """A `pytack.exceptions.Error` maps to exit code 1."""
+    """A `pkgdx.exceptions.Error` maps to exit code 1."""
     parsed_args = argparse.Namespace(
         verbose=False,
         func=mock.MagicMock(

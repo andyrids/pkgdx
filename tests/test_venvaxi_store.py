@@ -1,4 +1,4 @@
-"""Unit tests for `pytack.venvaxi._store`."""
+"""Unit tests for `pkgdx.venvaxi._store`."""
 
 import sqlite3
 from dataclasses import replace
@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from pytack.venvaxi._store import (
+from pkgdx.venvaxi._store import (
     SCHEMA_VERSION,
     EdgeKind,
     NodeKind,

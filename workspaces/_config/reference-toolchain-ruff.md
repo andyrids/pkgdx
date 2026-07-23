@@ -9,4 +9,4 @@ Ruff is used to implement Python linting and formatting standards.
 
 ## Configuration
 
-The Ruff config is located at `src/pytack/standards/ruff.toml`.
+The Ruff config is located at `src/pkgdx/standards/ruff.toml`.

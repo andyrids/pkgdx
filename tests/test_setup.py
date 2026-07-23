@@ -1,4 +1,4 @@
-"""Unit tests for the `pytack setup` command."""
+"""Unit tests for the `pkgdx setup` command."""
 
 import argparse
 import sys
@@ -6,9 +6,9 @@ from pathlib import Path
 from unittest import mock
 
 import tomlkit.exceptions
-from pytack import exceptions
-from pytack._core import CLIContext, ExitCode
-from pytack.__main__ import _setup_progress, command_setup, logger
+from pkgdx import exceptions
+from pkgdx._core import CLIContext, ExitCode
+from pkgdx.__main__ import _setup_progress, command_setup, logger
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.progress import Progress
@@ -71,7 +71,7 @@ def test_command_setup_complete(
         is_verbose=False,
     )
 
-    MAIN = "pytack.__main__"
+    MAIN = "pkgdx.__main__"
 
     with (
         mock.patch(
@@ -111,7 +111,7 @@ def test_command_setup_exits_on_missing_project_root(
         is_verbose=False,
     )
 
-    MAIN = "pytack.__main__"
+    MAIN = "pkgdx.__main__"
 
     with (
         mock.patch(
@@ -144,7 +144,7 @@ def test_command_setup_exits_on_prek_config_error(
         is_verbose=False,
     )
 
-    MAIN = "pytack.__main__"
+    MAIN = "pkgdx.__main__"
 
     with (
         mock.patch(
@@ -184,7 +184,7 @@ def test_command_setup_non_tty_runs_without_progress(
         is_verbose=False,
     )
 
-    MAIN = "pytack.__main__"
+    MAIN = "pkgdx.__main__"
 
     with (
         mock.patch(

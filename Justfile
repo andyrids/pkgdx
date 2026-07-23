@@ -16,10 +16,10 @@ setup: && secrets-baseline
     uv sync
     uv run -m prek install
 
-[doc("Test `pytack` setup in workspace member")]
+[doc("Test `pkgdx` setup in workspace member")]
 [group("DEV")]
 test *FLAGS:
-    uv run --directory consumers/testing pytack setup {{FLAGS}}
+    uv run --directory consumers/testing pkgdx setup {{FLAGS}}
 
 [doc("Create `coverage` report")]
 [group("DEV")]

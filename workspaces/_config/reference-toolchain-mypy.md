@@ -9,7 +9,7 @@ Mypy is used to enforce standards for typing.
 
 ## Configuration
 
-The Mypy config is located at `src/pytack/standards/mypy.ini`. Enforce the usage of the type hints
+The Mypy config is located at `src/pkgdx/standards/mypy.ini`. Enforce the usage of the type hints
 for all function/method args and return values.
 
 ## Guidance
@@ -25,6 +25,7 @@ disallow_any_unimported = true
 
 ```python
 from requests import Request
+
 
 def my_function(request: Request) -> None:  # type: ignore[no-any-unimported]
     ...

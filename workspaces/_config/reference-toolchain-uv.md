@@ -24,8 +24,8 @@ print("hello world!")
 EOF
 ```
 
-When using `uv run` in this project, uv will install PyTack before running the script. If the
-script does not depend on PyTack, use the `--no-project` option.
+When using `uv run` in this project, uv will install Pkgdx before running the script. If the
+script does not depend on Pkgdx, use the `--no-project` option.
 
 Example script with dependencies added into an inline metadata format:
 
@@ -47,17 +47,17 @@ pprint([(k, v["title"]) for k, v in data.items()][:10])
 EOF
 ```
 
-NOTE: Any dependencies not included with PyTack must be declared in the script.
+NOTE: Any dependencies not included with Pkgdx must be declared in the script.
 
 ## Workspaces
 
-This project uses Astral uv workspaces, which are in `consumers/*`. When testing PyTack commands
+This project uses Astral uv workspaces, which are in `consumers/*`. When testing Pkgdx commands
 in workspace members with uv, the `--directory` option should be used to generate output in the
 workspace member root.
 
 ```bash
-uv run --directory consumers/testing pytack setup
+uv run --directory consumers/testing pkgdx setup
 ```
 
-NOTE: Only run PyTack commands in workspace members, which have a `pytack` dependency in their
+NOTE: Only run Pkgdx commands in workspace members, which have a `pkgdx` dependency in their
 `pyproject.toml`.

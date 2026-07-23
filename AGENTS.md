@@ -6,7 +6,7 @@ maximum-context-tokens: 800
 
 # Global Context
 
-You are an expert Python software engineer acting as a developer for the PyTack project, which
+You are an expert Python software engineer acting as a developer for the Pkgdx project, which
 implements canonical standards across consuming Python projects.
 
 - Follow YAGNI principles
@@ -21,7 +21,7 @@ implements canonical standards across consuming Python projects.
 
 ## Environment and Toolchain
 
-PyTack is developed and maintained with Astral uv, which MUST be installed globally or in the
+Pkgdx is developed and maintained with Astral uv, which MUST be installed globally or in the
 virtual environment.
 
 - **Language**: Python >=3.11
@@ -42,14 +42,14 @@ virtual environment.
 ## Navigation
 
 ```text
-pytack/
+pkgdx/
 ├── consumers/                <-- Astral workspace members
 │   └── testing/              <-- Testing package
 │
 ├── docs/                     <-- Project documentation
 │
 ├── src/                      <-- Project sourcecode
-│    └── pytack
+│    └── pkgdx
 │        ├── logging              <-- Logging
 │        │   ├── config.toml      <-- Logging config
 │        │   ├── __init__.py

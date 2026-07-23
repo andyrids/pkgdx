@@ -1,4 +1,4 @@
-"""Unit tests for `pytack.venvaxi._introspect`."""
+"""Unit tests for `pkgdx.venvaxi._introspect`."""
 
 import importlib
 import logging
@@ -9,12 +9,12 @@ from pathlib import Path
 
 import pytest
 
-from pytack.exceptions import (
+from pkgdx.exceptions import (
     PackageImportError,
     PackageNotFoundError,
     SymbolNotFoundError,
 )
-from pytack.venvaxi._introspect import (
+from pkgdx.venvaxi._introspect import (
     _walk_module,
     find_symbol,
     get_inheritors,
@@ -24,7 +24,7 @@ from pytack.venvaxi._introspect import (
     show_module,
     truncate,
 )
-from pytack.venvaxi._store import NodeKind, SymbolStore
+from pkgdx.venvaxi._store import NodeKind, SymbolStore
 
 
 @pytest.fixture
@@ -242,7 +242,7 @@ def test_walk_submodules_skips_import_failure(
 ) -> None:
     """A submodule that raises on import is logged and skipped, and the
     walk continues over the remaining submodules."""
-    with caplog.at_level(logging.WARNING, logger="pytack.venvaxi"):
+    with caplog.at_level(logging.WARNING, logger="pkgdx.venvaxi"):
         _, children = show_module(fake_package)
     names = [child.name for child in children]
     assert "module" in names

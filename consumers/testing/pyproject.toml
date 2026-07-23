@@ -1,13 +1,13 @@
 [project]
 name = "testing"
 version = "0.1.0"
-description = "A pytack consumer for local testing"
+description = "A pkgdx consumer for local testing"
 authors = [
     { name = "andyrids", email = "andyrids.culprit320@passmail.com" }
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "pytack",
+    "pkgdx",
 ]
 
 [project.scripts]
@@ -18,4 +18,4 @@ requires = ["uv_build>=0.11.20,<0.12.0"]
 build-backend = "uv_build"
 
 [tool.uv.sources]
-pytack = { workspace = true }
+pkgdx = { workspace = true }

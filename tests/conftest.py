@@ -7,7 +7,7 @@ from unittest import mock
 
 import pytest
 
-from pytack.logging import configure_cli_logging
+from pkgdx.logging import configure_cli_logging
 
 
 @pytest.fixture
@@ -17,7 +17,7 @@ def configured_logging() -> Iterator[None]:
     try:
         yield
     finally:
-        logger = logging.getLogger("pytack")
+        logger = logging.getLogger("pkgdx")
         for handler in logger.handlers[:]:
             logger.removeHandler(handler)
 
@@ -50,12 +50,10 @@ def isolated_venv_axi_cache(
 ) -> pathlib.Path:
     """Isolates the `venv-axi` `SymbolStore` cache dir to `tmp_path`.
 
-    Prevents tests from reading/writing the real `~/.pytack/venv-axi/`
+    Prevents tests from reading/writing the real `~/.pkgdx/venv-axi/`
     cache directory.
     """
-    monkeypatch.setattr(
-        "pytack.venvaxi._cache.get_cache_dir", lambda: tmp_path
-    )
+    monkeypatch.setattr("pkgdx.venvaxi._cache.get_cache_dir", lambda: tmp_path)
     return tmp_path
 
 
