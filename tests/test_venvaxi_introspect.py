@@ -1,6 +1,7 @@
 """Unit tests for `pytack.venvaxi._introspect`."""
 
 import importlib
+import logging
 import sys
 import types
 from collections.abc import Iterator
@@ -59,39 +60,32 @@ def fake_package(
     isolated_venv_axi_cache: Path, tmp_path_factory: pytest.TempPathFactory
 ) -> Iterator[str]:
     """Registers a real on-disk package with a submodule and a subclass."""
-    src_dir = tmp_path_factory.mktemp("venvaxi_fixture_pkg_src")
-    package_dir = src_dir / "venvaxi_fixture_pkg"
-    package_dir.mkdir()
-    (package_dir / "__init__.py").write_text(
-        '"""Fixture package."""\n\n'
-        "class Animal:\n"
-        '    """An animal."""\n\n'
-        "    def speak(self) -> str:\n"
-        '        """Makes a sound."""\n'
-        '        return "..."\n\n\n'
-        "class Dog(Animal):\n"
-        '    """A dog."""\n\n'
-        "    def speak(self) -> str:\n"
-        '        """Barks."""\n'
-        '        return "Woof!"\n'
-    )
-    (package_dir / "sub.py").write_text(
-        '"""A submodule."""\n\n\n'
-        "def util() -> str:\n"
-        '    """A utility function."""\n'
-        '    return "util"\n'
-    )
-    (package_dir / "broken.py").write_text(
-        '"""A submodule that fails to import."""\n\n'
-        'raise RuntimeError("Error")\n'
-    )
-    sys.path.insert(0, str(src_dir))
+    from tests.resources import package
+
+    src_test = tmp_path_factory.mktemp("src_test")
+    package_test = src_test / "package"
+    package_test.mkdir()
+
+    init = Path(package.__file__)
+
+    init_test = package_test / init.name
+    init_test.write_text(init.read_text())
+
+    module = init.parent / "module.py"
+    module_test = package_test / module.name
+    module_test.write_text(module.read_text())
+
+    error = init.parent / "error.py"
+    error_test = package_test / error.name
+    error_test.write_text(error.read_text())
+
+    sys.path.insert(0, str(src_test))
     try:
-        yield "venvaxi_fixture_pkg"
+        yield "package"
     finally:
-        sys.path.remove(str(src_dir))
+        sys.path.remove(str(src_test))
         for name in list(sys.modules):
-            if name.startswith("venvaxi_fixture_pkg"):
+            if name.startswith("package"):
                 del sys.modules[name]
 
 
@@ -186,7 +180,7 @@ def test_show_module_returns_node_and_children(fake_package: str) -> None:
     node, children = show_module(fake_package)
     assert node.kind is NodeKind.PACKAGE
     names = [child.name for child in children]
-    assert names == ["Animal", "Dog", "sub"]
+    assert names == ["Animal", "Dog", "module"]
 
 
 def test_show_module_raises_for_unknown_symbol(fake_package: str) -> None:
@@ -232,7 +226,7 @@ def test_get_module_tree_walks_submodules(fake_package: str) -> None:
     pairs = get_module_tree(fake_package)
     depths_and_names = [(depth, node.name) for depth, node in pairs]
     assert (0, fake_package) in depths_and_names
-    assert (1, "sub") in depths_and_names
+    assert (1, "module") in depths_and_names
 
 
 def test_find_symbol_searches_cached_symbols(fake_package: str) -> None:
@@ -243,13 +237,17 @@ def test_find_symbol_searches_cached_symbols(fake_package: str) -> None:
     assert "Dog" in names
 
 
-def test_walk_submodules_skips_import_failure(fake_package: str) -> None:
+def test_walk_submodules_skips_import_failure(
+    fake_package: str, caplog: pytest.LogCaptureFixture
+) -> None:
     """A submodule that raises on import is logged and skipped, and the
     walk continues over the remaining submodules."""
-    _, children = show_module(fake_package)
+    with caplog.at_level(logging.WARNING, logger="pytack.venvaxi"):
+        _, children = show_module(fake_package)
     names = [child.name for child in children]
-    assert "sub" in names
-    assert "broken" not in names
+    assert "module" in names
+    assert "error" not in names
+    assert "Skipping submodule" in caplog.text
 
 
 def test_walk_module_visited_set_prevents_revisit(
@@ -264,10 +262,10 @@ def test_walk_module_visited_set_prevents_revisit(
             package_root=fake_package,
             depth=0,
             max_depth=2,
-            visited={f"{fake_package}.sub"},
+            visited={f"{fake_package}.module"},
             store=store,
             package=fake_package,
             version="1.0.0",
         )
         children = store.get_children(fake_package)
-    assert "sub" not in [child.name for child in children]
+    assert "module" not in [child.name for child in children]

@@ -1,7 +1,7 @@
 """Unit tests for `pytack.venvaxi._toon`."""
 
 import math
-from pathlib import Path
+from pathlib import PurePosixPath, PureWindowsPath
 
 import pytest
 
@@ -40,8 +40,10 @@ def test_encode_primitive_non_finite_float_is_null() -> None:
 
 
 def test_encode_primitive_path_encodes_as_string() -> None:
-    """A `Path` value encodes as its plain string form."""
-    assert encode_primitive(Path("a/b/c")) == "a/b/c"
+    """A `PurePath` value encodes as its platform string form, with
+    backslash separators quoted and escaped like any other string."""
+    assert encode_primitive(PurePosixPath("a/b/c")) == "a/b/c"
+    assert encode_primitive(PureWindowsPath("a/b/c")) == '"a\\\\b\\\\c"'
 
 
 def test_encode_primitive_plain_string() -> None:

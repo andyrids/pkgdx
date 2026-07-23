@@ -84,7 +84,7 @@ log_cli_level = "INFO"
 tmp_path_retention_policy = "failed"
 
 [tool.coverage.run]
-omit = ["*/venvaxi_fixture_pkg_src*/*"]
+omit = ["tests/*", "*/src_test*/*"]
 
 [tool.uv.workspace]
 members = [

@@ -75,9 +75,8 @@ def get_config_revision() -> str:
             revision: str | None = repo.get("rev", None)
             if revision:
                 return revision
-            else:
-                msg = "Missing `rev` key in Prek config"
-                raise PrekRepoRevisionError(msg)
+            msg = "Missing `rev` key in Prek config"
+            raise PrekRepoRevisionError(msg)
     msg = "`pytack` metadata URL missing/mismatch for Prek config"
     raise PrekRepoRevisionError(msg)
 

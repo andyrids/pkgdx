@@ -1,8 +1,13 @@
 """Unit tests for `pytack.venvaxi._store`."""
 
+import sqlite3
+from dataclasses import replace
 from pathlib import Path
 
+import pytest
+
 from pytack.venvaxi._store import (
+    SCHEMA_VERSION,
     EdgeKind,
     NodeKind,
     SymbolEdge,
@@ -186,3 +191,88 @@ def test_as_row_contains_all_fields() -> None:
     assert row["qualified_name"] == "pkg::Foo"
     assert row["kind"] == "class"
     assert row["name"] == "Foo"
+
+
+def test_upserts_discarded_without_flush(tmp_path: Path) -> None:
+    """Upserts left pending at close are not persisted."""
+    db_path = tmp_path / "store.db"
+    with SymbolStore(db_path) as store:
+        store.upsert_node(_node("pkg", NodeKind.PACKAGE, "pkg"))
+    with SymbolStore(db_path) as store:
+        assert store.get_node("pkg") is None
+
+
+def test_flush_persists_upserts(tmp_path: Path) -> None:
+    """`flush` commits pending upserts so they survive a reopen."""
+    db_path = tmp_path / "store.db"
+    with SymbolStore(db_path) as store:
+        store.upsert_node(_node("pkg", NodeKind.PACKAGE, "pkg"))
+        store.upsert_edge(
+            SymbolEdge(src="pkg", dst="pkg::Foo", kind=EdgeKind.CONTAINS)
+        )
+        store.flush()
+    with SymbolStore(db_path) as store:
+        assert store.get_node("pkg") is not None
+
+
+def test_rollback_discards_pending_upserts(tmp_path: Path) -> None:
+    """`rollback` discards pending upserts on the open connection."""
+    with SymbolStore(tmp_path / "store.db") as store:
+        store.upsert_node(_node("pkg", NodeKind.PACKAGE, "pkg"))
+        store.rollback()
+        assert store.get_node("pkg") is None
+
+
+def test_fts_index_tracks_upsert_update_and_clear(tmp_path: Path) -> None:
+    """The trigger-maintained FTS index follows the `nodes` lifecycle."""
+    with SymbolStore(tmp_path / "store.db") as store:
+        node = SymbolNode(
+            qualified_name="pkg::Dog",
+            kind=NodeKind.CLASS,
+            name="Dog",
+            module="pkg",
+            signature="",
+            doc="barks loudly",
+            package="pkg",
+            version="1.0.0",
+        )
+        store.upsert_node(node)
+        assert [n.name for n in store.search_symbols("barks")] == ["Dog"]
+
+        # Re-upserting must replace the indexed doc, not duplicate it
+        store.upsert_node(replace(node, doc="meows quietly"))
+        assert store.search_symbols("barks") == []
+        assert [n.name for n in store.search_symbols("meows")] == ["Dog"]
+
+        store.clear_package("pkg")
+        assert store.search_symbols("meows") == []
+
+
+def test_schema_version_mismatch_rebuilds_tables(tmp_path: Path) -> None:
+    """A `user_version` mismatch drops and recreates the schema."""
+    db_path = tmp_path / "store.db"
+    with SymbolStore(db_path) as store:
+        store.upsert_node(_node("pkg", NodeKind.PACKAGE, "pkg"))
+        store.flush()
+
+    connection = sqlite3.connect(db_path)
+    connection.execute("PRAGMA user_version = 999")
+    connection.commit()
+    connection.close()
+
+    with SymbolStore(db_path) as store:
+        assert store.get_node("pkg") is None
+        (version,) = store._connection.execute(
+            "PRAGMA user_version"
+        ).fetchone()
+        assert version == SCHEMA_VERSION
+
+
+def test_corrupt_database_raises_and_releases_file(tmp_path: Path) -> None:
+    """A corrupt database file raises `sqlite3.DatabaseError` and the
+    connection is closed (the file is deletable afterwards on Windows)."""
+    db_path = tmp_path / "store.db"
+    db_path.write_bytes(b"this is not a sqlite database, honest")
+    with pytest.raises(sqlite3.DatabaseError):
+        SymbolStore(db_path)
+    db_path.unlink()

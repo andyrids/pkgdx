@@ -154,7 +154,7 @@ def _create_repo_table(
     new_repo["hooks"] = tomlkit.aot()
     doc["repos"].append(new_repo)
 
-    logger.debug(f"Created `[repo]` - {name=} | {revision=}")
+    logger.debug("Created `[repo]` - %s | %s", name, revision)
     return new_repo
 
 
@@ -198,7 +198,7 @@ def _inject_missing_hooks(
 
     for expected in expected_hooks:
         if expected["id"] not in existing_id_set:
-            logger.debug(f"Detected missing hook `{expected['id']=}`")
+            logger.debug("Detected missing hook `%s`", expected["id"])
             hook_table = tomlkit.table()
             for key, value in expected.items():
                 if isinstance(value, list):

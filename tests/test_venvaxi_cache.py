@@ -190,3 +190,56 @@ def test_get_or_build_store_wraps_database_error(
         assert _cache.is_cache_valid(store, fake_module.__name__, "1.0.0")
     finally:
         store.close()
+
+
+def test_get_or_build_store_non_database_error_not_poisoning(
+    tmp_path: Path, fake_module: types.ModuleType
+) -> None:
+    """Non-database errors during a walk do not poison the cache.
+
+    A non-database failure mid-walk:
+
+    1. Propagates unwrapped
+    2. Closes the store
+    3. Leaves the cache invalid (forces rebuild)
+    """
+    root = tmp_path / "project"
+    with (
+        mock.patch(f"{CACHE}._installed_version", return_value="1.0.0"),
+        mock.patch(
+            "pytack.venvaxi._introspect._walk_module",
+            side_effect=TypeError("boom"),
+        ),
+        mock.patch.object(SymbolStore, "close", autospec=True) as close_mock,
+        pytest.raises(TypeError),
+    ):
+        _cache.get_or_build_store(root, fake_module.__name__)
+    close_mock.assert_called_once()
+
+    # On partial build (PACKAGE node) rollback, MUST rebuild
+    with mock.patch(f"{CACHE}._installed_version", return_value="1.0.0"):
+        store = _cache.get_or_build_store(root, fake_module.__name__)
+    try:
+        assert _cache.is_cache_valid(store, fake_module.__name__, "1.0.0")
+        children = store.get_children(fake_module.__name__)
+        assert [child.name for child in children] == ["util"]
+    finally:
+        store.close()
+
+
+def test_get_or_build_store_import_failure_closes_store(
+    tmp_path: Path, isolated_venv_axi_cache: Path
+) -> None:
+    """Failed import of a module closes the store.
+
+    A package that fails to import propagates the error and does not
+    leak the store connection.
+    """
+    root = tmp_path / "project"
+    with (
+        mock.patch(f"{CACHE}._installed_version", return_value=""),
+        mock.patch.object(SymbolStore, "close", autospec=True) as close_mock,
+        pytest.raises(ModuleNotFoundError),
+    ):
+        _cache.get_or_build_store(root, "definitely_not_a_real_module")
+    close_mock.assert_called_once()
