@@ -13,3 +13,15 @@ secrets-baseline:
 setup: && secrets-baseline
     uv sync
     uv run -m prek install
+
+[doc("Test `pytack` setup in workspace member")]
+[group("DEV")]
+test *FLAGS:
+    uv run --directory consumers/testing pytack setup {{FLAGS}}
+
+[doc("Create `coverage` report")]
+[group("DEV")]
+coverage *FLAGS:
+    @uv run coverage run -m pytest {{FLAGS}}
+    @uv run coverage report
+    @uv run coverage xml

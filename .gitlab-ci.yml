@@ -1,22 +1,23 @@
 variables:
-  DS_STATIC_REACHABILITY_ENABLED: true
   UV_CACHE_DIR: .uv-cache
   UV_LINK_MODE: copy
-  UV_VERSION: "0.11.19"
-
-# Include the GitLab managed templates
-include:
-  - template: Security/Container-Scanning.gitlab-ci.yml
-  - template: Jobs/Dependency-Scanning.v2.gitlab-ci.yml
-    inputs:
-      enable_static_reachability: true
-      stage: Scan
+  # UV_PUBLISH_INDEX: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/pypi"
+  UV_PUBLISH_URL: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/pypi"
+  UV_PUBLISH_PASSWORD: "$CI_JOB_TOKEN"
+  UV_PUBLISH_USERNAME: gitlab-ci-token
+  UV_VERSION: 0.11.26-trixie
+  GIT_DEPTH: 0
 
 stages:
   - Lint
   - Test
   - Build
   - Scan
+  - Publish
+
+# ---------------------------------------------------------
+# Workflow Customisation
+# ---------------------------------------------------------
 
 workflow:
   name: "$CI_COMMIT_TIMESTAMP $CI_PIPELINE_SOURCE $CI_COMMIT_REF_NAME"
@@ -27,35 +28,11 @@ workflow:
 # Job Rules & Anchors
 # ---------------------------------------------------------
 
-.protected-mr-rules: &protected-mr-rules
+.protected-branch-rules: &protected-branch-rules
   rules:
-    # Runs for any merge request targeting a protected branch.
-    # Excludes MRs to non-protected branches and direct pushes.
+    # MR/push -> protected branch
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_PROTECTED == "true"'
-
-.image-job-rules: &image-job-rules
-  rules:
-    # 1 & 2: MR from develop to main. 
-    # NOTE: In GitLab, pushing a commit to 'develop' while this MR is active 
-    # automatically triggers a new pipeline matching this exact rule.
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == "develop" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
-      variables:
-        CS_IMAGE: "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
-    
-    # 3: When develop is merged into main (Direct push/merge commit to main)
-    - if: '$CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"'
-      variables:
-        CS_IMAGE: "$CI_REGISTRY_IMAGE:latest"
-    
-    # 4: When there is a tag
-    - if: '$CI_COMMIT_TAG'
-
-.image-tag: &image-tag
-  before_script:
-    - |
-      if [ -n "$CI_COMMIT_TAG" ]; then
-        export CS_IMAGE="$CI_REGISTRY_IMAGE:${CI_COMMIT_TAG#v}"
-      fi
+    - if: '$CI_COMMIT_REF_PROTECTED == "true" && $CI_PIPELINE_SOURCE == "push"'
 
 # ---------------------------------------------------------
 # Job Definitions
@@ -64,7 +41,7 @@ workflow:
 .astral-uv:
   image:
     name: ghcr.io/astral-sh/uv:$UV_VERSION
-    entrypoint: [""]
+    # entrypoint: [""]
   cache:
   - key:
       files:
@@ -72,7 +49,13 @@ workflow:
     paths:
       - $UV_CACHE_DIR
   before_script:
+    - |
+      if [ -n "$CI_COMMIT_TAG" ]; then
+        export SETUPTOOLS_SCM_PRETEND_VERSION_FOR_pytack="${CI_COMMIT_TAG#v}"
+      fi
+    - git fetch --tags origin || true
     - uv sync
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.com/".insteadOf "https://gitlab.com/"
   after_script:
     - if [ "$CI_JOB_STATUS" == "canceled" ]; then exit 0; fi
     - uv cache prune --ci
@@ -81,18 +64,20 @@ ruff-lint-job:
   extends: .astral-uv
   stage: Lint
   interruptible: true
-  <<: *protected-mr-rules
+  <<: *protected-branch-rules
   script:
-    - uv run ruff check .
-    - uv run ruff format --check .
+    - uv run pytack-lint-hook
+    - uv run pytack-format-hook
 
 pytest-job:
   extends: .astral-uv
   stage: Test
   interruptible: true
-  <<: *protected-mr-rules
+  <<: *protected-branch-rules
   script:
-    - uv run pytest --cov --cov-report term --cov-report xml:coverage.xml
+    - uv run coverage run -m pytest
+    - uv run coverage report
+    - uv run coverage xml
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     reports:
@@ -100,21 +85,29 @@ pytest-job:
         coverage_format: cobertura
         path: coverage.xml
 
-build-image-job:
-  extends: .image-tag
+build-package-job:
+  extends: .astral-uv
   stage: Build
   interruptible: true
-  <<: *image-job-rules
+  rules:
+    - if: "$CI_COMMIT_TAG"
   script:
-    - echo "Executing multi-stage container build..."
-    - make build-image
+    - uv build --out-dir dist --package pytack --verbose
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 day
 
-# Override the default rules of the included container_scanning job
-container_scanning:
-  extends: .image-tag
-  stage: Scan
-  needs: ["build-image-job"]
-  interruptible: false
-  <<: *image-job-rules
-  variables:
-    CS_DEFAULT_BRANCH_IMAGE: "$CI_REGISTRY_IMAGE:latest"
+publish-package-job:
+  extends: .astral-uv
+  stage: Publish
+  interruptible: true
+  needs:
+    - job: build-package-job
+      artifacts: true
+  rules:
+    - if: "$CI_COMMIT_TAG"
+  # Skip .astral-uv `before_script`
+  before_script: []
+  script:
+    - uv publish dist/*

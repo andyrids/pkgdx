@@ -1,0 +1,58 @@
+version = 1
+incremental = false
+disable_existing_loggers = false
+
+[formatters.standard]
+format = "%(levelname)s: %(message)s"
+datefmt = "%Y-%m-%dT%H:%M:%S%z"
+
+[formatters.verbose]
+format = "[%(levelname)s|%(module)s|L%(lineno)d] %(asctime)s: %(message)s"
+datefmt = "%Y-%m-%dT%H:%M:%S%z"
+
+[formatters.rich]
+format = "%(message)s"
+datefmt = "[%Y-%m-%dT%H:%M:%S%z]"
+
+[formatters.rich-verbose]
+format = "[%(funcName)s] %(message)s"
+datefmt = "[%Y-%m-%dT%H:%M:%S%z]"
+
+[filters]
+# Kept empty to match the expected dictionary structure
+
+[handlers.stdout]
+class = "rich.logging.RichHandler"
+formatter = "rich"
+show_path = false
+rich_tracebacks = true
+markup = true
+omit_repeated_times = true
+
+[handlers.stdout-verbose]
+class = "rich.logging.RichHandler"
+formatter = "rich-verbose"
+show_path = true
+rich_tracebacks = true
+markup = false
+omit_repeated_times = false
+
+[handlers.stderr]
+class = "logging.StreamHandler"
+level = "WARNING"
+formatter = "standard"
+stream = "ext://sys.stderr"
+
+[loggers.pytack]
+level = "WARNING"
+handlers = ["stdout-verbose"]
+propagate = true
+
+[loggers."pytack.venvaxi"]
+level = "WARNING"
+handlers = ["stderr"]
+propagate = false
+
+# [root]
+# level = "WARNING"
+# handlers = []
