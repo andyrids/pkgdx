@@ -1,12 +1,14 @@
-"""Project-scoped, version-keyed on-disk cache for `venv-axi`'s store.
+"""Agent eXperience Interface (AXI) on-disk cache for projects.
 
-Cache invalidation is version-hash based (compare the stored `PACKAGE`
-node's version against the currently installed distribution version) -
-NOT file-hash/incremental-parse based, since `venv-axi` never parses the
-consuming repo's own source files, only already-installed package
-metadata.
+Cache invalidation is version-hash based - compare the stored `PACKAGE`
+node version against the currently installed distribution version - NOT
+file-hash|incremental-parse based.
+
+NOTE: This is because the AXI only parses the installed packages in the
+consuming environment.
 """
 
+import contextlib
 import hashlib
 import importlib
 import inspect
@@ -23,7 +25,7 @@ logger = logging.getLogger(__package__)
 
 
 def get_cache_dir() -> Path:
-    """Returns (creating if needed) the `venv-axi` cache directory.
+    """Return (create if needed) the AXI cache directory.
 
     Returns:
         `~/.pytack/venv-axi/`.
@@ -34,7 +36,7 @@ def get_cache_dir() -> Path:
 
 
 def _project_hash(root: Path) -> str:
-    """Computes a short, stable hash for a project root path.
+    """Compute a short, stable hash for a project root path.
 
     Args:
         root: The project root directory.
@@ -46,7 +48,7 @@ def _project_hash(root: Path) -> str:
 
 
 def get_cache_db_path(root: Path) -> Path:
-    """Returns the cache database path for a given project root.
+    """Return the cache database path for a given project root.
 
     Args:
         root: The project root directory.
@@ -58,7 +60,7 @@ def get_cache_db_path(root: Path) -> Path:
 
 
 def _installed_version(package_name: str) -> str:
-    """Resolves an installed distribution's version, if any.
+    """Resolve an installed distribution version.
 
     Args:
         package_name: The import (or distribution) name to resolve.
@@ -76,7 +78,7 @@ def _installed_version(package_name: str) -> str:
 def is_cache_valid(
     store: SymbolStore, package: str, installed_version: str
 ) -> bool:
-    """Checks whether a package's cached symbols are still current.
+    """Check package symbol cache currency.
 
     Args:
         store: The `SymbolStore` to check.
@@ -91,6 +93,14 @@ def is_cache_valid(
     return node is not None and node.version == installed_version
 
 
+def _discard_store(store: SymbolStore) -> None:
+    """Rolls back pending writes and closes a store after a failed build."""
+    with contextlib.suppress(sqlite3.Error):
+        store.rollback()
+    with contextlib.suppress(sqlite3.Error):
+        store.close()
+
+
 def get_or_build_store(
     root: Path,
     package_name: str,
@@ -98,15 +108,13 @@ def get_or_build_store(
     max_depth: int = _introspect.DEFAULT_MAX_DEPTH,
     force_refresh: bool = False,
 ) -> SymbolStore:
-    """Fetches (rebuilding if stale) a project's cached `SymbolStore`.
+    """Fetch (rebuild if stale) a cached project `SymbolStore`.
 
     Args:
         root: The consuming project's root directory.
         package_name: The import name of the package to introspect.
-        max_depth: The maximum submodule recursion depth. Defaults to
-            `_introspect.DEFAULT_MAX_DEPTH`.
+        max_depth: The maximum submodule recursion depth.
         force_refresh: Rebuild even if the cache is still valid.
-            Defaults to False.
 
     Returns:
         A `SymbolStore` open on the project's cache database, populated
@@ -120,9 +128,10 @@ def get_or_build_store(
     ):
         return store
 
-    module = importlib.import_module(package_name)
-    store.clear_package(package_name)
     try:
+        module = importlib.import_module(package_name)
+        # NOTE: `clear_package` ensures rebuild on failed introspection
+        store.clear_package(package_name)
         store.upsert_node(
             SymbolNode(
                 qualified_name=package_name,
@@ -145,8 +154,12 @@ def get_or_build_store(
             package=package_name,
             version=installed_version,
         )
+        store.flush()
     except sqlite3.DatabaseError as err:
-        store.clear_package(package_name)
+        _discard_store(store)
         msg = f"Failed to build symbol store for {package_name!r}"
         raise exceptions.StoreError(msg) from err
+    except Exception:
+        _discard_store(store)
+        raise
     return store

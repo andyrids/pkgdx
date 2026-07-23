@@ -27,6 +27,8 @@ from types import TracebackType
 
 logger = logging.getLogger(__package__)
 
+SCHEMA_VERSION = 1
+
 
 class NodeKind(StrEnum):
     """The kind of a `SymbolNode`."""
@@ -63,7 +65,7 @@ class SymbolNode:
     version: str
 
     def as_row(self) -> dict[str, str]:
-        """Converts this node to a flat, string-valued TOON row.
+        """Convert this node to a flat, string-valued TOON row.
 
         Returns:
             A dict keyed by every `SymbolNode` field, suitable for
@@ -91,7 +93,7 @@ class SymbolEdge:
 
 
 def qualify(module: str, *parts: str) -> str:
-    """Builds a qualified symbol name.
+    """Build a qualified symbol name.
 
     Args:
         module: The owning module's dotted name.
@@ -109,15 +111,15 @@ def qualify(module: str, *parts: str) -> str:
 
 @lru_cache(maxsize=None)
 def _read_sql(filename: str) -> str:
-    """Loads & caches SQL queries to prevent disk I/O on every execution."""
+    """Load & cache SQL queries to prevent disk I/O on every execution."""
     return (resources.files(__package__) / filename).read_text("UTF-8")
 
 
 class SymbolStore:
-    """A SQLite-backed store for a project's introspected symbol graph."""
+    """A SQLite-backed store for an introspected symbol graph."""
 
     def __init__(self, db_path: Path) -> None:
-        """Opens (creating if needed) the symbol store database.
+        """Open (or create) the symbol store database.
 
         Args:
             db_path: The path to the SQLite database file.
@@ -125,10 +127,14 @@ class SymbolStore:
         self._connection = sqlite3.connect(db_path)
         self._connection.row_factory = sqlite3.Row
         self._fts_enabled = True
-        self._ensure_schema()
+        try:
+            self._ensure_schema()
+        except BaseException:
+            self._connection.close()
+            raise
 
     def __enter__(self) -> "SymbolStore":
-        """Returns `self` for use as a context manager."""
+        """Return `self` for use as a context manager."""
         return self
 
     def __exit__(
@@ -137,15 +143,35 @@ class SymbolStore:
         exc_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
-        """Closes the underlying database connection."""
+        """Close the underlying database connection."""
         self.close()
 
     def close(self) -> None:
-        """Closes the underlying database connection."""
+        """Close the underlying database connection."""
         self._connection.close()
 
+    def flush(self) -> None:
+        """Commit any pending writes to disk."""
+        self._connection.commit()
+
+    def rollback(self) -> None:
+        """Discard any pending (uncommitted) writes."""
+        self._connection.rollback()
+
     def _ensure_schema(self) -> None:
-        """Creates the `nodes`/`edges` tables and FTS5 index if missing."""
+        """Create the `nodes`|`edges` tables and FTS5 index if missing.
+
+        On a `user_version` mismatch the existing tables are dropped and
+        rebuilt - cache databases are disposable, so no migrations. Stale
+        package data simply rebuilds via `_cache.is_cache_valid()`.
+        """
+        (version,) = self._connection.execute("PRAGMA user_version").fetchone()
+        if version != SCHEMA_VERSION:
+            self._connection.executescript(
+                "DROP TABLE IF EXISTS symbols_fts;"
+                "DROP TABLE IF EXISTS nodes;"
+                "DROP TABLE IF EXISTS edges;"
+            )
 
         self._connection.executescript(_read_sql("schema.sql"))
 
@@ -154,10 +180,16 @@ class SymbolStore:
         except sqlite3.OperationalError:
             logger.debug("FTS5 unavailable, falling back to LIKE search")
             self._fts_enabled = False
+        if version != SCHEMA_VERSION:
+            self._connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
         self._connection.commit()
 
     def upsert_node(self, node: SymbolNode) -> None:
-        """Inserts or updates a symbol node.
+        """Insert or update a symbol node.
+
+        NOTE: Writes stay pending until `flush()` - callers batching many
+        upserts (e.g. an introspection walk) commit once at the end. The
+        FTS5 index is kept in sync by `schema_fts5.sql` triggers.
 
         Args:
             node: The `SymbolNode` to persist.
@@ -175,20 +207,11 @@ class SymbolStore:
                 node.version,
             ),
         )
-        if self._fts_enabled:
-            self._connection.execute(
-                "DELETE FROM symbols_fts WHERE qualified_name = ?",
-                (node.qualified_name,),
-            )
-            self._connection.execute(
-                "INSERT INTO symbols_fts (qualified_name, name, doc)"
-                " VALUES (?, ?, ?)",
-                (node.qualified_name, node.name, node.doc),
-            )
-        self._connection.commit()
 
     def upsert_edge(self, edge: SymbolEdge) -> None:
-        """Inserts an edge, ignoring it if already present.
+        """Insert an edge, ignoring if already present.
+
+        NOTE: Writes stay pending until `flush()` - see `upsert_node`.
 
         Args:
             edge: The `SymbolEdge` to persist.
@@ -197,10 +220,9 @@ class SymbolStore:
             _read_sql("upsert_edge.sql"),
             (edge.src, edge.dst, str(edge.kind)),
         )
-        self._connection.commit()
 
     def _row_to_node(self, row: sqlite3.Row) -> SymbolNode:
-        """Maps a raw `nodes` row to a typed `SymbolNode`.
+        """Map a raw `nodes` row to a typed `SymbolNode`.
 
         Args:
             row: A raw `sqlite3.Row` from the `nodes` table.
@@ -220,7 +242,7 @@ class SymbolStore:
         )
 
     def get_node(self, qualified_name: str) -> SymbolNode | None:
-        """Fetches a single node by qualified name.
+        """Fetch a single node by qualified name.
 
         Args:
             qualified_name: The node's qualified name.
@@ -235,7 +257,7 @@ class SymbolStore:
         return self._row_to_node(row) if row else None
 
     def get_children(self, qualified_name: str) -> list[SymbolNode]:
-        """Fetches direct `CONTAINS` children of a node.
+        """Fetch direct `CONTAINS` children of a node.
 
         Args:
             qualified_name: The parent node's qualified name.
@@ -250,7 +272,7 @@ class SymbolStore:
         return [self._row_to_node(row) for row in cursor.fetchall()]
 
     def get_inheritors(self, qualified_name: str) -> list[SymbolNode]:
-        """Fetches classes that directly inherit from a node.
+        """Fetch classes that directly inherit from a node.
 
         Args:
             qualified_name: The base class's qualified name.
@@ -271,7 +293,7 @@ class SymbolStore:
         max_depth: int,
         result: list[tuple[int, SymbolNode]],
     ) -> None:
-        """Recursively appends `MODULE`/`PACKAGE` descendants to `result`.
+        """Append `MODULE`/`PACKAGE` descendants to `result` (recursive).
 
         Args:
             qualified_name: The current node's qualified name.
@@ -292,7 +314,7 @@ class SymbolStore:
     def get_module_tree(
         self, module_name: str, max_depth: int = 2
     ) -> list[tuple[int, SymbolNode]]:
-        """Walks the `CONTAINS` module/package hierarchy depth-first.
+        """Walk the `CONTAINS` module/package hierarchy depth-first.
 
         Args:
             module_name: The root module's qualified (bare) name.
@@ -311,7 +333,7 @@ class SymbolStore:
         return result
 
     def search_symbols(self, query: str, limit: int = 20) -> list[SymbolNode]:
-        """Searches symbols by name|docstring via FTS5 with a `LIKE` fallback.
+        """Search symbols by name|docstring via FTS5 with a `LIKE` fallback.
 
         Args:
             query: The free-text search query.
@@ -331,15 +353,15 @@ class SymbolStore:
             except sqlite3.OperationalError:
                 logger.debug("FTS5 query failed (`%s`), using LIKE", query)
 
-        LIKE = f"%{query}%"
+        like_pattern = f"%{query}%"
         cursor = self._connection.execute(
             _read_sql("search_like.sql"),
-            (LIKE, LIKE, limit),
+            (like_pattern, like_pattern, limit),
         )
         return [self._row_to_node(row) for row in cursor.fetchall()]
 
     def clear_package(self, package: str) -> None:
-        """Deletes all nodes|edges belonging to a package.
+        """Delete all nodes|edges belonging to a package.
 
         NOTE: Avoids Python-to-C context switching and N+1 query problem with
         sub-queries.
@@ -347,15 +369,7 @@ class SymbolStore:
         Args:
             package: The package (distribution|import) name to clear.
         """
-        # Clear the FTS Index (if enabled)
-        if self._fts_enabled:
-            self._connection.execute(
-                "DELETE FROM symbols_fts WHERE qualified_name IN "
-                "(SELECT qualified_name FROM nodes WHERE package = ?)",
-                (package,),
-            )
-
-        # Clear the Edges
+        # Clear the Edges (FTS5 index cleared via `nodes` delete trigger)
         self._connection.execute(
             "DELETE FROM edges WHERE "
             "src IN (SELECT qualified_name FROM nodes WHERE package = ?) OR "

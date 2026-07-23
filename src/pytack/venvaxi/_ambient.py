@@ -14,6 +14,7 @@ has no adverse effect.
 
 import json
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -41,8 +42,23 @@ Agent-ergonomic venv package & API information is available via
   and `.mcp.json` and keep this block up to date."""
 
 
+def _atomic_write_text(path: Path, text: str) -> None:
+    """Atomically writes text via a same-directory temp file + rename.
+
+    NOTE: An interrupted write leaves `path` untouched (the `.tmp` file
+    is simply overwritten on the next run).
+
+    Args:
+        path: The destination file path.
+        text: The full file content to write.
+    """
+    tmp_path = path.with_suffix(f"{path.suffix}.tmp")
+    tmp_path.write_text(text, encoding="utf-8")
+    os.replace(tmp_path, path)
+
+
 def _venv_axi_command() -> str:
-    """Resolves the absolute path to the running `venv-axi` executable.
+    """Resolve absolute path of the AXI executable.
 
     Returns:
         The absolute path of the invoked `venv-axi`/`pytack-venv-axi`
@@ -52,7 +68,7 @@ def _venv_axi_command() -> str:
 
 
 def inject_agents_md(root: Path) -> bool:
-    """Idempotently injects the ambient-context block into `AGENTS.md`.
+    """Inject ambient-context block into `AGENTS.md` (idempotent).
 
     Args:
         root: The consuming repo's root path.
@@ -64,7 +80,7 @@ def inject_agents_md(root: Path) -> bool:
     block = f"{_BEGIN}\n{_BLOCK_BODY}\n{_END}"
 
     if not path.exists():
-        path.write_text(f"{block}\n", encoding="utf-8")
+        _atomic_write_text(path, f"{block}\n")
         logger.debug("Created `AGENTS.md` with venv-axi block")
         return True
 
@@ -76,18 +92,18 @@ def inject_agents_md(root: Path) -> bool:
         if updated == text:
             logger.debug("`AGENTS.md` venv-axi block is up-to-date")
             return False
-        path.write_text(updated, encoding="utf-8")
+        _atomic_write_text(path, updated)
         logger.debug("Updated `AGENTS.md` venv-axi block")
         return True
 
     separator = "\n\n" if text and not text.endswith("\n\n") else ""
-    path.write_text(f"{text}{separator}{block}\n", encoding="utf-8")
+    _atomic_write_text(path, f"{text}{separator}{block}\n")
     logger.debug("Appended venv-axi block to `AGENTS.md`")
     return True
 
 
 def _update_mcp_json(path: Path, servers_key: str) -> bool:
-    """Idempotently registers the venv-axi server in an MCP config file.
+    """Register AXI MCP server in a config file (idempotent).
 
     Args:
         path: The MCP config JSON file path.
@@ -117,19 +133,19 @@ def _update_mcp_json(path: Path, servers_key: str) -> bool:
 
     servers["venv-axi"] = entry
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    _atomic_write_text(path, json.dumps(data, indent=2) + "\n")
     return True
 
 
 def setup_ambient_context(root: Path) -> dict[str, bool]:
-    """Installs `venv-axi` ambient context into the consuming repo.
+    """Install AXI ambient context into the consuming repo.
 
     Args:
-        root: The consuming repo's root path.
+        root: The consuming repo root path.
 
     Returns:
         A mapping of which artifacts were created or modified:
-        `agents_md`, `vscode_mcp` and `repo_mcp`.
+        `AGENTS.md`, `.vscode` and `.mcp.json`.
     """
     return {
         "AGENTS.md": inject_agents_md(root),

@@ -279,8 +279,14 @@ def _walk_submodules(
             continue
         try:
             submodule = importlib.import_module(subname)
-        except Exception:
-            logger.debug("Skipping submodule `%s` (import failed)", subname)
+        except Exception as err:
+            # NOTE: Broad on purpose - importing third-party submodules
+            # runs arbitrary module-level code, which can raise anything
+            # (RuntimeError, OSError, ...); one bad submodule must not
+            # abort the whole walk.
+            logger.warning(
+                "Skipping submodule `%s` (import failed: %s)", subname, err
+            )
             continue
         if not submodule.__name__.startswith(package_root):
             continue
@@ -423,15 +429,12 @@ def show_module(name: str) -> tuple[SymbolNode, list[SymbolNode]]:
     Returns:
         The module's `SymbolNode` and its direct `CONTAINS` children.
     """
-    store = _build_store_for(name)
-    try:
+    with _build_store_for(name) as store:
         node = store.get_node(name)
         if node is None:
             msg = f"Module `{name}` not found"
             raise SymbolNotFoundError(msg)
         return node, store.get_children(name)
-    finally:
-        store.close()
 
 
 def get_symbol(qualified_name: str) -> SymbolNode:
@@ -446,15 +449,12 @@ def get_symbol(qualified_name: str) -> SymbolNode:
     Returns:
         The matching `SymbolNode`.
     """
-    store = _build_store_for(qualified_name)
-    try:
+    with _build_store_for(qualified_name) as store:
         node = store.get_node(qualified_name)
         if node is None:
             msg = f"Symbol `{qualified_name}` not found"
             raise SymbolNotFoundError(msg)
         return node
-    finally:
-        store.close()
 
 
 def get_inheritors(qualified_name: str) -> list[SymbolNode]:
@@ -466,11 +466,8 @@ def get_inheritors(qualified_name: str) -> list[SymbolNode]:
     Returns:
         The inheriting `SymbolNode`s.
     """
-    store = _build_store_for(qualified_name)
-    try:
+    with _build_store_for(qualified_name) as store:
         return store.get_inheritors(qualified_name)
-    finally:
-        store.close()
 
 
 def get_module_tree(
@@ -486,11 +483,8 @@ def get_module_tree(
     Returns:
         `(depth, node)` pairs in depth-first order.
     """
-    store = _build_store_for(name, max_depth=max_depth)
-    try:
+    with _build_store_for(name, max_depth=max_depth) as store:
         return store.get_module_tree(name, max_depth)
-    finally:
-        store.close()
 
 
 def find_symbol(query: str, limit: int = 20) -> list[SymbolNode]:
@@ -512,11 +506,8 @@ def find_symbol(query: str, limit: int = 20) -> list[SymbolNode]:
     from pytack._core import get_project_root
     from pytack.venvaxi._cache import get_cache_db_path
 
-    store = SymbolStore(get_cache_db_path(get_project_root()))
-    try:
+    with SymbolStore(get_cache_db_path(get_project_root())) as store:
         return store.search_symbols(query, limit)
-    finally:
-        store.close()
 
 
 def get_public_api(
@@ -555,11 +546,8 @@ def get_public_api(
         msg = f"Failed to import `{import_name}` (from `{name}`)"
         raise PackageImportError(msg) from err
 
-    store = _build_store_for(name)
-    try:
+    with _build_store_for(name) as store:
         children = store.get_children(import_name)
-    finally:
-        store.close()
 
     symbols: list[SymbolInfo] = []
     for node in children:

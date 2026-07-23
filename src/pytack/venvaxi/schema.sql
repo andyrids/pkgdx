@@ -18,3 +18,6 @@ CREATE TABLE IF NOT EXISTS edges (
     kind TEXT NOT NULL,
     PRIMARY KEY (src, dst, kind)
 );
+
+CREATE INDEX IF NOT EXISTS idx_edges_dst ON edges(dst);
+CREATE INDEX IF NOT EXISTS idx_nodes_package ON nodes(package);
