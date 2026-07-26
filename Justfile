@@ -1,4 +1,8 @@
-set windows-shell := ["cmd.exe", "/c"]
+[unix]
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+[windows]
+set shell := ["cmd.exe", "/c"]
 
 [default]
 @_:
