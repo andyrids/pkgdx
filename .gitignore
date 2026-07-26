@@ -4,6 +4,7 @@ __pycache__/
 
 # uv — virtual environment
 .venv/
+.uv-cache/
 
 # hatchling — build output
 dist/
@@ -33,3 +34,10 @@ htmlcov/
 # Windows — filesystem metadata
 Thumbs.db
 ehthumbs.db
+
+# VSCode - settings
+.vscode/
+
+# ICM
+workspaces/**/output/*
+!workspaces/**/output/.gitkeep

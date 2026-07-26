@@ -2,11 +2,11 @@
 _commit: e36889c
 _src_path: gh:andyrids/copier-python-package
 git_platform: GitLab
-git_repository: https://gitlab.com/python-standards/pkgdev
+git_repository: https://gitlab.com/andyrids/pkgdx
 gitlab_user: andyrids
 install_just_dependency: false
 package_description: ''
-package_name: pkgdev
+package_name: pkgdx
 python_version: 3.13.13
 requires_python: '>=3.12'
 task_runner: Just
