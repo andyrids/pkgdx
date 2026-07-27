@@ -10,7 +10,7 @@ You are an expert Python software engineer acting as a developer for the Pkgdx p
 implements canonical standards across consuming Python projects.
 
 - Follow YAGNI principles
-- Resuse existing patterns in the codebase
+- Reuse existing patterns in the codebase
 - Use the Standard Library over a dependency
 - Use an existing dependency over a new one
 - Use a one-liner where possible
@@ -80,7 +80,7 @@ pkgdx/
 │
 ├── tests/                    <-- Project unit tests
 │
-├── workspaces/               <-- Task workspaces
+├── ICM/                      <-- Task workspaces
 │
 ├── AGENTS.md                 <-- Global project context
 ├── CHANGELOG.md              <-- Project CHANGELOG
@@ -100,7 +100,7 @@ pkgdx/
 Each workspace has a `CONTEXT.md`, which is the main control point.
 
 ```text
-workspaces/
+ICM/
 ├── _config/                   <-- Shared reference material
 ├── create-feature/            <-- Create new feature
 │   ├── CONTEXT.md
@@ -118,6 +118,9 @@ workspaces/
 ## Routing
 
 User prompt tasking and workspace routing information is in the project root `CONTEXT.md`.
+
+In Claude Code, the `/create-feature`, `/create-unit-test` and `/create-documentation` commands
+(`.claude/commands/`) are the preferred entry points to each workspace pipeline.
 
 ## Token Efficiency
 
