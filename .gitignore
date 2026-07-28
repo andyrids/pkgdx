@@ -39,5 +39,5 @@ ehthumbs.db
 .vscode/
 
 # ICM
-workspaces/**/output/*
-!workspaces/**/output/.gitkeep
+ICM/**/output/*
+!ICM/**/output/.gitkeep

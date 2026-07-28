@@ -13,7 +13,7 @@ import inspect
 import logging
 import pkgutil
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from importlib import metadata
 from types import ModuleType
 from typing import Any
@@ -49,8 +49,12 @@ class SymbolInfo:
     doc: str
 
 
+SYMBOL_INFO_FIELDS = tuple(field.name for field in fields(SymbolInfo))
+"""The ordered `SymbolInfo` field names, forming TOON tabular headers."""
+
+
 def truncate(text: str, limit: int = DEFAULT_TRUNCATE_LIMIT) -> str:
-    """Truncates text to a set number of characters determined by `limit`.
+    """Truncate text to a set number of characters determined by `limit`.
 
     NOTE: AXI principle 3 (content truncation with size hints).
 
@@ -71,7 +75,7 @@ def truncate(text: str, limit: int = DEFAULT_TRUNCATE_LIMIT) -> str:
 
 
 def _resolve_import_name(name: str) -> str:
-    """Resolves import slugs from distribution names.
+    """Resolve import slugs from distribution names.
 
     Args:
         name: The distribution (package) name.
@@ -122,7 +126,7 @@ def _classify(obj: Any) -> NodeKind:
 def _walk_class_members(
     cls: type, *, store: SymbolStore, package: str, version: str
 ) -> None:
-    """Walks a class's public members into `CONTAINS`/`INHERITS` edges.
+    """Walk a class's public members into `CONTAINS`/`INHERITS` edges.
 
     Args:
         cls: The class to walk.
@@ -185,7 +189,7 @@ def _record_symbol(
     package: str,
     version: str,
 ) -> NodeKind:
-    """Upserts a single module-level symbol node plus its edges.
+    """Upsert a single module-level symbol node plus its edges.
 
     Args:
         module: The owning module.
@@ -256,7 +260,7 @@ def _walk_submodules(
     package: str,
     version: str,
 ) -> None:
-    """Discovers and recursively walks a package's direct submodules.
+    """Discover and recursively walk a package's direct submodules.
 
     Args:
         module: The parent package module.
@@ -379,7 +383,7 @@ def _walk_module(
 
 
 def _top_level_root(name: str) -> str:
-    """Extracts the top-level package/module name from any identifier.
+    """Extract the top-level package/module name from any identifier.
 
     Args:
         name: A bare module name (`"rich"`), dotted module name
@@ -418,7 +422,7 @@ def _build_store_for(
 
 
 def show_module(name: str) -> tuple[SymbolNode, list[SymbolNode]]:
-    """Shows a module/package node and its direct children.
+    """Show a module/package node and its direct children.
 
     Args:
         name: The module's bare or dotted import name.
@@ -438,7 +442,7 @@ def show_module(name: str) -> tuple[SymbolNode, list[SymbolNode]]:
 
 
 def get_symbol(qualified_name: str) -> SymbolNode:
-    """Fetches a single symbol node by its qualified name.
+    """Fetch a single symbol node by its qualified name.
 
     Args:
         qualified_name: The fully qualified symbol name.
@@ -458,7 +462,7 @@ def get_symbol(qualified_name: str) -> SymbolNode:
 
 
 def get_inheritors(qualified_name: str) -> list[SymbolNode]:
-    """Fetches classes that directly inherit from a class.
+    """Fetch classes that directly inherit from a class.
 
     Args:
         qualified_name: The base class's qualified name.
@@ -473,7 +477,7 @@ def get_inheritors(qualified_name: str) -> list[SymbolNode]:
 def get_module_tree(
     name: str, max_depth: int = DEFAULT_MAX_DEPTH
 ) -> list[tuple[int, SymbolNode]]:
-    """Fetches a module/package's nested module tree.
+    """Fetch a module/package's nested module tree.
 
     Args:
         name: The module's bare or dotted import name.
@@ -488,7 +492,7 @@ def get_module_tree(
 
 
 def find_symbol(query: str, limit: int = 20) -> list[SymbolNode]:
-    """Searches the project's already-cached symbols by name/doc text.
+    """Search the project's already-cached symbols by name/doc text.
 
     NOTE: Searches whatever has already been cached via prior
     `show_module`/`get_module_tree`/`get_public_api` calls for this
@@ -516,7 +520,7 @@ def get_public_api(
     docstring: bool = False,
     limit: int = DEFAULT_TRUNCATE_LIMIT,
 ) -> list[SymbolInfo]:
-    """Extracts top-level public functions & classes from a package.
+    """Extract top-level public functions & classes from a package.
 
     NOTE: Compatibility shim over the `SymbolStore`-backed introspection
     engine - preserves the original flat, class/function-only contract.

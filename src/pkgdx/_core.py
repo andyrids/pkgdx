@@ -2,7 +2,6 @@
 
 import argparse
 import dataclasses
-from rich.console import Console
 import logging
 import re
 import subprocess
@@ -13,6 +12,7 @@ from typing import Any
 
 import tomlkit
 import tomlkit.exceptions
+from rich.console import Console
 from tomlkit import TOMLDocument
 from tomlkit.items import Table
 
@@ -30,17 +30,17 @@ class ExitCode:
     EX_SYNTAX = 2
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True, slots=True)
 class CLIContext:
     """Centralized state for the CLI commands."""
 
     args: argparse.Namespace
     console: Console
-    is_verbose: bool
+    is_verbose: bool = False
 
 
 def get_git_toplevel() -> Path:
-    """Gets the root path of the consuming Git repository.
+    """Get the root path of the consuming Git repository.
 
     Returns:
         The Git top-level directory path.
@@ -60,7 +60,7 @@ def get_git_toplevel() -> Path:
 
 
 def get_project_root() -> Path:
-    """Gets the root path of the consuming repo.
+    """Get the root path of the consuming repo.
 
     Returns:
         The root path of the consuming repo.
@@ -102,7 +102,7 @@ def install_prek_hooks(root: Path) -> None:
 
 
 def update_prek_hooks(root: Path) -> None:
-    """Checks for pre-commit hook updates.
+    """Check for pre-commit hook updates.
 
     NOTE: Updates the pre-commit hooks based on available tagged versions in
     the remote `pkgdx` repo.
@@ -137,7 +137,7 @@ def update_prek_hooks(root: Path) -> None:
 def _create_repo_table(
     doc: TOMLDocument, name: str, revision: str | None = None
 ) -> Table:
-    """Creates a new repository table in the pre-commit configuration.
+    """Create a new repository table in the pre-commit configuration.
 
     Args:
         doc: The TOMLDocument to parse.
@@ -161,7 +161,7 @@ def _create_repo_table(
 def _get_repo_table(
     doc: TOMLDocument, name: str, revision: str | None = None
 ) -> tuple[Table, bool]:
-    """Gets an existing or creates a new repository table.
+    """Get an existing or create a new repository table.
 
     Args:
         doc: The TOMLDocument to parse.
@@ -184,7 +184,7 @@ def _inject_missing_hooks(
     table: dict[str, Any],
     expected_hooks: list[HookBuiltin | HookLocal | HookRemote],
 ) -> bool:
-    """Injects missing hooks into the repository table.
+    """Inject missing hooks into the repository table.
 
     Args:
         table: The repository table.
@@ -215,8 +215,48 @@ def _inject_missing_hooks(
     return changed
 
 
+def _validate_prek_repos(doc: TOMLDocument) -> None:
+    """Validate the consumer `prek.toml` `[[repos]]` shape.
+
+    NOTE: A missing or empty `repos` key stays valid - the template
+    injection path in `setup_prek_config` creates it.
+
+    Args:
+        doc: The parsed consumer `prek.toml` document.
+
+    Raises:
+        exceptions.PrekConfigError: On a malformed repo/hook entry.
+    """
+    repos = doc.get("repos")
+    if repos is None:
+        return
+    if not isinstance(repos, list):
+        msg = "`repos` must be an array of tables"
+        raise exceptions.PrekConfigError(msg)
+
+    for index, repo in enumerate(repos):
+        is_table = isinstance(repo, dict)
+        if not is_table or not isinstance(repo.get("repo"), str):
+            msg = f"`repos[{index}]` missing string `repo` key"
+            raise exceptions.PrekConfigError(msg)
+
+        hooks = repo.get("hooks", [])
+        if not isinstance(hooks, list):
+            msg = f"`repos[{index}].hooks` must be an array of tables"
+            raise exceptions.PrekConfigError(msg)
+
+        for hook_index, hook in enumerate(hooks):
+            is_table = isinstance(hook, dict)
+            if not is_table or not isinstance(hook.get("id"), str):
+                msg = (
+                    f"`repos[{index}].hooks[{hook_index}]`"
+                    " missing string `id` key"
+                )
+                raise exceptions.PrekConfigError(msg)
+
+
 def setup_prek_config(root: Path, reset: bool = False) -> None:
-    """Configures pre-commit hooks in the consuming repo.
+    """Configure pre-commit hooks in the consuming repo.
 
     Args:
         root: The root path of the consuming repo.
@@ -233,6 +273,7 @@ def setup_prek_config(root: Path, reset: bool = False) -> None:
 
     # Consuming project `prek.toml`
     doc_consumer: TOMLDocument = tomlkit.parse(config_existing.read_text())
+    _validate_prek_repos(doc_consumer)
 
     if "repos" not in doc_consumer or not doc_consumer.get("repos", []):
         logger.debug("Existing `prek.toml` missing or has empty `[repos]`")
@@ -262,7 +303,7 @@ def setup_prek_config(root: Path, reset: bool = False) -> None:
 
 
 def create_secrets_baseline(root: Path) -> None:
-    """Runs detect-secrets to create a .secrets.baseline file."""
+    """Run detect-secrets to create a `.secrets.baseline` file."""
     secrets_baseline = root / ".secrets.baseline"
     if secrets_baseline.exists():
         logger.debug("Using existing `.secrets.baseline`")

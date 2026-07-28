@@ -2,5 +2,5 @@
 
 
 def util() -> str:
-    """A utility function."""
+    """Return a utility function."""
     return __name__

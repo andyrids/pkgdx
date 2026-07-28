@@ -1,19 +1,20 @@
 """Argparse CLI for `venv-axi`."""
 
 import argparse
-from enum import StrEnum
 import logging
 import sys
 from dataclasses import asdict
+from enum import StrEnum
 from pathlib import Path
 
 from rich.console import Console
 
 from pkgdx import exceptions
-from pkgdx._core import get_project_root, CLIContext, ExitCode
+from pkgdx._core import CLIContext, ExitCode, get_project_root
 from pkgdx.logging import configure_venv_axi_logging
 from pkgdx.venvaxi._ambient import setup_ambient_context
 from pkgdx.venvaxi._introspect import (
+    SYMBOL_INFO_FIELDS,
     find_symbol,
     get_module_tree,
     get_public_api,
@@ -26,7 +27,7 @@ logger = logging.getLogger(__package__)
 
 
 def _emit(text: str) -> None:
-    """Writes a line of structured output to STDOUT.
+    """Write a line of structured output to STDOUT.
 
     NOTE: Uses `sys.stdout.write` (instead of `print`) so structural
     TOON output is never subject to Rich console line-wrapping.
@@ -38,7 +39,7 @@ def _emit(text: str) -> None:
 
 
 def _format_path(path: Path) -> str:
-    """Formats a path relative to $HOME.
+    """Format a path relative to $HOME.
 
     Args:
         path: The absolute path to format.
@@ -54,7 +55,7 @@ def _format_path(path: Path) -> str:
 
 
 def _error_output(message: str) -> str:
-    """Formats a structured TOON error object and help footer.
+    """Format a structured TOON error object and help footer.
 
     Args:
         message: The human-readable error message.
@@ -68,7 +69,7 @@ def _error_output(message: str) -> str:
 
 
 def command_home(_: CLIContext) -> int:
-    """Prints live status and next-step hints (the content-first home view).
+    """Print live status and next-step hints (the content-first home view).
 
     Args:
         _: The CLI context.
@@ -104,7 +105,7 @@ def command_home(_: CLIContext) -> int:
 
 
 def command_list(ctx: CLIContext) -> int:
-    """Lists the consuming repo's declared, installed venv packages.
+    """List the consuming repo's declared, installed venv packages.
 
     Args:
         ctx: The CLI context.
@@ -116,15 +117,10 @@ def command_list(ctx: CLIContext) -> int:
     packages = list_packages(root, include_dev=ctx.args.all)
 
     if not packages:
+        help_txt = "Run `venv-axi list --all` to include all dependencies"
+
         _emit("count: 0")
-        _emit(
-            format_help(
-                [
-                    "Run `venv-axi list --all` to include"
-                    " dev/optional dependencies",
-                ]
-            )
-        )
+        _emit(format_help([help_txt]))
         return ExitCode.EX_OK
 
     fields = [field.strip() for field in ctx.args.fields.split(",") if field]
@@ -137,7 +133,7 @@ def command_list(ctx: CLIContext) -> int:
 
 
 def _command_show_api(ctx: CLIContext) -> int:
-    """Shows a package's public, top-level API symbols.
+    """Show public, top-level API symbols for a package.
 
     Args:
         ctx: The CLI context.
@@ -152,13 +148,16 @@ def _command_show_api(ctx: CLIContext) -> int:
 
     rows = [asdict(symbol) for symbol in symbols]
     _emit(f"count: {len(symbols)}")
-    _emit(encode_table("symbols", rows, ["name", "kind", "signature", "doc"]))
+    _emit(encode_table("symbols", rows, SYMBOL_INFO_FIELDS))
+
     if not ctx.args.docstring:
         _emit(
             format_help(
                 [
-                    f"Run `venv-axi show {ctx.args.package} --api --docstring`"
-                    " for complete docstrings"
+                    (
+                        f"Run `venv-axi show {ctx.args.package} "
+                        "--api --docstring` for complete docstrings"
+                    )
                 ]
             )
         )
@@ -166,7 +165,7 @@ def _command_show_api(ctx: CLIContext) -> int:
 
 
 def _command_show_metadata(ctx: CLIContext) -> int:
-    """Shows a package's installed metadata.
+    """Show a package's installed metadata.
 
     Args:
         ctx: The CLI context.
@@ -189,7 +188,7 @@ def _command_show_metadata(ctx: CLIContext) -> int:
 
 
 def command_show(ctx: CLIContext) -> int:
-    """Shows a package's metadata or public API (dispatches on `--api`).
+    """Show a package's metadata or public API (dispatches on `--api`).
 
     Args:
         ctx: The CLI context.
@@ -203,7 +202,7 @@ def command_show(ctx: CLIContext) -> int:
 
 
 def command_find(ctx: CLIContext) -> int:
-    """Searches cached symbols by name/doc text.
+    """Search cached symbols by name/doc text.
 
     Args:
         ctx: The CLI context.
@@ -236,7 +235,7 @@ class TreeField(StrEnum):
 
 
 def command_tree(ctx: CLIContext) -> int:
-    """Shows a package's nested module tree.
+    """Show a package's nested module tree.
 
     Args:
         ctx: The CLI context.
@@ -256,7 +255,7 @@ def command_tree(ctx: CLIContext) -> int:
 
 
 def command_inspect(ctx: CLIContext) -> int:
-    """Shows complete information for a qualified symbol name.
+    """Show complete information for a qualified symbol name.
 
     Args:
         ctx: The CLI context.
@@ -279,7 +278,7 @@ def command_inspect(ctx: CLIContext) -> int:
 
 
 def command_serve(_: CLIContext) -> int:
-    """Serves a dedicated AXI MCP server over STDIO.
+    """Serve a dedicated AXI MCP server over STDIO.
 
     Args:
         _: The CLI context.
@@ -298,7 +297,7 @@ def command_serve(_: CLIContext) -> int:
 
 
 def command_setup(_: CLIContext) -> int:
-    """Installs `venv-axi` ambient context into the consuming repo.
+    """Install `venv-axi` ambient context into the consuming repo.
 
     Args:
         _: The CLI context.
@@ -315,7 +314,7 @@ def command_setup(_: CLIContext) -> int:
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    """Builds the `venv-axi` argument parser.
+    """Build the `venv-axi` argument parser.
 
     Returns:
         The configured `ArgumentParser`, with non-required subcommands
@@ -430,7 +429,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    """Parses arguments & dispatches to the selected command.
+    """Parse arguments & dispatch to the selected command.
 
     Returns:
         The process exit code; 0 on success, 1 on a handled

@@ -12,25 +12,25 @@ Each task category heading details necessary context and locations.
 
 ### Create Feature
 
-- **Navigate to**: `workspaces/create-feature`
+- **Navigate to**: `ICM/create-feature`
 - **Read**: `CONTEXT.md`
 - **Exclude**: * in `.gitignore`
 
 ### Create Documentation
 
-- **Navigate to**: `workspaces/create-documentation`
+- **Navigate to**: `ICM/create-documentation`
 - **Read**: `CONTEXT.md`
 - **Exclude**: * in `.gitignore`
 
 ### Create Unit Test
 
-- **Navigate to**: `workspaces/create-unit-test`
+- **Navigate to**: `ICM/create-unit-test`
 - **Read**: `CONTEXT.md`
 - **Exclude**: * in `.gitignore`
 
 ### Code Refactor
 
-- **Navigate to**: `workspaces/create-feature`
+- **Navigate to**: `ICM/create-feature`
 - **Read**: `CONTEXT.md`
 - **Exclude**: * in `.gitignore`
 
@@ -41,7 +41,7 @@ Each task category heading details necessary context and locations.
     **Read**: `pkgdx/*`
   - `tests/`
     **Read**: `*`
-  - `workspaces/_config/`
+  - `ICM/_config/`
     - **Read**:
       - `reference-toolchain-logging`
       - `reference-toolchain-mypy`

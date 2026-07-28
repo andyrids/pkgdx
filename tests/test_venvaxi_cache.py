@@ -3,7 +3,7 @@
 import sqlite3
 import sys
 import types
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from unittest import mock
 
@@ -13,16 +13,18 @@ from pkgdx import exceptions
 from pkgdx.venvaxi import _cache
 from pkgdx.venvaxi._store import NodeKind, SymbolNode, SymbolStore
 
+NodeFactory = Callable[..., SymbolNode]
+
 CACHE = "pkgdx.venvaxi._cache"
 
 
 @pytest.fixture
 def fake_module(isolated_venv_axi_cache: Path) -> Iterator[types.ModuleType]:
-    """Registers a throwaway module for cache-orchestration tests."""
+    """Register a throwaway module for cache-orchestration tests."""
     module = types.ModuleType("venvaxi_cache_fixture_mod")
 
     def util() -> str:
-        """A utility function."""
+        """Return a utility function."""
         return "ok"
 
     module.util = util  # type: ignore[attr-defined]
@@ -81,19 +83,14 @@ def test_is_cache_valid_false_when_node_missing(tmp_path: Path) -> None:
         assert _cache.is_cache_valid(store, "pkg", "1.0.0") is False
 
 
-def test_is_cache_valid_true_when_version_matches(tmp_path: Path) -> None:
+def test_is_cache_valid_true_when_version_matches(
+    tmp_path: Path, make_symbol_node: NodeFactory
+) -> None:
     """A stored version matching the installed version is valid."""
     with SymbolStore(tmp_path / "store.db") as store:
         store.upsert_node(
-            SymbolNode(
-                qualified_name="pkg",
-                kind=NodeKind.PACKAGE,
-                name="pkg",
-                module="pkg",
-                signature="",
-                doc="",
-                package="pkg",
-                version="1.0.0",
+            make_symbol_node(
+                qualified_name="pkg", kind=NodeKind.PACKAGE, name="pkg"
             )
         )
         assert _cache.is_cache_valid(store, "pkg", "1.0.0") is True

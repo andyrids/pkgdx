@@ -8,7 +8,6 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-
 MODULE_ROOT: Path = Path(__file__).parent
 MYPY_CONFIG: Path = MODULE_ROOT / "mypy.ini"
 PREK_CONFIG: Path = MODULE_ROOT / "hooks.toml"
@@ -18,7 +17,7 @@ RUFF_CONFIG: Path = MODULE_ROOT / "ruff.toml"
 
 @lru_cache(maxsize=1)
 def _load_prek_config() -> dict[str, Any]:
-    """Loads Prek config.
+    """Load Prek config.
 
     Returns:
         The Prek hooks TOML as a dict."""
@@ -40,6 +39,7 @@ def get_pkgdx_repository() -> str:
     """
     import urllib.parse
     from importlib.metadata import metadata
+
     from pkgdx.exceptions import ProjectRepoURLMissingError
 
     pkgdx_metadata = metadata("pkgdx")
@@ -57,7 +57,7 @@ def get_pkgdx_repository() -> str:
 
 @lru_cache(maxsize=1)
 def get_config_revision() -> str:
-    """Gets repo revision from Prek config.
+    """Get repo revision from Prek config.
 
     Raises:
         PrekRepoRevisionError: On missing revision value.
@@ -83,15 +83,15 @@ def get_config_revision() -> str:
 
 @lru_cache(maxsize=1)
 def get_config_repository() -> str:
-    """Gets repo URL from Prek config.
+    """Get repo URL from Prek config.
 
     Raises:
-        PrekRepoRevisionError: On missing revision value.
+        ProjectRepoURLMissingError: On missing repository URL.
 
     Returns:
         Repository URL.
     """
-    from pkgdx.exceptions import PrekRepoRevisionError
+    from pkgdx.exceptions import ProjectRepoURLMissingError
 
     config = _load_prek_config()
     REPO_URL = get_pkgdx_repository()
@@ -101,7 +101,7 @@ def get_config_repository() -> str:
             return REPO_URL
 
     msg = "`pkgdx` repository URL from metadata not found in Prek config"
-    raise PrekRepoRevisionError(msg)
+    raise ProjectRepoURLMissingError(msg)
 
 
 __all__: list[str] = [

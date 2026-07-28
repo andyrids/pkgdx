@@ -6,6 +6,7 @@ from typing import Any
 
 from pkgdx._core import get_project_root
 from pkgdx.venvaxi._introspect import (
+    SYMBOL_INFO_FIELDS,
     find_symbol,
     get_inheritors,
     get_module_tree,
@@ -20,7 +21,7 @@ logger = logging.getLogger(__package__)
 
 
 def list_packages_tool(include_dev: bool = False) -> str:
-    """Lists the consuming repo's venv packages in TOON format."""
+    """List the consuming repo's venv packages in TOON format."""
     root = get_project_root()
     packages = list_packages(root, include_dev=include_dev)
     if not packages:
@@ -31,7 +32,7 @@ def list_packages_tool(include_dev: bool = False) -> str:
 
 
 def show_package_tool(name: str) -> str:
-    """Shows a single package's metadata in TOON format."""
+    """Show a single package's metadata in TOON."""
     package = resolve_package(name)
     return encode_object(
         {
@@ -43,17 +44,17 @@ def show_package_tool(name: str) -> str:
 
 
 def show_package_api_tool(name: str, full: bool = False) -> str:
-    """Shows a package's public, top-level API symbols in TOON."""
+    """Show a package's public, top-level API symbols in TOON."""
     symbols = get_public_api(name, docstring=full)
     if not symbols:
         return "count: 0"
     rows = [asdict(symbol) for symbol in symbols]
-    table = encode_table("symbols", rows, ["name", "kind", "signature", "doc"])
+    table = encode_table("symbols", rows, SYMBOL_INFO_FIELDS)
     return f"count: {len(symbols)}\n{table}"
 
 
 def show_module_tool(name: str) -> str:
-    """Shows a module/package node and its direct children in TOON."""
+    """Show a module/package node and its direct children in TOON."""
     node, children = show_module(name)
     header = encode_object(
         {
@@ -72,7 +73,7 @@ def show_module_tool(name: str) -> str:
 
 
 def get_symbol_tool(qualified_name: str) -> str:
-    """Shows a single symbol's full detail in TOON format."""
+    """Show a single symbol's full detail in TOON."""
     node = get_symbol(qualified_name)
     return encode_object(
         {
@@ -85,7 +86,7 @@ def get_symbol_tool(qualified_name: str) -> str:
 
 
 def find_symbol_tool(query: str, limit: int = 20) -> str:
-    """Searches cached symbols by name/doc text, returned as TOON."""
+    """Search cached symbols by name/doc text, returned as TOON."""
     nodes = find_symbol(query, limit)
     if not nodes:
         return "count: 0"
@@ -95,7 +96,7 @@ def find_symbol_tool(query: str, limit: int = 20) -> str:
 
 
 def get_inheritors_tool(qualified_name: str) -> str:
-    """Shows classes that directly inherit from a class, in TOON."""
+    """Show classes that directly inherit from a class in TOON."""
     nodes = get_inheritors(qualified_name)
     if not nodes:
         return "count: 0"
@@ -107,7 +108,7 @@ def get_inheritors_tool(qualified_name: str) -> str:
 
 
 def get_module_tree_tool(name: str, max_depth: int = 2) -> str:
-    """Shows a module/package's nested module tree, in TOON."""
+    """Show a module/package's nested module tree in TOON."""
     pairs = get_module_tree(name, max_depth)
     if not pairs:
         return "count: 0"
@@ -129,7 +130,7 @@ _TOOLS = (
 
 
 def build_server() -> Any:
-    """Builds the `venv-axi` FastMCP server instance.
+    """Build the `venv-axi` FastMCP server instance.
 
     Raises:
         ImportError: If `fastmcp` is not installed (requires the
@@ -148,5 +149,5 @@ def build_server() -> Any:
 
 
 def serve() -> None:
-    """Starts the `venv-axi` MCP server over stdio."""
+    """Start the `venv-axi` MCP server over stdio."""
     build_server().run()

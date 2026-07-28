@@ -2,16 +2,27 @@
 
 import argparse
 import sys
+from collections.abc import Callable
 from pathlib import Path
 from unittest import mock
 
+import pytest
+import tomlkit
 import tomlkit.exceptions
-from pkgdx import exceptions
-from pkgdx._core import CLIContext, ExitCode
-from pkgdx.__main__ import _setup_progress, command_setup, logger
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.progress import Progress
+
+from pkgdx import exceptions
+from pkgdx.__main__ import _setup_progress, command_setup, logger
+from pkgdx._core import (
+    CLIContext,
+    ExitCode,
+    _validate_prek_repos,
+    setup_prek_config,
+)
+
+ContextFactory = Callable[..., CLIContext]
 
 
 def test_setup_progress_disabled_in_non_tty(
@@ -62,13 +73,13 @@ def test_command_setup_complete(
     mock_project: Path,
     tty_stdout_enable: None,
     mock_subprocess_run: mock.MagicMock,
+    make_cli_context: ContextFactory,
 ) -> None:
     """The setup command advances through all six progress steps."""
 
-    ctx = CLIContext(
+    ctx = make_cli_context(
         args=argparse.Namespace(verbose=False, reset=False),
         console=Console(),
-        is_verbose=False,
     )
 
     MAIN = "pkgdx.__main__"
@@ -103,12 +114,12 @@ def test_command_setup_complete(
 def test_command_setup_exits_on_missing_project_root(
     mock_project: Path,
     tty_stdout_disable: None,
+    make_cli_context: ContextFactory,
 ) -> None:
     """The setup command exits with code 1 when the project root is missing."""
-    ctx = CLIContext(
+    ctx = make_cli_context(
         args=argparse.Namespace(verbose=False, reset=False),
         console=Console(),
-        is_verbose=False,
     )
 
     MAIN = "pkgdx.__main__"
@@ -135,13 +146,13 @@ def test_command_setup_exits_on_missing_project_root(
 def test_command_setup_exits_on_prek_config_error(
     mock_project: Path,
     tty_stdout_enable: None,
+    make_cli_context: ContextFactory,
 ) -> None:
     """The setup command exits with code 1 when prek.toml config fails."""
 
-    ctx = CLIContext(
+    ctx = make_cli_context(
         args=argparse.Namespace(verbose=False, reset=False),
         console=Console(),
-        is_verbose=False,
     )
 
     MAIN = "pkgdx.__main__"
@@ -175,13 +186,13 @@ def test_command_setup_non_tty_runs_without_progress(
     mock_project: Path,
     tty_stdout_disable: None,
     mock_subprocess_run: mock.MagicMock,
+    make_cli_context: ContextFactory,
 ) -> None:
     """The setup command runs without progress rendering in non-TTY mode."""
 
-    ctx = CLIContext(
+    ctx = make_cli_context(
         args=argparse.Namespace(verbose=False, reset=False),
         console=Console(),
-        is_verbose=False,
     )
 
     MAIN = "pkgdx.__main__"
@@ -209,3 +220,55 @@ def test_command_setup_non_tty_runs_without_progress(
         command_setup(ctx)
 
     msetup_progress.assert_called_once()
+
+
+def test_validate_prek_repos_accepts_valid_config() -> None:
+    """A well-formed `[[repos]]` config passes validation silently."""
+    doc = tomlkit.parse(
+        '[[repos]]\nrepo = "local"\n[[repos.hooks]]\nid = "ruff"'
+    )
+    _validate_prek_repos(doc)
+
+
+def test_validate_prek_repos_accepts_missing_repos() -> None:
+    """A document without a `repos` key stays valid."""
+    _validate_prek_repos(tomlkit.parse(""))
+
+
+def test_validate_prek_repos_rejects_non_array_repos() -> None:
+    """A non-array `repos` value raises `PrekConfigError`."""
+    doc = tomlkit.parse("repos = 5")
+    with pytest.raises(exceptions.PrekConfigError, match="array of tables"):
+        _validate_prek_repos(doc)
+
+
+def test_validate_prek_repos_rejects_missing_repo_key() -> None:
+    """A repo entry without a string `repo` key raises `PrekConfigError`."""
+    doc = tomlkit.parse('[[repos]]\nrev = "1.0.0"')
+    with pytest.raises(exceptions.PrekConfigError, match=r"repos\[0\].*repo"):
+        _validate_prek_repos(doc)
+
+
+def test_validate_prek_repos_rejects_non_array_hooks() -> None:
+    """A non-array `hooks` value raises `PrekConfigError`."""
+    doc = tomlkit.parse('[[repos]]\nrepo = "local"\nhooks = "nope"')
+    with pytest.raises(exceptions.PrekConfigError, match=r"repos\[0\]\.hooks"):
+        _validate_prek_repos(doc)
+
+
+def test_validate_prek_repos_rejects_hook_missing_id() -> None:
+    """A hook entry without a string `id` key raises `PrekConfigError`."""
+    doc = tomlkit.parse(
+        '[[repos]]\nrepo = "local"\n[[repos.hooks]]\nname = "x"'
+    )
+    with pytest.raises(exceptions.PrekConfigError, match=r"hooks\[0\].*id"):
+        _validate_prek_repos(doc)
+
+
+def test_setup_prek_config_rejects_malformed_consumer_file(
+    tmp_path: Path,
+) -> None:
+    """A malformed consumer `prek.toml` fails fast with a clear error."""
+    (tmp_path / "prek.toml").write_text('[[repos]]\nrev = "1.0.0"')
+    with pytest.raises(exceptions.PrekConfigError):
+        setup_prek_config(tmp_path)
