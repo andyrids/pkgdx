@@ -2,10 +2,11 @@
 
 import logging
 import re
-import tomllib
 from dataclasses import dataclass
 from importlib import metadata
 from pathlib import Path
+
+import tomllib
 
 from pkgdx.exceptions import PackageNotFoundError
 
@@ -25,7 +26,7 @@ class PackageInfo:
 
 
 def _requirement_name(requirement: str) -> str:
-    """Extracts the bare package name from a PEP 508 requirement string.
+    """Extract the bare package name from a PEP 508 requirement string.
 
     Args:
         requirement: A raw dependency string, e.g. `"fastmcp>=0.1.0"`.
@@ -77,7 +78,7 @@ def discover_direct_dependencies(
 
 
 def resolve_package(name: str) -> PackageInfo:
-    """Resolves metadata for an installed distribution.
+    """Resolve metadata for an installed distribution.
 
     Args:
         name: The package (distribution) name.
@@ -105,7 +106,7 @@ def resolve_package(name: str) -> PackageInfo:
 
 
 def _try_resolve_package(name: str) -> PackageInfo | None:
-    """Resolves a package.
+    """Resolve a package.
 
     NOTE: Skips uninstalled dependencies rather than raising.
 
@@ -125,7 +126,7 @@ def _try_resolve_package(name: str) -> PackageInfo | None:
 def list_packages(
     root: Path, *, include_dev: bool = False
 ) -> list[PackageInfo]:
-    """Lists resolved package info for declared dependencies.
+    """List resolved package info for declared dependencies.
 
     NOTE: Missing dependencies are skipped rather than raising.
 

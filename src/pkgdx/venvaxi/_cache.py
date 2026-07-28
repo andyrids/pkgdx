@@ -94,7 +94,7 @@ def is_cache_valid(
 
 
 def _discard_store(store: SymbolStore) -> None:
-    """Rolls back pending writes and closes a store after a failed build."""
+    """Roll back pending writes and close a store after a failed build."""
     with contextlib.suppress(sqlite3.Error):
         store.rollback()
     with contextlib.suppress(sqlite3.Error):

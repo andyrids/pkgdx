@@ -18,12 +18,13 @@ Attribution:
 
 import logging
 import sqlite3
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from enum import StrEnum
+from functools import cache
 from importlib import resources
-from functools import lru_cache
 from pathlib import Path
 from types import TracebackType
+from typing import Self
 
 logger = logging.getLogger(__package__)
 
@@ -71,16 +72,7 @@ class SymbolNode:
             A dict keyed by every `SymbolNode` field, suitable for
             `pkgdx.venvaxi._toon.encode_table` | `encode_object`.
         """
-        return {
-            "qualified_name": self.qualified_name,
-            "kind": str(self.kind),
-            "name": self.name,
-            "module": self.module,
-            "signature": self.signature,
-            "doc": self.doc,
-            "package": self.package,
-            "version": self.version,
-        }
+        return asdict(self)
 
 
 @dataclass(frozen=True, slots=True)
@@ -109,7 +101,7 @@ def qualify(module: str, *parts: str) -> str:
     return f"{module}::{'.'.join(parts)}"
 
 
-@lru_cache(maxsize=None)
+@cache
 def _read_sql(filename: str) -> str:
     """Load & cache SQL queries to prevent disk I/O on every execution."""
     return (resources.files(__package__) / filename).read_text("UTF-8")
@@ -133,7 +125,7 @@ class SymbolStore:
             self._connection.close()
             raise
 
-    def __enter__(self) -> "SymbolStore":
+    def __enter__(self) -> Self:
         """Return `self` for use as a context manager."""
         return self
 
@@ -224,22 +216,18 @@ class SymbolStore:
     def _row_to_node(self, row: sqlite3.Row) -> SymbolNode:
         """Map a raw `nodes` row to a typed `SymbolNode`.
 
+        NOTE: Column names MUST match `SymbolNode` fields 1:1 - queries
+        always project `nodes.*` & `strict=True` surfaces any drift.
+
         Args:
             row: A raw `sqlite3.Row` from the `nodes` table.
 
         Returns:
             The corresponding `SymbolNode`.
         """
-        return SymbolNode(
-            qualified_name=row["qualified_name"],
-            kind=NodeKind(row["kind"]),
-            name=row["name"],
-            module=row["module"],
-            signature=row["signature"],
-            doc=row["doc"],
-            package=row["package"],
-            version=row["version"],
-        )
+        data = dict(zip(row.keys(), row, strict=True))
+        data["kind"] = NodeKind(data["kind"])
+        return SymbolNode(**data)
 
     def get_node(self, qualified_name: str) -> SymbolNode | None:
         """Fetch a single node by qualified name.

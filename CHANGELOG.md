@@ -25,31 +25,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fetches venv package metadata for a consuming repo.
   - Fetches public API/docstring introspection.
   - Output uses a token-efficient TOON format.
-  - A `setup` command installs ambient context (`AGENTS.md`, `.vscode/mcp.json`, `.mcp.json`)
-- `venv-axi` symbol introspection is now backed by a recursive,
-  SQLite-backed graph store (`find`/`tree`/`inspect` CLI subcommands;
-  `show_module`/`get_symbol`/`find_symbol`/`get_inheritors`/
-  `get_module_tree` MCP tools), replacing the previous flat,
-  top-level-only API scan.
-- Per-project, version-hash-keyed on-disk caching for introspection
-  results, invalidated automatically when a package's installed
-  version changes.
+  - A `setup` command installs ambient context (`AGENTS.md`, `.vscode/mcp.json`, `.mcp.json`).
+- `venv-axi` symbol introspection is now backed by a recursive, SQLite-backed graph store.
+  - Per-project, version-hash-keyed on-disk caching for introspection results.
 
 ### Changed
 
-- TOON table encoding now defaults to a pipe (`|`) delimiter instead
-  of comma, to avoid ambiguity with comma-containing docstrings/values
-  (**breaking change** for any consumer parsing `venv-axi`/MCP TOON
-  output with a hardcoded comma delimiter).
+- `pkgdx setup` now validates the consumer `prek.toml` shape at parse time.
+- Dataclass serialization is now stdlib-driven and field-agnostic.
+- TOON table encoding now defaults to a pipe (`|`) delimiter mitigating comma-containing values.
 
 ### Fixed
 
-- Introspection no longer crashes (`sqlite3.IntegrityError`) when a
-  walked object's `__module__` attribute is present but `None`.
-- A crash partway through building the symbol cache no longer leaves
-  behind a partially-populated cache that is silently treated as
-  valid on the next run; it now clears the partial state and raises
-  `pkgdx.exceptions.StoreError`.
+- Introspection no longer crashes (`sqlite3.IntegrityError`) on `__module__` present, but `None`.
+- A crash partway through building the symbol cache now invalidates it for future runs.
 
 ## [0.1.0rc6] - 2026-07-14
 

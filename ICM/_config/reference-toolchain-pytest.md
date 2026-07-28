@@ -24,6 +24,10 @@ Pytest is used for unit testing, with tests colocated in `tests/`.
 - Shared fixtures live once in `tests/conftest.py` and are consumed via dependency injection
   (e.g. `configured_logging`, `tty_stdout_enable`/`tty_stdout_disable`, `mock_subprocess_run`,
   `mock_project`) rather than re-declared per test module
+- Dataclass instances are built via factory fixtures (`make_symbol_node`, `make_package_info`,
+  `make_cli_context`) that supply defaults for every field and accept `**overrides` - tests
+  override only the fields they assert on, so a model field addition touches a single conftest
+  default rather than every construction site
 - Mock external processes with `unittest.mock.patch` (see `mock_subprocess_run`) instead of
   invoking real subprocesses
 - Use `tmp_path_factory` for isolated filesystem fixtures (see `mock_project`)

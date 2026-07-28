@@ -2,5 +2,4 @@
 
 
 def main() -> None:
-    """Main entry point."""
-    pass
+    """Run main entry point."""
