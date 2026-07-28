@@ -17,7 +17,7 @@ external dependencies.}}
 ## (3) CLI Interface and UX
 
 {{Detail how the feature interacts with the terminal. Specify argparse changes, STDOUT/STDERR
-behavior and rich console output formatting.}}
+behavior, logging and rich console output formatting.}}
 
 ## (4) Implementation Directives
 
@@ -33,3 +33,7 @@ function flow.}}
 
 {{List specific functions or classes that require new unit test coverage to pass the
 03-verification stage.}}
+
+## (7) References
+
+{{List all project files or external material that were read to generate this specification.}}

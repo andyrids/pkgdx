@@ -6,17 +6,19 @@ maximum-context-tokens: 500
 
 # Documentation
 
-Finalise the workflow by updating project documentation to reflect the new feature and changes.
+Finalise the workflow by updating project documentation to reflect any changes.
 
 ## Inputs
 
-- `01-specification/output/[slug]-spec.md`
-- `02-implementation/output/[slug]-code.md`
 - `03-verification/output/[slug]-test.md`
 
 ## Reference Material
 
-- Read:
+Material tagged 'COULD' should be read if relevant to the implementation output or verification
+process.
+
+- Read (MUST):
+  - `ICM/_config/reference-standard-changelog.md`
   - `ICM/_config/reference-standard-techspec.md`
 
 ## Process
@@ -25,13 +27,11 @@ Finalise the workflow by updating project documentation to reflect the new featu
 2. Create a documentation report
    - List relevant documentation updates
      - `README.md`, `CHANGELOG.md` etc.
-     - Provide sufficient detail for a `create-documentation` specification
-   - List unit test & compliance check updates
-     - Provide sufficient detail for a `create-unit-test` specification
-   - List any new reusable design pattern introduced during implementation (e.g. a new Rich/CLI
-     UX pattern) to be appended to the relevant `ICM/_config/reference-*.md` file, so it
-     becomes the canonical reference for future features
+   - List new reusable design patterns introduced during implementation
+     - Consider appending to a relevant `ICM/_config/reference-*.md` file
+     - Consider creating a new `ICM/_config/reference-*.md` file
 3. CHECKPOINT - await user review in accordance with acceptance criteria
+4. Update project documentation
 
 ## Outputs
 

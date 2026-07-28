@@ -14,27 +14,24 @@ Write Python code for the technical specification from the Specification stage.
 
 ## Reference Material
 
-- Read:
-  - `ICM/_config/reference-toolchain-logging.md`
-  - `ICM/_config/reference-toolchain-mypy.md`
-  - `ICM/_config/reference-toolchain-prek.md`
-  - `ICM/_config/reference-toolchain-pytest.md`
-  - `ICM/_config/reference-toolchain-ruff.md`
-  - `ICM/_config/reference-toolchain-uv.md`
-  - `ICM/_config/reference-cookbook-rich.md`
+Material tagged 'COULD' should be read if relevant to the technical specification.
+
+- Read (MUST):
   - `ICM/_config/reference-standard-attribution.md`
+  - `ICM/_config/reference-standard-docstrings.md`
+- Read (COULD):
+  - `ICM/_config/reference-standard-toon.md`
 
 ## Process
 
-1. Read the specification
-2. Implement the required logic within `src/pkgdx/`
-3. Adhere to the workspace toolchain
-4. Draft the implementation report
-   - List Git command to generate a diff report
+1. Implement the required logic within `src/pkgdx/`
+2. Adhere to the project toolchain
+3. Draft the implementation report
    - List changes in accordance with specification
-     - List each file modified
+     - List files modified
      - Explain decisions
-5. CHECKPOINT - await user review in accordance with acceptance criteria
+     - Explain issues or concerns
+4. CHECKPOINT - await user review in accordance with acceptance criteria
 
 ## Outputs
 

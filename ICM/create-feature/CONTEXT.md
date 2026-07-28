@@ -34,30 +34,33 @@ This workspace is used to create new features or refactor existing ones.
 
 ## Navigation
 
+Each stage `CONTEXT.md` provides specific routing & reference material.
+
 ```text
 create-feature/
 ├── CONTEXT.md
 └── stages/                  <-- 4-stage pipeline
     ├── 01-specification/    <-- Feature specification
-    │   ├── CONTEXT.md       <-- Stage routing & reference material
+    │   ├── CONTEXT.md
     │   └── output/          <-- Technical specification
     │
     ├── 02-implementation/   <-- Feature implementation
-    │   ├── CONTEXT.md       <-- Stage routing & reference material
+    │   ├── CONTEXT.md 
     │   └── output/          <-- Implemented specification
     │
     ├── 03-verification/     <-- Feature testing
-    │   ├── CONTEXT.md       <-- Stage routing & reference material
+    │   ├── CONTEXT.md
     │   └── output/          <-- Verification report
     │
     └── 04-documentation/    <-- Feature documentation
-        ├── CONTEXT.md       <-- Stage routing & reference material
+        ├── CONTEXT.md
         └── output/          <-- Documentation report
 ```
 
 ## Acceptance Criteria
 
 - Artifact creation in accordance with stage guidance
+- Adhere to naming convention standards
 - Stage checkpoint review
   - User review & acceptance of each output artifact
   - User review & acceptance of modified/created sourcecode

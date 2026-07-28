@@ -6,8 +6,13 @@ maximum-context-tokens: 800
 
 # Global Context
 
-You are an expert Python software engineer acting as a developer for the Pkgdx project, which
-implements canonical standards across consuming Python projects.
+You are an expert Python software engineer acting as a developer for the Pkgdx project - a DevX
+toolkit, providing tools that streamline Python project development:
+
+1. CLI for canonical standards implementation across consuming Python projects
+2. Agent eXperience Interface (AXI) CLI for token-efficient querying of venv dependencies
+
+## General Guidance
 
 - Follow YAGNI principles
 - Reuse existing patterns in the codebase
@@ -21,23 +26,10 @@ implements canonical standards across consuming Python projects.
 
 ## Environment and Toolchain
 
-Pkgdx is developed and maintained with Astral uv, which MUST be installed globally or in the
-virtual environment.
+Pkgdx is developed with Astral uv, which MUST be installed globally or in the venv.
 
 - **Language**: Python >=3.11
 - **OS**: Windows/Linux/WSL2
-
-| Tool              | Function                  |
-| ----------------- | ------------------------- |
-| uv                | Package manager           |
-| PyMarkdown        | linter/formatter          |
-| Ruff              | linter/formatter          |
-| Mypy              | Static type checker       |
-| Pytest            | Unit tests                |
-| Coverage          | Unit test coverage        |
-| Prek              | Pre-commit hook framework |
-| Logging (stdlib)  | Logging                   |
-| Argparse (stdlib) | CLI                       |
 
 ## Navigation
 
@@ -78,42 +70,29 @@ pkgdx/
 │        ├── py.typed
 │        └── _types.py
 │
-├── tests/                    <-- Project unit tests
+├── tests/                  <-- Project unit tests
 │
-├── ICM/                      <-- Task workspaces
+├── ICM/                    <-- Task workspaces
 │
-├── AGENTS.md                 <-- Global project context
-├── CHANGELOG.md              <-- Project CHANGELOG
-├── CLAUDE.md -> AGENTS.md    <-- Symbolic link to AGENTS.md
-├── CONTEXT.md                <-- Task routing
-├── COPYRIGHT                 <-- Project COPYRIGHT
-├── Justfile                  <-- Just recipes
-├── LICENSE                   <-- Project LICENSE
-├── prek.toml                 <-- Prek pre-commit hook configuration
-├── pyproject.toml            <-- Project configuration
-├── README.md                 <-- Project README
-└── uv.lock                   <-- Project dependency lockfile
+├── AGENTS.md               <-- Global project context
+├── CHANGELOG.md            <-- Project CHANGELOG
+├── CLAUDE.md -> AGENTS.md  <-- Symbolic link to AGENTS.md
+├── CONTEXT.md              <-- Task routing
+├── COPYRIGHT               <-- Project COPYRIGHT
+├── Justfile                <-- Just recipes
+├── LICENSE                 <-- Project LICENSE
+├── prek.toml               <-- Prek pre-commit hook configuration
+├── pyproject.toml          <-- Project configuration
+├── README.md               <-- Project README
+└── uv.lock                 <-- Project dependency lockfile
 ```
 
 ## Workspaces
 
-Each workspace has a `CONTEXT.md`, which is the main control point.
+Interpretable Context Methodology (ICM) is a structured filesystem hierarchy, where numbered
+folders represent pipeline stages and Markdown files carry prompts and context.
 
-```text
-ICM/
-├── _config/                   <-- Shared reference material
-├── create-feature/            <-- Create new feature
-│   ├── CONTEXT.md
-│   └── stages/                <-- Pipeline stages
-│
-├── create-unit-test/          <-- Create new unit test
-│   ├── CONTEXT.md
-│   └── stages/                <-- Pipeline stages
-│
-├── create-documentation/      <-- Create new documentation
-│   ├── CONTEXT.md
-│   └── stages/                <-- Pipeline stages
-```
+Each ICM workspace has a `CONTEXT.md`, which is the main control point.
 
 ## Routing
 
@@ -124,26 +103,7 @@ In Claude Code, the `/create-feature`, `/create-unit-test` and `/create-document
 
 ## Token Efficiency
 
-- Each task is performed within a specific workspace
+- Each task is performed within a specific ICM workspace
 - Each workspace is compartmentalised
 - Each workspace `CONTEXT.md` provides necessary context
 - Avoid unnecessary files listed in `.gitignore`
-
-## Naming Conventions
-
-### References
-
-| Reference      | Pattern                           | Example                          |
-| -------------- | --------------------------------- | -------------------------------- |
-| Toolchain      | `reference-toolchain-[tool].md`   | `reference-toolchain-mypy.md`    |
-| Cookbook       | `reference-cookbook-[package].md` | `reference-cookbook-rich.md`     |
-| Standard       | `reference-standard-[name].md`    | `reference-standard-techspec.md` |
-
-### Output
-
-| Output                | Pattern          | Example                       |
-| --------------------- | ---------------- | ----------------------------- |
-| Specification report  | `[slug]-spec.md` | `rich-progress-bar-spec.md`   |
-| Implementation report | `[slug]-code.md` | `rich-progress-bar-code.md`   |
-| Verification report   | `[slug]-test.md` | `rich-progress-bar-test.md`   |
-| Documentation report  | `[slug]-docs.md` | `rich-progress-bar-docs.md`   |

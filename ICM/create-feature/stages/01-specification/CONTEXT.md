@@ -14,14 +14,12 @@ Analyse the incoming feature request and generate a comprehensive technical spec
 
 ## Reference Material
 
-- Read:
+Material tagged 'COULD' should be read if relevant for the user prompt and context.
+
+- Read (MUST):
+  - `ICM/_config/reference-standard-naming.md`
   - `ICM/_config/reference-standard-techspec.md`
-  - `ICM/_config/reference-toolchain-logging.md`
-  - `ICM/_config/reference-toolchain-mypy.md`
-  - `ICM/_config/reference-toolchain-prek.md`
-  - `ICM/_config/reference-toolchain-pytest.md`
-  - `ICM/_config/reference-toolchain-ruff.md`
-- Read only if the feature produces Rich/CLI output:
+- Read (COULD):
   - `ICM/_config/reference-cookbook-rich.md`
 
 ## Process
