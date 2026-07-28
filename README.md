@@ -199,3 +199,8 @@ A community dedicated to this methodology can be found at [https://www.skool.com
 > [!NOTE]
 > ICM can leverage AI in a way that streamlines development, but also generates enough friction
 > in the right areas to promote continued development (Friction Doctrine).
+
+```bash
+uv trampoline failed to canonicalize script path
+uv sync --reinstall
+```

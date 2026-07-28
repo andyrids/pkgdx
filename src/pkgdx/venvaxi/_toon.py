@@ -32,7 +32,7 @@ _VALID_KEY_RE = re.compile(VALID_KEY_REGEX)
 
 
 def _needs_quoting(value: str, delimiter: str) -> bool:
-    """Determines whether a string value must be quoted.
+    """Determine whether a string value must be quoted.
 
     Args:
         value: The raw string value.
@@ -65,7 +65,7 @@ def _escape(value: str) -> str:
     """
 
     def match_char(ch: str) -> str:
-        """Matches & escapes a single character for TOON."""
+        """Match & escape a single character for TOON."""
         match ch:
             case ch if ch in ESCAPES:
                 return ESCAPES[ch]
@@ -79,7 +79,7 @@ def _escape(value: str) -> str:
 
 
 def _reject_nested(value: Any) -> None:
-    """Raises if `value` is a nested container.
+    """Raise if `value` is a nested container.
 
     Args:
         value: The candidate field/row value.
@@ -95,7 +95,7 @@ def _reject_nested(value: Any) -> None:
 
 
 def encode_primitive(value: Any, delimiter: str = DEFAULT_DELIMITER) -> str:
-    """Encodes a single primitive value as a TOON token.
+    """Encode a single primitive value as a TOON token.
 
     Args:
         value: A string, number, boolean, None, or `PurePath` value.
@@ -127,7 +127,7 @@ def encode_primitive(value: Any, delimiter: str = DEFAULT_DELIMITER) -> str:
 
 
 def encode_key(key: str) -> str:
-    """Encodes an object/table field key, quoting when necessary.
+    """Encode an object/table field key, quoting when necessary.
 
     Args:
         key: The raw key string.
@@ -144,7 +144,7 @@ def encode_key(key: str) -> str:
 def encode_object(
     fields: Mapping[str, Any], *, delimiter: str = DEFAULT_DELIMITER
 ) -> str:
-    """Encodes a flat mapping as TOON `key: value` lines.
+    """Encode a flat mapping as TOON `key: value` lines.
 
     Args:
         fields: An ordered mapping of field names to primitive values.
@@ -167,7 +167,7 @@ def _format_header(
     delimiter: str,
     length_marker: str | Literal[False],
 ) -> str:
-    """Formats a TOON array/table header line.
+    """Format a TOON array/table header line.
 
     Args:
         key: The array/table field name.
@@ -199,7 +199,7 @@ def encode_table(
     delimiter: str = DEFAULT_DELIMITER,
     length_marker: str | Literal[False] = False,
 ) -> str:
-    """Encodes a uniform list of objects as a TOON tabular array.
+    """Encode a uniform list of objects as a TOON tabular array.
 
     Args:
         key: The array field name.
@@ -228,7 +228,7 @@ def encode_table(
 
 
 def format_help(lines: Sequence[str]) -> str:
-    """Formats the contextual-disclosure `help[]` footer.
+    """Format the contextual-disclosure `help[]` footer.
 
     NOTE: AXI principle 9 (contextual disclosure): concrete
     next-step commands are surfaced instead of a static usage summary.

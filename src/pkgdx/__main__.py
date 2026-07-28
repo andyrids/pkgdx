@@ -10,13 +10,12 @@ from typing import NoReturn
 
 import tomlkit
 import tomlkit.exceptions
-from pkgdx import _core, exceptions, standards
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.progress import Progress, TaskID
 
+from pkgdx import _core, exceptions, standards
 from pkgdx.logging import configure_cli_logging
-
 
 logger = logging.getLogger(__package__)
 
@@ -106,7 +105,7 @@ def core_pymarkdown_lint(args: list[str]) -> int:
 
 
 def ruff_format() -> NoReturn:
-    """Runs ruff formatting with the configured settings.
+    """Run ruff formatting with the configured settings.
 
     NOTE: Relates to pre-commit hook ID `pkgdx-format`, with
     entry point `pkgdx-format-hook`.
@@ -115,7 +114,7 @@ def ruff_format() -> NoReturn:
 
 
 def ruff_lint() -> NoReturn:
-    """Runs ruff linting with the configured settings.
+    """Run ruff linting with the configured settings.
 
     NOTE: Relates to pre-commit hook ID `pkgdx-lint`, with
     entry point `pkgdx-lint-hook`.
@@ -124,7 +123,7 @@ def ruff_lint() -> NoReturn:
 
 
 def mypy_typing() -> NoReturn:
-    """Runs mypy type checking with the configured settings.
+    """Run mypy type checking with the configured settings.
 
     NOTE: Relates to pre-commit hook ID `pkgdx-typing`, with
     entry point `pkgdx-typing-hook`.
@@ -133,7 +132,7 @@ def mypy_typing() -> NoReturn:
 
 
 def detect_secrets() -> NoReturn:
-    """Runs detect-secrets with the provided arguments.
+    """Run detect-secrets with the provided arguments.
 
     NOTE: Relates to pre-commit hook ID `pkgdx-secrets`, with
     entry point `pkgdx-secrets-hook`.
@@ -142,7 +141,7 @@ def detect_secrets() -> NoReturn:
 
 
 def pymarkdown_lint() -> NoReturn:
-    """Runs pymarkdown linting with the configured settings.
+    """Run pymarkdown linting with the configured settings.
 
     NOTE: Relates to pre-commit hook ID `pkgdx-markdown`, with
     entry point `pkgdx-markdown-hook`.
@@ -151,7 +150,7 @@ def pymarkdown_lint() -> NoReturn:
 
 
 def venv_axi() -> NoReturn:
-    """Provides CLI entrypoint for `venv-axi`.
+    """Provide CLI entrypoint for `venv-axi`.
 
     NOTE: Relates to `[project.scripts]` entries `venv-axi` and
     `pkgdx-venv-axi`. Implementation lives in `pkgdx.venvaxi`.
@@ -168,7 +167,7 @@ def venv_axi() -> NoReturn:
 
 
 def command_setup(ctx: _core.CLIContext) -> int:
-    """Configures a consuming repo with `pkgdx` standards.
+    """Configure a consuming repo with `pkgdx` standards.
 
     Attempts to identify the root of the consuming repo and ensures that
     `Prek` is configured with the expected `pkgdx` hooks.
@@ -237,7 +236,7 @@ def command_setup(ctx: _core.CLIContext) -> int:
 
 
 def main() -> None:
-    """Provides CLI entrypoint for `pkgdx`."""
+    """Provide CLI entrypoint for `pkgdx`."""
     parser = argparse.ArgumentParser(
         description="`pkgdx` - Canonical standards management"
     )

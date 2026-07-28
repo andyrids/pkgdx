@@ -31,7 +31,7 @@ from pkgdx.venvaxi._store import NodeKind, SymbolStore
 def fake_module(
     isolated_venv_axi_cache: Path,
 ) -> Iterator[types.ModuleType]:
-    """Registers a throwaway module for API-introspection tests."""
+    """Register a throwaway module for API-introspection tests."""
     module = types.ModuleType("venvaxi_fixture_mod")
 
     def greet(name: str) -> str:
@@ -59,7 +59,7 @@ def fake_module(
 def fake_package(
     isolated_venv_axi_cache: Path, tmp_path_factory: pytest.TempPathFactory
 ) -> Iterator[str]:
-    """Registers a real on-disk package with a submodule and a subclass."""
+    """Register a real on-disk package with a submodule and a subclass."""
     from tests.resources import package
 
     src_test = tmp_path_factory.mktemp("src_test")
@@ -93,14 +93,14 @@ def fake_package(
 def fake_module_with_none_module_attr(
     isolated_venv_axi_cache: Path,
 ) -> Iterator[types.ModuleType]:
-    """Registers a module containing a symbol whose `__module__` is `None`.
+    """Register a module containing a symbol whose `__module__` is `None`.
 
     NOTE: Sometimes seen with some C-extension/builtin objects.
     """
     module = types.ModuleType("venvaxi_fixture_none_module_mod")
 
     def unset() -> str:
-        """A function whose `__module__` is explicitly unset."""
+        """Return a function whose `__module__` is explicitly unset."""
         return "ok"
 
     unset.__module__ = None  # type: ignore[assignment]

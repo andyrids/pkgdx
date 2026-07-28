@@ -5,7 +5,9 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+
 import pytest
+
 from pkgdx import exceptions, standards
 
 
@@ -35,6 +37,7 @@ def test_validate_manifest() -> None:
 def test_prek_revision_update() -> None:
     """Ensures the Prek config has the latest revision version."""
     import shutil
+
     from pkgdx.standards import PREK_CONFIG
 
     prek = shutil.which("prek")

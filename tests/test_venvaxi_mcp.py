@@ -1,6 +1,7 @@
 """Unit tests for `pkgdx.venvaxi._mcp`."""
 
 import asyncio
+from collections.abc import Callable
 from pathlib import Path
 from unittest import mock
 
@@ -16,19 +17,8 @@ from pkgdx.venvaxi._store import NodeKind, SymbolNode
 # ruff: enable[E402]
 MCP = "pkgdx.venvaxi._mcp"
 
-
-def _node(qualified_name: str, kind: NodeKind, name: str) -> SymbolNode:
-    """Builds a `SymbolNode` with sensible test defaults."""
-    return SymbolNode(
-        qualified_name=qualified_name,
-        kind=kind,
-        name=name,
-        module="rich",
-        signature="()",
-        doc="Doc.",
-        package="rich",
-        version="15.0.0",
-    )
+NodeFactory = Callable[..., SymbolNode]
+PackageFactory = Callable[..., PackageInfo]
 
 
 def test_build_server_registers_tools() -> None:
@@ -48,12 +38,12 @@ def test_build_server_registers_tools() -> None:
     }
 
 
-def test_list_packages_tool_returns_toon(tmp_path: Path) -> None:
+def test_list_packages_tool_returns_toon(
+    tmp_path: Path, make_package_info: PackageFactory
+) -> None:
     """The list tool returns a TOON-encoded package table."""
     server = build_server()
-    packages = [
-        PackageInfo(name="rich", version="15.0.0", location="/venv"),
-    ]
+    packages = [make_package_info()]
     with (
         mock.patch(f"{MCP}.get_project_root", return_value=tmp_path),
         mock.patch(f"{MCP}.list_packages", return_value=packages),
@@ -64,11 +54,14 @@ def test_list_packages_tool_returns_toon(tmp_path: Path) -> None:
     assert "rich|15.0.0" in result
 
 
-def test_show_package_tool_returns_toon() -> None:
+def test_show_package_tool_returns_toon(
+    make_package_info: PackageFactory,
+) -> None:
     """The show tool returns TOON-encoded package metadata."""
     server = build_server()
-    package = PackageInfo(name="rich", version="15.0.0", location="/venv")
-    with mock.patch(f"{MCP}.resolve_package", return_value=package):
+    with mock.patch(
+        f"{MCP}.resolve_package", return_value=make_package_info()
+    ):
         tool = asyncio.run(server.get_tool("show_package_tool"))
         result = tool.fn(name="rich")
     assert "name: rich" in result
@@ -87,11 +80,17 @@ def test_show_package_api_tool_returns_toon() -> None:
     assert "foo|function" in result
 
 
-def test_show_module_tool_returns_toon() -> None:
+def test_show_module_tool_returns_toon(
+    make_symbol_node: NodeFactory,
+) -> None:
     """The module tool returns the module header plus a children table."""
     server = build_server()
-    node = _node("rich", NodeKind.PACKAGE, "rich")
-    children = [_node("rich::Console", NodeKind.CLASS, "Console")]
+    node = make_symbol_node(
+        qualified_name="rich", kind=NodeKind.PACKAGE, name="rich"
+    )
+    children = [
+        make_symbol_node(qualified_name="rich::Console", name="Console")
+    ]
     with mock.patch(f"{MCP}.show_module", return_value=(node, children)):
         tool = asyncio.run(server.get_tool("show_module_tool"))
         result = tool.fn(name="rich")
@@ -100,20 +99,24 @@ def test_show_module_tool_returns_toon() -> None:
     assert "Console|class" in result
 
 
-def test_show_module_tool_empty_children() -> None:
+def test_show_module_tool_empty_children(
+    make_symbol_node: NodeFactory,
+) -> None:
     """No children still reports the module header and a zero count."""
     server = build_server()
-    node = _node("rich", NodeKind.PACKAGE, "rich")
+    node = make_symbol_node(
+        qualified_name="rich", kind=NodeKind.PACKAGE, name="rich"
+    )
     with mock.patch(f"{MCP}.show_module", return_value=(node, [])):
         tool = asyncio.run(server.get_tool("show_module_tool"))
         result = tool.fn(name="rich")
     assert "children count: 0" in result
 
 
-def test_get_symbol_tool_returns_toon() -> None:
+def test_get_symbol_tool_returns_toon(make_symbol_node: NodeFactory) -> None:
     """The symbol tool returns a TOON-encoded object."""
     server = build_server()
-    node = _node("rich::Console", NodeKind.CLASS, "Console")
+    node = make_symbol_node(qualified_name="rich::Console", name="Console")
     with mock.patch(f"{MCP}.get_symbol", return_value=node):
         tool = asyncio.run(server.get_tool("get_symbol_tool"))
         result = tool.fn(qualified_name="rich::Console")
@@ -121,10 +124,12 @@ def test_get_symbol_tool_returns_toon() -> None:
     assert "kind: class" in result
 
 
-def test_find_symbol_tool_returns_toon() -> None:
+def test_find_symbol_tool_returns_toon(
+    make_symbol_node: NodeFactory,
+) -> None:
     """The find tool returns a TOON-encoded symbol table."""
     server = build_server()
-    nodes = [_node("rich::Console", NodeKind.CLASS, "Console")]
+    nodes = [make_symbol_node(qualified_name="rich::Console", name="Console")]
     with mock.patch(f"{MCP}.find_symbol", return_value=nodes):
         tool = asyncio.run(server.get_tool("find_symbol_tool"))
         result = tool.fn(query="Console")
@@ -141,10 +146,12 @@ def test_find_symbol_tool_empty() -> None:
     assert result == "count: 0"
 
 
-def test_get_inheritors_tool_returns_toon() -> None:
+def test_get_inheritors_tool_returns_toon(
+    make_symbol_node: NodeFactory,
+) -> None:
     """The inheritors tool returns a TOON-encoded subclass table."""
     server = build_server()
-    nodes = [_node("rich::Dog", NodeKind.CLASS, "Dog")]
+    nodes = [make_symbol_node(qualified_name="rich::Dog", name="Dog")]
     with mock.patch(f"{MCP}.get_inheritors", return_value=nodes):
         tool = asyncio.run(server.get_tool("get_inheritors_tool"))
         result = tool.fn(qualified_name="rich::Animal")
@@ -152,12 +159,26 @@ def test_get_inheritors_tool_returns_toon() -> None:
     assert 'Dog|class|"rich::Dog"' in result
 
 
-def test_get_module_tree_tool_returns_toon() -> None:
+def test_get_module_tree_tool_returns_toon(
+    make_symbol_node: NodeFactory,
+) -> None:
     """The tree tool returns a TOON-encoded depth-annotated table."""
     server = build_server()
     pairs = [
-        (0, _node("rich", NodeKind.PACKAGE, "rich")),
-        (1, _node("rich.table", NodeKind.MODULE, "table")),
+        (
+            0,
+            make_symbol_node(
+                qualified_name="rich", kind=NodeKind.PACKAGE, name="rich"
+            ),
+        ),
+        (
+            1,
+            make_symbol_node(
+                qualified_name="rich.table",
+                kind=NodeKind.MODULE,
+                name="table",
+            ),
+        ),
     ]
     with mock.patch(f"{MCP}.get_module_tree", return_value=pairs):
         tool = asyncio.run(server.get_tool("get_module_tree_tool"))
