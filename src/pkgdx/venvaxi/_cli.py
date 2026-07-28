@@ -117,17 +117,10 @@ def command_list(ctx: CLIContext) -> int:
     packages = list_packages(root, include_dev=ctx.args.all)
 
     if not packages:
+        help_txt = "Run `venv-axi list --all` to include all dependencies"
+
         _emit("count: 0")
-        _emit(
-            format_help(
-                [
-                    (
-                        "Run `venv-axi list --all` to include dev/optional "
-                        "dependencies"
-                    )
-                ]
-            )
-        )
+        _emit(format_help([help_txt]))
         return ExitCode.EX_OK
 
     fields = [field.strip() for field in ctx.args.fields.split(",") if field]
@@ -156,14 +149,15 @@ def _command_show_api(ctx: CLIContext) -> int:
     rows = [asdict(symbol) for symbol in symbols]
     _emit(f"count: {len(symbols)}")
     _emit(encode_table("symbols", rows, SYMBOL_INFO_FIELDS))
-    if not ctx.args.docstring:
-        package = ctx.args.package
-        options = "--api --docstring"
 
+    if not ctx.args.docstring:
         _emit(
             format_help(
                 [
-                    f"Run `venv-axi show {package} {options}` for docstrings",
+                    (
+                        f"Run `venv-axi show {ctx.args.package} "
+                        "--api --docstring` for complete docstrings"
+                    )
                 ]
             )
         )
