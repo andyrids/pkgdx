@@ -56,7 +56,7 @@ in workspace members with uv, the `--directory` option should be used to generat
 workspace member root.
 
 ```bash
-uv run --directory consumers/testing pkgdx setup
+uv run --directory consumers/testing pkgdx init
 ```
 
 NOTE: Only run Pkgdx commands in workspace members, which have a `pkgdx` dependency in their

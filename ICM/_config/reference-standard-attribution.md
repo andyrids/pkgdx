@@ -19,7 +19,7 @@ docstring.
 Example `_toon_constants.py` (direct code porting):
 
 ```python
-"""Centralized constants for the `venv-axi` TOON encoder.
+"""Centralized constants for the `axi` TOON encoder.
 
 Attribution:
     The regex patterns, structural tokens and constant-extraction patterns in
@@ -34,7 +34,7 @@ Attribution:
 Example `_store.py` and `_introspect.py` (architectural inspiration):
 
 ```python
-"""Graph-Based Symbol Registry for venv-axi.
+"""Graph-Based Symbol Registry for axi.
 
 Attribution:
     The SQLite node/edge graph architecture and recursive AST walking patterns

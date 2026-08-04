@@ -48,20 +48,26 @@ pkgdx/
 │        │   └── _logging.py
 │        │
 │        ├── standards            <-- Canonical standards
-│        │   ├── hooks.toml       <-- Consuming repo Prek config
 │        │   ├── __init__.py
+│        │   ├── _cli.py          <-- standards `init` command CLI
+│        │   ├── _hooks.py        <-- Core pre-commit hook logic
+│        │   ├── hooks.toml       <-- Consuming repo Prek config
 │        │   ├── mypy.ini         <-- Consuming repo Mypy config
 │        │   ├── pymarkdown.toml  <-- Consuming repo PyMarkdown config
 │        │   └── ruff.toml        <-- Consuming repo Ruff config
 │        │
-│        ├── venvaxi              <-- Agent eXperience Interface (venv-axi)
-│        │   ├── __init__.py
+│        ├── axi                  <-- Agent eXperience Interface (axi)
+│        │   ├── __init__.py      <-- Package metadata & public API introspection
 │        │   ├── _ambient.py      <-- AXI principle 7 - Ambient Context
-│        │   ├── _cli.py          <-- venv-axi CLI
+│        │   ├── _cache.py        <-- On-disk cache (version-hash invalidation)
+│        │   ├── _cli.py          <-- axi CLI
 │        │   ├── _introspect.py   <-- API & docstring introspection
 │        │   ├── _mcp.py          <-- FastMCP server
 │        │   ├── _packages.py     <-- Dependency discovery
-│        │   └── _toon.py_        <-- TOON (Token-Oriented Object Notation) encoder
+│        │   ├── _store.py        <-- SQLite node|edge symbol graph registry
+│        │   ├── _toon.py         <-- TOON (Token-Oriented Object Notation) encoder
+│        │   ├── _toon_constants.py <-- TOON encoder constants
+│        │   └── *.sql            <-- Graph store schema & queries (SQLite)
 │        │
 │        ├── _core.py             <-- Core CLI logic
 │        ├── exceptions.py        <-- Exceptions
@@ -98,8 +104,9 @@ Each ICM workspace has a `CONTEXT.md`, which is the main control point.
 
 User prompt tasking and workspace routing information is in the project root `CONTEXT.md`.
 
-In Claude Code, the `/create-feature`, `/create-unit-test` and `/create-documentation` commands
-(`.claude/commands/`) are the preferred entry points to each workspace pipeline.
+In Claude Code, the `/create-feature` command (`.claude/commands/`) is the preferred entry point.
+Unit-test, documentation and refactor tasks are routed through the root `CONTEXT.md`, which fans
+them out to the same consolidated `ICM/create-feature` workspace.
 
 ## Token Efficiency
 
@@ -107,3 +114,45 @@ In Claude Code, the `/create-feature`, `/create-unit-test` and `/create-document
 - Each workspace is compartmentalised
 - Each workspace `CONTEXT.md` provides necessary context
 - Avoid unnecessary files listed in `.gitignore`
+
+<!-- pkgdx:axi:begin -->
+
+## axi
+
+`pkgdx axi` reports the **installed truth** about this repo's
+dependencies - the exact signatures present in this venv, at the exact
+versions pinned here. Prefer it over recalling an API from memory:
+memory drifts from the installed version, `axi` cannot.
+
+It does not read this repo's own source, and does not need to - scan the
+codebase yourself, then use what you find to drive `axi`:
+
+1. **Scan** - locate the import and call sites of the dependency symbol
+   you are working on with your own file-search tools. This gives you a
+   bare symbol name (`Console.print`) and its owning package (`rich`).
+2. **Resolve** - `pkgdx axi find Console.print --package rich` turns
+   that bare name into a qualified one (`rich.console::Console.print`),
+   indexing the package if needed.
+3. **Inspect** - `pkgdx axi inspect rich.console::Console.print` returns
+   the real signature and docstring for the installed version.
+
+Docstrings are truncated to a first line by default; add `--docstring`
+for complete bodies. Add `--refresh` to any query to rebuild a stale
+graph after changing a dependency version (`find` requires `--package`
+alongside `--refresh`).
+
+`axi` reports what a symbol *is*, not how to use it - for guides,
+examples and migration notes, reach for documentation instead.
+
+Other commands:
+
+- `pkgdx axi` - live status and next-step hints.
+- `pkgdx axi list [--all]` - declared, installed dependencies.
+- `pkgdx axi show <package> [--api]` - metadata, or public API symbols.
+- `pkgdx axi tree <package> [--max-depth N]` - nested module tree.
+- `pkgdx axi inspect <module>` - a module's direct children.
+- `pkgdx axi inherits <qualified_name>` - direct subclasses.
+- `pkgdx axi serve` - the same tools over MCP (stdio).
+- `pkgdx axi setup` - re-register MCP config and refresh this block.
+
+<!-- pkgdx:axi:end -->
