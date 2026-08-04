@@ -24,13 +24,13 @@ just test --reset
 This test could be run manually with the following command:
 
 ```sh
-uv run --directory consumers/testing pkgdx setup -v
+uv run --directory consumers/testing pkgdx -v init
 ```
 
 To run a full reset and setup, add the `--reset` option:
 
 ```sh
-uv run --directory consumers/testing pkgdx setup -v --reset
+uv run --directory consumers/testing pkgdx -v init --reset
 ```
 
 >[!tip]
