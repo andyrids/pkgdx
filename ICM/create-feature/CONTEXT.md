@@ -1,6 +1,6 @@
 ---
-context-hierarchy: Layer 1
-context-hierarchy-role: Workspace task routing
+context-hierarchy: Layer 2
+context-hierarchy-role: Workspace control point
 maximum-context-tokens: 300
 ---
 

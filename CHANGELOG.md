@@ -16,17 +16,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > - `Fixed` for any bug fixes.
 > - `Security` in case of vulnerabilities.
 
-## [0.1.0rc7]
+## [0.1.0] - 2026-08-04
 
 ### Added
 
-- `venv-axi` (`pkgdx-venv-axi`) - an Agent eXperience Interface (AXI).
+- AXI CLI `find --package <package>` indexes a package on a miss, then re-searches.
+- AXI CLI `--refresh` flag on `show`, `find`, `tree` & `inspect`, rebuilding a stale symbol graph.
+- AXI CLI `inspect --docstring` flag for complete docstring bodies.
+- AXI MCP `help[]` footers, and `docstring`/`package` parameters, for CLI parity.
+- TOON token-efficiency benchmark.
+
+### Changed
+
+- AXI `find` results are now deterministically ranked.
+- AXI symbol graph schema v4.
+- AXI failed signature introspection now reports `(signature unavailable)`.
+
+### Fixed
+
+- AXI `inherits` silently returned `count: 0` for re-exported classes.
+- AXI `setup` registered an unstartable MCP server without `fastmcp`.
+- AXI `serve` misreported any runtime `ImportError` as a missing `pkgdx[axi]` extra.
+
+## [0.1.0rc8] - 2026-07-31
+
+### Added
+
+- AXI CLI `inherits <qualified_name>` command.
+
+### Changed
+
+- Renamed the canonical standards CLI subcommand `setup` to `init`.
+- Moved standards & AXI CLI to separate subpackages; `axi`, `standards`.
+- Clearer AXI CLI `show` & `inspect` help text.
+- More consistant AXI CLI `help[]` footers on empty results.
+- AXI CLI `inspect` command now accepts bare module names.
+- `CLIContext.console` docstring note on relevance to `standards` subpackage.
+
+### Fixed
+
+- AXI CLI `show` & `inspect` raw-traceback on unimportable names.
+- AXI CLI symbols mis-attributed to the wrong module.
+- AXI CLI silent errors on incorrect names passed to `list` & `find` commands.
+
+## [0.1.0rc7] - 2026-07-29
+
+### Added
+
+- `axi` (`pkgdx-axi`) - an Agent eXperience Interface (AXI).
   - Provides a CLI & MCP interface.
   - Fetches venv package metadata for a consuming repo.
   - Fetches public API/docstring introspection.
   - Output uses a token-efficient TOON format.
   - A `setup` command installs ambient context (`AGENTS.md`, `.vscode/mcp.json`, `.mcp.json`).
-- `venv-axi` symbol introspection is now backed by a recursive, SQLite-backed graph store.
+- `axi` symbol introspection is now backed by a recursive, SQLite-backed graph store.
   - Per-project, version-hash-keyed on-disk caching for introspection results.
 
 ### Changed

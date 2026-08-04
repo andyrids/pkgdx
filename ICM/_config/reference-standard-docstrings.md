@@ -43,8 +43,9 @@ License:
 def format_help(lines: Sequence[str]) -> str:
     """Format the contextual-disclosure `help[]` footer.
 
-    NOTE: AXI principle 9 (contextual disclosure): concrete
-    next-step commands are surfaced instead of a static usage summary.
+    NOTE: AXI principle 9 (contextual disclosure, see
+    `ICM/_config/reference-standard-axi.md`): concrete next-step commands
+    are surfaced instead of a static usage summary.
 
     Args:
         lines: Concrete next-step command suggestions.
@@ -54,8 +55,8 @@ def format_help(lines: Sequence[str]) -> str:
 
         ```
         help[2]:
-            Run `venv-axi list` for the venv package list
-            Run `venv-axi show <package>` for package info
+            Run `axi list` for the venv package list
+            Run `axi show <package>` for package info
         ```
     """
     body = "\n".join(f"  {line}" for line in lines)
@@ -67,16 +68,3 @@ def format_help(lines: Sequence[str]) -> str:
 - MUST follow existing codebase style
 - MUST have a summary line that describes what the class instance represents
 - SHOULD include Attributes section for public attributes (excluding properties)
-
-## CHANGELOG
-
-- MUST use [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format
-- MUST adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
-- MUST use the following sections where appropriate:
-  - `Added` for new features
-  - `Changed` for changes in existing functionality
-  - `Deprecated` for soon-to-be removed features
-  - `Removed` for now removed features
-  - `Fixed` for any bug fixes
-  - `Security` in case of vulnerabilities
-- SHOULD use brief summaries for sections

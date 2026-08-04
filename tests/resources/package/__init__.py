@@ -9,6 +9,14 @@ class Animal:
         return "..."
 
 
+class Cat(Animal):
+    """A cat."""
+
+    def speak(self) -> str:
+        """Meow."""
+        return "MEOW!"
+
+
 class Dog(Animal):
     """A dog."""
 

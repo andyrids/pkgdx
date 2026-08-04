@@ -32,7 +32,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-venv-axi = ["fastmcp>=0.1.0"]
+axi = ["fastmcp>=0.1.0"]
 
 [dependency-groups]
 dev = [
@@ -48,8 +48,6 @@ pkgdx-format-hook = "pkgdx.__main__:ruff_format"
 pkgdx-lint-hook = "pkgdx.__main__:ruff_lint"
 pkgdx-markdown-hook = "pkgdx.__main__:pymarkdown_lint"
 pkgdx-typing-hook = "pkgdx.__main__:mypy_typing"
-pkgdx-venv-axi = "pkgdx.__main__:venv_axi"
-venv-axi = "pkgdx.__main__:venv_axi"
 
 [project.urls]
 Repository = "https://gitlab.com/andyrids/pkgdx"
