@@ -31,17 +31,3 @@ def configure_pkg_logging() -> None:
     """Configure package logging using a `NullHandler`."""
     package = __package__.split(".")[0] if __package__ else "pkgdx"
     logging.getLogger(package).addHandler(logging.NullHandler())
-
-
-def configure_venv_axi_logging(level: int = logging.WARNING) -> None:
-    """Configure `venv-axi` logging using the `config.toml` settings.
-
-    NOTE: Logs are sent to STDERR only, via the dedicated
-    `pkgdx.venvaxi` logger, keeping STDOUT reserved for structured
-    TOON output (AXI principle 6).
-    """
-    logging.config.dictConfig(tomllib.loads(CONFIG_STR))
-
-    logger = logging.getLogger("pkgdx.venvaxi")
-    logger.setLevel(level)
-    logger.propagate = False

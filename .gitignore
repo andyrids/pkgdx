@@ -41,3 +41,5 @@ ehthumbs.db
 # ICM
 ICM/**/output/*
 !ICM/**/output/.gitkeep
+
+.mcp.json
