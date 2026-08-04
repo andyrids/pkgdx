@@ -39,7 +39,6 @@ omit_repeated_times = false
 
 [handlers.stderr]
 class = "logging.StreamHandler"
-level = "WARNING"
 formatter = "standard"
 stream = "ext://sys.stderr"
 
@@ -48,8 +47,8 @@ level = "WARNING"
 handlers = ["stdout-verbose"]
 propagate = true
 
-[loggers."pkgdx.venvaxi"]
-level = "WARNING"
+[loggers."pkgdx.axi"]
+level = "NOTSET"
 handlers = ["stderr"]
 propagate = false
 

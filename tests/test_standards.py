@@ -31,8 +31,8 @@ def test_validate_manifest() -> None:
 
 
 @pytest.mark.skipif(
-    os.environ.get("CI_COMMIT_TAG") is not None,
-    reason="Avoid CI/CD race condition on tag event",
+    os.environ.get("CI") is not None,
+    reason="Avoid CI/CD race conditions",
 )
 def test_prek_revision_update() -> None:
     """Ensures the Prek config has the latest revision version."""

@@ -1,4 +1,4 @@
-"""Core logic and file-system operations for pkgdx setup."""
+"""Core logic and file-system operations for the `pkgdx init` command."""
 
 import argparse
 import dataclasses
@@ -32,7 +32,11 @@ class ExitCode:
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class CLIContext:
-    """Centralized state for the CLI commands."""
+    """Centralized state for the CLI commands.
+
+    NOTE: `console` is used by the `standards` commands only - `axi`
+    writes raw TOON to `sys.stdout` to avoid Rich line-wrapping.
+    """
 
     args: argparse.Namespace
     console: Console

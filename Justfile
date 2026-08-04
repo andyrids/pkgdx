@@ -23,7 +23,7 @@ setup: && secrets-baseline
 [doc("Test `pkgdx` setup in workspace member")]
 [group("DEV")]
 test *FLAGS:
-    uv run --directory consumers/testing pkgdx setup {{FLAGS}}
+    uv run --directory consumers/testing pkgdx -v init {{FLAGS}}
 
 [doc("Create `coverage` report")]
 [group("DEV")]
