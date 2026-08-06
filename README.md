@@ -4,12 +4,9 @@ I created `pkgdx` as a way to improve DX for Python projects. The package is int
 installation as a development dependency, providing a main command-line interface (CLI) and
 a nested CLI commands and options for common development tasks.
 
-Current nested CLI features:
+## Current Features
 
-1. Setup canonical standards toolchain
-2. Agent interface for dependency introspection
-
-## (1) Maintaining Canonical Standards
+### (1) Canonical Standards Maintenance
 
 `pkgdx` centralises creation and implementation of coding standards across projects, providing a
 single source of truth for toolchain configuration:
@@ -20,7 +17,7 @@ single source of truth for toolchain configuration:
 4. detect-secrets (secret detection)
 5. Prek (hook framework)
 
-### (1) Why?
+#### Why?
 
 Other methods of maintaining standards include templating tools like `Cookiecutter` or `Copier`,
 which inject configurations directly into the project `pyproject.toml` and/or root directory.
@@ -28,7 +25,10 @@ which inject configurations directly into the project `pyproject.toml` and/or ro
 `pkgdx` automates the implementation of a common standard through pre-commit hooks and CI/CD,
 removing the need for extensive `pyproject.toml` boilerplate.
 
-### (1) How?
+> [!TIP]
+> `pkgdx` compliments project templating tools - it does not replace them.
+
+#### How?
 
 Configuration files and CLI are contained in the `standards/` subpackage and developments tools
 have console scripts (`[project.scripts]`) and pre-commit hooks (`.pre-commit-hooks.yaml`), which
@@ -54,81 +54,17 @@ To apply the canonical standards to a project, run the `init` command:
 uv run pkgdx init
 ```
 
-> [!TIP]
-> To see verbose output, use the `--verbose` or `-v` option:
-> `uv run pkgdx -v init`
+To see verbose output, use the `--verbose` or `-v` option:
+
+```bash
+uv run pkgdx -v init
+```
 
 To overwrite or reset an existing `prek.toml` in the project root, use the `--reset` option:
 
 ```bash
 uv run pkgdx init --reset
 ```
-
-## (2) Introspect Project Dependencies
-
-`pkgdx` provides an [Agent eXperience Interface (AXI)](https://axi.md/), which introspects
-dependencies for a consuming project - querying exact signatures present in that venv, at the
-exact versions pinned there - in a token-efficient [TOON](https://github.com/toon-format/spec)
-format, on STDOUT.
-
-### (2) Why?
-
-The AXI allows introspection of installed packages by importing them, thereby covering
-private, internal and undocumented distributions that documentation-retrieval tools cannot see.
-
-The interface cannot drift from the pinned version - reporting what a symbol is rather than how to
-use it - complimenting a documentation source such as `Context7`, `King Context` etc.
-
-The AXI answers "does this exist, and what is its exact shape in the version I have
-installed?" - other tools answer "how do I use this and why?"
-
-### (2) How?
-
-An agent scans the codebase with available tools and uses its findings to drive the AXI:
-
-1. Scan the codebase -> bare name (`Console.print`) & package (`rich`)
-2. Resolve bare name -> qualified name
-
-```bash
-uv run pkgdx axi find Console.print --package rich
-```
-
-```bash
-uv run pkgdx axi inspect rich.console::Console.print
-```
-
-Other commands:
-
-- `pkgdx axi` - Live status & next-step hints
-- `pkgdx axi list` - Installed, declared dependencies
-- `pkgdx axi show rich --api` - Public API symbols
-- `pkgdx axi tree rich --max-depth 1` - Nested module tree
-- `pkgdx axi inspect rich.console` - Direct children
-- `pkgdx axi inherits <qualified_name>` - Direct subclasses
-
-Docstrings are truncated to a first line by default - add `--docstring` for complete bodies. The
-`--refresh` option rebuilds a stale graph after a dependency version change.
-
-Ambient context for agents can be injected into `AGENTS.md` alongside MCP server entries in
-`.vscode/mcp.json` and `.mcp.json`:
-
-```bash
-pkgdx axi setup
-```
-
-The AXI tools can be served over MCP (STDIO) with the `pkgdx axi serve` command, which requires the
-`axi` extra:
-
-```bash
-uv add pkgdx \
-  --dev \
-  --extra axi \
-  --index gitlab=https://gitlab.com/api/v4/projects/82928123/packages/pypi/simple
-```
-
-The MCP server exposes; `list_packages_tool`, `show_package_tool`, `show_package_api_tool`,
-`show_module_tool`, `get_symbol_tool`, `find_symbol_tool`, `get_inheritors_tool` and
-`get_module_tree_tool`
 
 ## Installation
 
@@ -152,7 +88,7 @@ uv add --dev git+https://gitlab.com/apridya/pkgdx.git
 ```
 
 ```bash
-uv add --dev git+https://gitlab.com/apridya/pkgdx.git@v1.0.0
+uv add --dev git+https://gitlab.com/apridya/pkgdx.git@v0.2.0
 ```
 
 ## CI/CD Integration
@@ -220,27 +156,3 @@ A community dedicated to this methodology can be found at [https://www.skool.com
 > [!NOTE]
 > ICM can leverage AI in a way that streamlines development, but also generates enough friction
 > in the right areas to promote continued development (Friction Doctrine).
-
-## Attribution
-
-### `code-review-graph`
-
-The SQLite Node|Edge graph architecture and symbol-graph walking patters used in the AXI modules
-are heavily inspired by `code-review-graph`.
-
-`code-review-graph` populates its graph from a static AST, whereas the `pkgdx` AXI populates its
-graph from live object introspection.
-
-`code-review-graph` walks a static AST, whereas the `pkgdx` AXI walks live objects via `importlib`
-and `inspect`.
-
-- **Repository**: [tirth8205/code-review-graph](https://github.com/tirth8205/code-review-graph)
-- **License**: MIT License - Copyright (c) 2026 Tirth Kanani
-
-### `toon-python`
-
-The regex patterns, structural tokens and constant-extraction patterns for TOON format are directly
-adapted from the official `toon-python` reference implementation.
-
-- **Repository**: [toon-format/toon-python](https://github.com/toon-format/toon-python)
-- **License**: MIT License - Copyright (c) 2025 TOON Format Organization

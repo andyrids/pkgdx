@@ -7,10 +7,8 @@ maximum-context-tokens: 800
 # Global Context
 
 You are an expert Python software engineer acting as a developer for the Pkgdx project - a DevX
-toolkit, providing tools that streamline Python project development:
-
-1. CLI for canonical standards implementation across consuming Python projects
-2. Agent eXperience Interface (AXI) CLI for token-efficient querying of venv dependencies
+toolkit, providing a CLI for canonical standards implementation across consuming Python
+projects.
 
 ## General Guidance
 
@@ -33,65 +31,31 @@ Pkgdx is developed with Astral uv, which MUST be installed globally or in the ve
 
 ## Navigation
 
-```text
-pkgdx/
-├── consumers/                <-- Astral workspace members
-│   └── testing/              <-- Testing package
-│
-├── docs/                     <-- Project documentation
-│
-├── src/                      <-- Project sourcecode
-│    └── pkgdx
-│        ├── logging              <-- Logging
-│        │   ├── config.toml      <-- Logging config
-│        │   ├── __init__.py
-│        │   └── _logging.py
-│        │
-│        ├── standards            <-- Canonical standards
-│        │   ├── __init__.py
-│        │   ├── _cli.py          <-- standards `init` command CLI
-│        │   ├── _hooks.py        <-- Core pre-commit hook logic
-│        │   ├── hooks.toml       <-- Consuming repo Prek config
-│        │   ├── mypy.ini         <-- Consuming repo Mypy config
-│        │   ├── pymarkdown.toml  <-- Consuming repo PyMarkdown config
-│        │   └── ruff.toml        <-- Consuming repo Ruff config
-│        │
-│        ├── axi                  <-- Agent eXperience Interface (axi)
-│        │   ├── __init__.py      <-- Package metadata & public API introspection
-│        │   ├── _ambient.py      <-- AXI principle 7 - Ambient Context
-│        │   ├── _cache.py        <-- On-disk cache (version-hash invalidation)
-│        │   ├── _cli.py          <-- axi CLI
-│        │   ├── _introspect.py   <-- API & docstring introspection
-│        │   ├── _mcp.py          <-- FastMCP server
-│        │   ├── _packages.py     <-- Dependency discovery
-│        │   ├── _store.py        <-- SQLite node|edge symbol graph registry
-│        │   ├── _toon.py         <-- TOON (Token-Oriented Object Notation) encoder
-│        │   ├── _toon_constants.py <-- TOON encoder constants
-│        │   └── *.sql            <-- Graph store schema & queries (SQLite)
-│        │
-│        ├── _core.py             <-- Core CLI logic
-│        ├── exceptions.py        <-- Exceptions
-│        ├── __init__.py
-│        ├── __main__.py          <-- Main CLI
-│        ├── py.typed
-│        └── _types.py
-│
-├── tests/                  <-- Project unit tests
-│
-├── ICM/                    <-- Task workspaces
-│
-├── AGENTS.md               <-- Global project context
-├── CHANGELOG.md            <-- Project CHANGELOG
-├── CLAUDE.md -> AGENTS.md  <-- Symbolic link to AGENTS.md
-├── CONTEXT.md              <-- Task routing
-├── COPYRIGHT               <-- Project COPYRIGHT
-├── Justfile                <-- Just recipes
-├── LICENSE                 <-- Project LICENSE
-├── prek.toml               <-- Prek pre-commit hook configuration
-├── pyproject.toml          <-- Project configuration
-├── README.md               <-- Project README
-└── uv.lock                 <-- Project dependency lockfile
-```
+- `consumers/testing/` <- Astral workspace member - `testing`
+- `docs/` <- Project documentation & research
+- `ICM/` <- Task workspaces
+- `src/pkgdx/` <- Project sourcecode
+  - `logging/` <- Logging
+    - Logging functions, logging config TOML
+  - `standards/` <- Canonical standards
+    - `init` CLI, pre-commit hooks, toolchain configs
+  - `__main__.py` <- Main CLI
+  - `_core.py` <- Core CLI logic
+- `tests/` <- Project unit tests
+- `.pre-commit-hooks.yaml` <- Project pre-commit hooks
+- `.gitlab-ci.yml` <- Project CI/CD config
+- `.secrets.baseline` <- Secrets baseline (`detect-secrets`)
+- `AGENTS.md` <- Global project context
+- `CHANGELOG.md` <- Project CHANGELOG
+- `CLAUDE.md` <- Symbolic link to AGENTS.md
+- `CONTEXT.md` <- Task routing
+- `COPYRIGHT` <- Project COPYRIGHT
+- `Justfile` <- Just recipes
+- `LICENSE` <- Project LICENSE
+- `prek.toml` <- Prek pre-commit hook configuration
+- `pyproject.toml` <- Project configuration
+- `README.md` <- Project README
+- `uv.lock` <- Project lockfile
 
 ## Workspaces
 
@@ -114,45 +78,3 @@ them out to the same consolidated `ICM/create-feature` workspace.
 - Each workspace is compartmentalised
 - Each workspace `CONTEXT.md` provides necessary context
 - Avoid unnecessary files listed in `.gitignore`
-
-<!-- pkgdx:axi:begin -->
-
-## axi
-
-`pkgdx axi` reports the **installed truth** about this repo's
-dependencies - the exact signatures present in this venv, at the exact
-versions pinned here. Prefer it over recalling an API from memory:
-memory drifts from the installed version, `axi` cannot.
-
-It does not read this repo's own source, and does not need to - scan the
-codebase yourself, then use what you find to drive `axi`:
-
-1. **Scan** - locate the import and call sites of the dependency symbol
-   you are working on with your own file-search tools. This gives you a
-   bare symbol name (`Console.print`) and its owning package (`rich`).
-2. **Resolve** - `pkgdx axi find Console.print --package rich` turns
-   that bare name into a qualified one (`rich.console::Console.print`),
-   indexing the package if needed.
-3. **Inspect** - `pkgdx axi inspect rich.console::Console.print` returns
-   the real signature and docstring for the installed version.
-
-Docstrings are truncated to a first line by default; add `--docstring`
-for complete bodies. Add `--refresh` to any query to rebuild a stale
-graph after changing a dependency version (`find` requires `--package`
-alongside `--refresh`).
-
-`axi` reports what a symbol *is*, not how to use it - for guides,
-examples and migration notes, reach for documentation instead.
-
-Other commands:
-
-- `pkgdx axi` - live status and next-step hints.
-- `pkgdx axi list [--all]` - declared, installed dependencies.
-- `pkgdx axi show <package> [--api]` - metadata, or public API symbols.
-- `pkgdx axi tree <package> [--max-depth N]` - nested module tree.
-- `pkgdx axi inspect <module>` - a module's direct children.
-- `pkgdx axi inherits <qualified_name>` - direct subclasses.
-- `pkgdx axi serve` - the same tools over MCP (stdio).
-- `pkgdx axi setup` - re-register MCP config and refresh this block.
-
-<!-- pkgdx:axi:end -->

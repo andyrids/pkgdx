@@ -16,32 +16,32 @@ implemented, which are detailed below.
 When a whole file or core concept is adapted, include a clear `Attribution` in the module
 docstring.
 
-Example `_toon_constants.py` (direct code porting):
+Example (direct code porting):
 
 ```python
-"""Centralized constants for the `axi` TOON encoder.
+"""Bundled toolchain configuration for `pkgdx.standards`.
 
 Attribution:
-    The regex patterns, structural tokens and constant-extraction patterns in
-    this file are directly adapted from the official `toon-python` reference
-    implementation.
+    The rule selection and per-file ignore patterns in this file are directly
+    adapted from the upstream project's own configuration.
 
-    Repository: https://github.com/toon-format/toon-python
-    License: MIT License - Copyright (c) 2025 TOON Format Organization
+    Repository: https://github.com/example/upstream
+    License: MIT License - Copyright (c) 2026 Upstream Authors
 """
 ```
 
-Example `_store.py` and `_introspect.py` (architectural inspiration):
+Example (architectural inspiration):
 
 ```python
-"""Graph-Based Symbol Registry for axi.
+"""Pre-commit hook shims for `pkgdx.standards`.
 
 Attribution:
-    The SQLite node/edge graph architecture and recursive AST walking patterns
-    used in this module are heavily inspired by `code-review-graph`.
+    The console-script shim pattern - a thin entry point that injects a
+    bundled config file before delegating to the underlying tool - is
+    heavily inspired by `upstream-hooks`.
 
-    Repository: https://github.com/tirth8205/code-review-graph
-    License: MIT License - Copyright (c) 2026 Tirth Kanani
+    Repository: https://github.com/example/upstream-hooks
+    License: MIT License - Copyright (c) 2026 Upstream Authors
 """
 ```
 

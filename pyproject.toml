@@ -31,13 +31,9 @@ dependencies = [
     "tomlkit>=0.15.0",
 ]
 
-[project.optional-dependencies]
-axi = ["fastmcp>=0.1.0"]
-
 [dependency-groups]
 dev = [
     "coverage>=7.14.1",
-    "fastmcp>=0.1.0",
     "pytest>=9.1.1",
 ]
 

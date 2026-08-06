@@ -40,27 +40,20 @@ License:
 - COULD provide example usage or detail where needed
 
 ```python
-def format_help(lines: Sequence[str]) -> str:
-    """Format the contextual-disclosure `help[]` footer.
+def install_prek_hooks(root: Path) -> None:
+    """Install pre-commit hooks if not installed.
 
-    NOTE: AXI principle 9 (contextual disclosure, see
-    `ICM/_config/reference-standard-axi.md`): concrete next-step commands
-    are surfaced instead of a static usage summary.
+    NOTE: A pre-existing `.git/hooks/pre-commit` is left alone - `prek
+    install` is only shelled out to on a repo that has none.
 
     Args:
-        lines: Concrete next-step command suggestions.
-
-    Returns:
-        A `help[N]:` block, with indented lines for each suggestion.
-
-        ```
-        help[2]:
-            Run `axi list` for the venv package list
-            Run `axi show <package>` for package info
-        ```
+        root: The root path of the consuming repo.
     """
-    body = "\n".join(f"  {line}" for line in lines)
-    return f"help[{len(lines)}]:\n{body}"
+    precommit_config = root / ".git" / "hooks" / "pre-commit"
+    if precommit_config.exists():
+        logger.debug("Prek pre-commit hooks already installed")
+        return
+    ...
 ```
 
 ### (3) Classes
