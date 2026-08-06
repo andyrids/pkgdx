@@ -4,11 +4,9 @@ I created `pkgdx` as a way to improve DX for Python projects. The package is int
 installation as a development dependency, providing a main command-line interface (CLI) and
 a nested CLI commands and options for common development tasks.
 
-Current nested CLI features:
+## Current Features
 
-1. Setup canonical standards toolchain
-
-## Maintaining Canonical Standards
+### (1) Canonical Standards Maintenance
 
 `pkgdx` centralises creation and implementation of coding standards across projects, providing a
 single source of truth for toolchain configuration:
@@ -19,7 +17,7 @@ single source of truth for toolchain configuration:
 4. detect-secrets (secret detection)
 5. Prek (hook framework)
 
-### Why?
+#### Why?
 
 Other methods of maintaining standards include templating tools like `Cookiecutter` or `Copier`,
 which inject configurations directly into the project `pyproject.toml` and/or root directory.
@@ -27,7 +25,10 @@ which inject configurations directly into the project `pyproject.toml` and/or ro
 `pkgdx` automates the implementation of a common standard through pre-commit hooks and CI/CD,
 removing the need for extensive `pyproject.toml` boilerplate.
 
-### How?
+> [!TIP]
+> `pkgdx` compliments project templating tools - it does not replace them.
+
+#### How?
 
 Configuration files and CLI are contained in the `standards/` subpackage and developments tools
 have console scripts (`[project.scripts]`) and pre-commit hooks (`.pre-commit-hooks.yaml`), which
@@ -53,9 +54,11 @@ To apply the canonical standards to a project, run the `init` command:
 uv run pkgdx init
 ```
 
-> [!TIP]
-> To see verbose output, use the `--verbose` or `-v` option:
-> `uv run pkgdx -v init`
+To see verbose output, use the `--verbose` or `-v` option:
+
+```bash
+uv run pkgdx -v init
+```
 
 To overwrite or reset an existing `prek.toml` in the project root, use the `--reset` option:
 
@@ -85,7 +88,7 @@ uv add --dev git+https://gitlab.com/apridya/pkgdx.git
 ```
 
 ```bash
-uv add --dev git+https://gitlab.com/apridya/pkgdx.git@v1.0.0
+uv add --dev git+https://gitlab.com/apridya/pkgdx.git@v0.2.0
 ```
 
 ## CI/CD Integration
