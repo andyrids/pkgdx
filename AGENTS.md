@@ -33,72 +33,33 @@ Pkgdx is developed with Astral uv, which MUST be installed globally or in the ve
 
 ## Navigation
 
-```text
-pkgdx/
-├── .claude/
-├── .github/
-│
-├── consumers/                <-- Astral workspace members
-│   └── testing/              <-- Testing package
-│
-├── docs/                     <-- Project documentation & research
-│
-├── ICM/                      <-- Task workspaces
-│
-├── src/                      <-- Project sourcecode
-│    └── pkgdx
-│        ├── axi                  <-- Venv Agent eXperience Interface (AXI)
-│        │   ├── __init__.py
-│        │   ├── _ambient.py      <-- AXI principle 7 - Ambient Context
-│        │   ├── _cache.py        <-- On-disk cache (version-hash invalidation)
-│        │   ├── _cli.py          <-- AXI `axi` CLI
-│        │   ├── _introspect.py   <-- API & docstring introspection
-│        │   ├── _mcp.py          <-- FastMCP server
-│        │   ├── _packages.py     <-- Dependency discovery
-│        │   ├── _store.py        <-- SQLite node|edge symbol graph registry
-│        │   ├── _toon.py         <-- TOON (Token-Oriented Object Notation) encoder
-│        │   ├── _constants.py    <-- TOON encoder constants
-│        │   └── *.sql            <-- Graph store schema & queries (SQLite)
-│        │
-│        ├── logging              <-- Logging
-│        │   ├── __init__.py
-│        │   ├── _logging.py      <-- Logging functions
-│        │   └── config.toml      <-- Logging config
-│        │
-│        ├── standards            <-- Canonical standards
-│        │   ├── __init__.py
-│        │   ├── _cli.py          <-- Standards `init` command CLI
-│        │   ├── _hooks.py        <-- Core pre-commit hook logic
-│        │   ├── hooks.toml       <-- Consuming repo Prek config
-│        │   ├── mypy.ini         <-- Consuming repo Mypy config
-│        │   ├── pymarkdown.toml  <-- Consuming repo PyMarkdown config
-│        │   └── ruff.toml        <-- Consuming repo Ruff config
-│        │
-│        ├── __init__.py
-│        ├── __main__.py          <-- Main CLI
-│        ├── _core.py             <-- Core CLI logic
-│        ├── _types.py            <-- Custom types
-│        ├── exceptions.py        <-- Custom exceptions
-│        └── py.typed
-│
-├── tests/                  <-- Project unit tests
-│
-├── .gitignore
-├── .gitlab-ci.yml
-├── .pre-commit-hooks.yaml
-├── .secrets.baseline       <-- Secrets baseline (`detect-secrets`)
-├── AGENTS.md               <-- Global project context
-├── CHANGELOG.md            <-- Project CHANGELOG
-├── CLAUDE.md -> AGENTS.md  <-- Symbolic link to AGENTS.md
-├── CONTEXT.md              <-- Task routing
-├── COPYRIGHT               <-- Project COPYRIGHT
-├── Justfile                <-- Just recipes
-├── LICENSE                 <-- Project LICENSE
-├── prek.toml               <-- Prek pre-commit hook configuration
-├── pyproject.toml          <-- Project configuration
-├── README.md               <-- Project README
-└── uv.lock                 <-- Project lockfile
-```
+- `consumers/testing/` <- Astral workspace member - `testing`
+- `docs/` <- Project documentation & research
+- `ICM/` <- Task workspaces
+- `src/pkgdx/` <- Project sourcecode
+  - `axi/` <- Venv Agent eXperience Interface (AXI)
+    - CLI, FastMCP, SQLite graph store, cache, TOON encoder
+  - `logging/` <- Logging
+    - Logging functions, logging config TOML
+  - `standards/` <- Canonical standards
+    - `init` CLI, pre-commit hooks, toolchain configs
+  - `__main__.py` <- Main CLI
+  - `_core.py` <- Core CLI logic
+- `tests/` <- Project unit tests
+- `.pre-commit-hooks.yaml` <- Project pre-commit hooks
+- `.gitlab-ci.yml` <- Project CI/CD config
+- `.secrets.baseline` <- Secrets baseline (`detect-secrets`)
+- `AGENTS.md` <- Global project context
+- `CHANGELOG.md` <- Project CHANGELOG
+- `CLAUDE.md` <- Symbolic link to AGENTS.md
+- `CONTEXT.md` <- Task routing
+- `COPYRIGHT` <- Project COPYRIGHT
+- `Justfile` <- Just recipes
+- `LICENSE` <- Project LICENSE
+- `prek.toml` <- Prek pre-commit hook configuration
+- `pyproject.toml` <- Project configuration
+- `README.md` <- Project README
+- `uv.lock` <- Project lockfile
 
 ## Workspaces
 
