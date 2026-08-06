@@ -7,10 +7,8 @@ maximum-context-tokens: 800
 # Global Context
 
 You are an expert Python software engineer acting as a developer for the Pkgdx project - a DevX
-toolkit, providing tools that streamline Python project development:
-
-1. CLI for canonical standards implementation across consuming Python projects
-2. Agent eXperience Interface (AXI) CLI for token-efficient querying of venv dependencies
+toolkit, providing a CLI for canonical standards implementation across consuming Python
+projects.
 
 ## General Guidance
 
@@ -37,8 +35,6 @@ Pkgdx is developed with Astral uv, which MUST be installed globally or in the ve
 - `docs/` <- Project documentation & research
 - `ICM/` <- Task workspaces
 - `src/pkgdx/` <- Project sourcecode
-  - `axi/` <- Venv Agent eXperience Interface (AXI)
-    - CLI, FastMCP, SQLite graph store, cache, TOON encoder
   - `logging/` <- Logging
     - Logging functions, logging config TOML
   - `standards/` <- Canonical standards
@@ -82,45 +78,3 @@ them out to the same consolidated `ICM/create-feature` workspace.
 - Each workspace is compartmentalised
 - Each workspace `CONTEXT.md` provides necessary context
 - Avoid unnecessary files listed in `.gitignore`
-
-<!-- pkgdx:axi:begin -->
-
-## axi
-
-`pkgdx axi` reports the **installed truth** about this repo's
-dependencies - the exact signatures present in this venv, at the exact
-versions pinned here. Prefer it over recalling an API from memory:
-memory drifts from the installed version, `axi` cannot.
-
-It does not read this repo's own source, and does not need to - scan the
-codebase yourself, then use what you find to drive `axi`:
-
-1. **Scan** - locate the import and call sites of the dependency symbol
-   you are working on with your own file-search tools. This gives you a
-   bare symbol name (`Console.print`) and its owning package (`rich`).
-2. **Resolve** - `pkgdx axi find Console.print --package rich` turns
-   that bare name into a qualified one (`rich.console::Console.print`),
-   indexing the package if needed.
-3. **Inspect** - `pkgdx axi inspect rich.console::Console.print` returns
-   the real signature and docstring for the installed version.
-
-Docstrings are truncated to a first line by default; add `--docstring`
-for complete bodies. Add `--refresh` to any query to rebuild a stale
-graph after changing a dependency version (`find` requires `--package`
-alongside `--refresh`).
-
-`axi` reports what a symbol *is*, not how to use it - for guides,
-examples and migration notes, reach for documentation instead.
-
-Other commands:
-
-- `pkgdx axi` - live status and next-step hints.
-- `pkgdx axi list [--all]` - declared, installed dependencies.
-- `pkgdx axi show <package> [--api]` - metadata, or public API symbols.
-- `pkgdx axi tree <package> [--max-depth N]` - nested module tree.
-- `pkgdx axi inspect <module>` - a module's direct children.
-- `pkgdx axi inherits <qualified_name>` - direct subclasses.
-- `pkgdx axi serve` - the same tools over MCP (stdio).
-- `pkgdx axi setup` - re-register MCP config and refresh this block.
-
-<!-- pkgdx:axi:end -->

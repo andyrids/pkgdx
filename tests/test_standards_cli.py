@@ -14,7 +14,7 @@ from rich.console import Console
 from rich.logging import RichHandler
 from rich.progress import Progress
 
-from pkgdx import exceptions
+from pkgdx import __main__, exceptions
 from pkgdx._core import (
     CLIContext,
     ExitCode,
@@ -279,3 +279,40 @@ def test_setup_prek_config_rejects_malformed_consumer_file(
     (tmp_path / "prek.toml").write_text('[[repos]]\nrev = "1.0.0"')
     with pytest.raises(exceptions.PrekConfigError):
         setup_prek_config(tmp_path)
+
+
+def _run_main(argv: list[str]) -> int:
+    """Run `pkgdx.__main__.main` with `argv` & return the exit code."""
+    with (
+        mock.patch("sys.argv", ["pkgdx", *argv]),
+        mock.patch("pkgdx.__main__.configure_cli_logging"),
+        pytest.raises(SystemExit) as exc_info,
+    ):
+        __main__.main()
+    return int(exc_info.value.code)
+
+
+def test_main_maps_error_to_exit_1(
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """An `Error` maps to exit code 1, reported via the logger."""
+    error = exceptions.ProjectRootNotFoundError("no root")
+    with mock.patch(f"{STANDARDS_CLI}.command_init", side_effect=error):
+        exit_code = _run_main(["init"])
+    out = capsys.readouterr().out
+    assert exit_code == ExitCode.EX_FAILURE
+    assert "error: true" not in out
+
+
+def test_main_verbose_flag_reaches_init_context() -> None:
+    """`pkgdx --verbose init` parses & sets `CLIContext.is_verbose`."""
+    recorded: dict[str, CLIContext] = {}
+
+    def record(ctx: CLIContext) -> int:
+        recorded["ctx"] = ctx
+        return ExitCode.EX_OK
+
+    with mock.patch(f"{STANDARDS_CLI}.command_init", side_effect=record):
+        exit_code = _run_main(["--verbose", "init"])
+    assert exit_code == ExitCode.EX_OK
+    assert recorded["ctx"].is_verbose is True

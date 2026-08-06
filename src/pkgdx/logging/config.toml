@@ -47,11 +47,6 @@ level = "WARNING"
 handlers = ["stdout-verbose"]
 propagate = true
 
-[loggers."pkgdx.axi"]
-level = "NOTSET"
-handlers = ["stderr"]
-propagate = false
-
 # [root]
 # level = "WARNING"
 # handlers = []
