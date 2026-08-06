@@ -42,4 +42,7 @@ ehthumbs.db
 ICM/**/output/*
 !ICM/**/output/.gitkeep
 
+# skill-creator — eval workspaces
+.claude/skills/*-workspace/
+
 .mcp.json
