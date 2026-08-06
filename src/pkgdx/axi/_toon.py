@@ -14,7 +14,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import PurePath
 from typing import Any, Literal
 
-from pkgdx.axi._toon_constants import (
+from pkgdx.axi._constants import (
     COMMA,
     DEFAULT_DELIMITER,
     ESCAPES,
