@@ -2,6 +2,7 @@
 
 import functools
 import logging
+import re
 from collections.abc import Callable
 from dataclasses import asdict
 from typing import Any
@@ -72,7 +73,7 @@ def _with_help(output: str, hints: list[str]) -> str:
 
 
 def list_packages_tool(include_dev: bool = False) -> str:
-    """List the consuming repo's venv packages in TOON format."""
+    """List venv packages for a consuming repo (TOON format)."""
     root = get_project_root()
     packages = list_packages(root, include_dev=include_dev)
     if not packages:
@@ -88,7 +89,7 @@ def list_packages_tool(include_dev: bool = False) -> str:
 
 
 def show_package_tool(name: str) -> str:
-    """Show a single package's metadata in TOON."""
+    """Show metadata for a single package (TOON format)."""
     package = resolve_package(name)
     return _with_help(
         encode_object(
@@ -103,7 +104,7 @@ def show_package_tool(name: str) -> str:
 
 
 def show_package_api_tool(name: str, docstring: bool = False) -> str:
-    """Show a package's public, top-level API symbols in TOON."""
+    """Show public API symbols for a package (TOON format)."""
     symbols = get_public_api(name, docstring=docstring)
     if not symbols:
         return _with_help(
@@ -120,7 +121,7 @@ def show_package_api_tool(name: str, docstring: bool = False) -> str:
 
 
 def show_module_tool(name: str, docstring: bool = False) -> str:
-    """Show a module/package node and its direct children in TOON."""
+    """Show a module|package node and its direct children (TOON format)."""
     node, children = show_module(name)
     header = encode_object(
         {
@@ -155,7 +156,7 @@ def show_module_tool(name: str, docstring: bool = False) -> str:
 
 
 def get_symbol_tool(qualified_name: str, docstring: bool = False) -> str:
-    """Show a single symbol's full detail in TOON."""
+    """Show full detail for a single symbol (TOON format)."""
     node = get_symbol(qualified_name)
     output = encode_object(
         {
@@ -175,7 +176,7 @@ def get_symbol_tool(qualified_name: str, docstring: bool = False) -> str:
 def find_symbol_tool(
     query: str, limit: int = 20, package: str | None = None
 ) -> str:
-    """Search cached symbols by name/doc text, returned as TOON."""
+    """Search cached symbols by name|doc text (TOON format)."""
     nodes = find_symbol(query, limit, package)
     if not nodes:
         hint = (
@@ -194,7 +195,7 @@ def find_symbol_tool(
 
 
 def get_inheritors_tool(qualified_name: str) -> str:
-    """Show classes that directly inherit from a class in TOON."""
+    """Show classes that directly inherit from a class (TOON format)."""
     nodes = get_inheritors(qualified_name)
     if not nodes:
         return _with_help(
@@ -212,7 +213,7 @@ def get_inheritors_tool(qualified_name: str) -> str:
 
 
 def get_module_tree_tool(name: str, max_depth: int = 2) -> str:
-    """Show a module/package's nested module tree in TOON."""
+    """Show nested module tree for a module|package (TOON format)."""
     pairs = get_module_tree(name, max_depth)
     if not pairs:
         return _with_help(
@@ -226,7 +227,7 @@ def get_module_tree_tool(name: str, max_depth: int = 2) -> str:
     )
 
 
-_TOOLS = (
+_TOOLS: tuple[Callable[..., str], ...] = (
     list_packages_tool,
     show_package_tool,
     show_package_api_tool,
@@ -251,9 +252,13 @@ def build_server() -> Any:
     """
     from fastmcp import FastMCP
 
-    server = FastMCP("axi")
-    for tool_fn in _TOOLS:
-        server.tool(_toon_errors(tool_fn))
+    server = FastMCP("VenvAXI")
+    for function in _TOOLS:
+        fname = function.__name__
+        # get_module_tree_tool -> getModuleTreeTool etc. (camelCase)
+        cname = re.sub(r"_([a-zA-Z])", lambda m: m.group(1).upper(), fname)
+
+        server.tool(_toon_errors(function), name=cname)
     return server
 
 
