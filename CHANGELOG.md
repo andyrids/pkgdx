@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > - `Fixed` for any bug fixes.
 > - `Security` in case of vulnerabilities.
 
+## [Unreleased]
+
+### Removed
+
+- AXI CLI and MCP server, extracted to the standalone
+  [`venv-axi`](https://github.com/andyrids/venv-axi) package. The `pkgdx[axi]` extra and its
+  `fastmcp` dependency are gone; use `uv add venv-axi --dev` instead.
+
 ## [0.1.0] - 2026-08-04
 
 ### Added

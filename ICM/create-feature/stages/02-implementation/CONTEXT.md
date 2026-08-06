@@ -20,7 +20,7 @@ Material tagged 'COULD' should be read if relevant to the technical specificatio
   - `ICM/_config/reference-standard-attribution.md`
   - `ICM/_config/reference-standard-docstrings.md`
 - Read (COULD):
-  - `ICM/_config/reference-standard-toon.md`
+  - `ICM/_config/reference-cookbook-rich.md`
 
 ## Process
 
