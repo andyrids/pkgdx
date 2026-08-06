@@ -5,6 +5,7 @@ from pathlib import PurePosixPath, PureWindowsPath
 
 import pytest
 
+from pkgdx.axi._constants import COMMA
 from pkgdx.axi._toon import (
     encode_key,
     encode_object,
@@ -12,7 +13,6 @@ from pkgdx.axi._toon import (
     encode_table,
     format_help,
 )
-from pkgdx.axi._toon_constants import COMMA
 
 
 def test_encode_primitive_none() -> None:
