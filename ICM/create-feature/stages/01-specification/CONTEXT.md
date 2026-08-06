@@ -20,7 +20,6 @@ Material tagged 'COULD' should be read if relevant for the user prompt and conte
   - `ICM/_config/reference-standard-naming.md`
   - `ICM/_config/reference-standard-techspec.md`
 - Read (COULD):
-  - `ICM/_config/reference-standard-axi.md`
   - `ICM/_config/reference-cookbook-rich.md`
 
 ## Process

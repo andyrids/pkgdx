@@ -32,11 +32,7 @@ class ExitCode:
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class CLIContext:
-    """Centralized state for the CLI commands.
-
-    NOTE: `console` is used by the `standards` commands only - `axi`
-    writes raw TOON to `sys.stdout` to avoid Rich line-wrapping.
-    """
+    """Centralized state for the CLI commands."""
 
     args: argparse.Namespace
     console: Console
