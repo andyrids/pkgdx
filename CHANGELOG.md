@@ -16,6 +16,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > - `Fixed` for any bug fixes.
 > - `Security` in case of vulnerabilities.
 
+## [0.2.1] - 2026-09-09
+
+### Added
+
+- New documentation for project standards & toolchain guidance ([`docs/`](docs/))
+
+### Changed
+
+- Excluded `.venv` from `detect-secrets` scan in `secrets-baseline` Justfile recipe.
+
+### Removed
+
+- `tryceratops` [TRY003](https://docs.astral.sh/ruff/rules/raise-vanilla-args/) rule was removed due
+to false positives (builtin exceptions like `ValueError` & `TypeError`).
+
+### Fixed
+
+- Removed `types_or: ["python", "pyi"]` constraint from `pkgdx-secrets` hook, which defeated secret
+detection.
+
 ## [0.2.0] - 2026-08-06
 
 ### Removed

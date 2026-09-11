@@ -45,8 +45,7 @@
   entry: pkgdx-secrets-hook
   args: ["--baseline", ".secrets.baseline", "--no-verify"]
   language: python
-  types_or: ["python", "pyi"]
-  exclude: "(\\.secrets\\.baseline|.*\\.lock)"
+  exclude: "(\\.venv|\\.secrets\\.baseline|.*\\.lock)"
   require_serial: true
   pass_filenames: true
   stages: ["pre-commit"]

@@ -5,10 +5,8 @@ import logging
 import sys
 from typing import NoReturn
 
-from rich.console import Console
-
 from pkgdx import _core, exceptions
-from pkgdx.logging import configure_cli_logging
+from pkgdx.logging import CLI_CONSOLE, configure_cli_logging
 from pkgdx.standards import _hooks
 from pkgdx.standards._cli import add_subparser as add_standards_subparser
 
@@ -102,8 +100,9 @@ def main() -> NoReturn:
     is_verbose = args.verbose
     configure_cli_logging(logging.DEBUG if is_verbose else logging.WARNING)
 
-    console = Console(force_terminal=sys.stdout.isatty())
-    ctx = _core.CLIContext(args=args, console=console, is_verbose=is_verbose)
+    ctx = _core.CLIContext(
+        args=args, console=CLI_CONSOLE, is_verbose=is_verbose
+    )
 
     try:
         exit_code = int(args.func(ctx))

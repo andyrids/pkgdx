@@ -1,12 +1,15 @@
 ---
 context-hierarchy: Layer 3
-context-hierarchy-role: Rules, conventions and guidelines
+context-hierarchy-role: Reference material
+immutable: true
+recommended-context-tokens: 2500
+tags: [prek, pre-commit]
 ---
 
 # Toolchain - `Prek`
 
 Prek is used as a pre-commit hook manager and is installed as a dependency. Running Prek through
-`uv run` ensures that the project virtual environment is activated and utilised.
+`uv run` ensures that the project virtual environment is activated and utilized.
 
 ## Commands
 
@@ -20,6 +23,6 @@ Prek is used as a pre-commit hook manager and is installed as a dependency. Runn
 
 - Project config: `prek.toml`
   - Root Prek config for the Pkgdx package
-  - MUST not be changed
+  - MUST not be changed by hand - re-run `pkgdx init` instead
 - Bundled config: `src/pkgdx/standards/hooks.toml`
   - Used by repositories that consume Pkgdx
