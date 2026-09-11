@@ -1,80 +1,70 @@
 ---
 context-hierarchy: Layer 0
 context-hierarchy-role: Global identity
-maximum-context-tokens: 800
+immutable: false
+recommended-context-tokens: 900
 ---
 
-# Global Context
+# Package Developer Experience (DX) Toolkit [`Pkgdx`]
 
-You are an expert Python software engineer acting as a developer for the Pkgdx project - a DevX
-toolkit, providing a CLI for canonical standards implementation across consuming Python
-projects.
+The pkgdx project provides a DX toolkit, which centralises the maintenance and implementation of
+canonical standards for consuming projects.
 
-## General Guidance
+Agent eXperience Interface (AXI) CLI for token-efficient querying of
+venv dependencies. See `docs/architecture.md` for more details.
 
-- Follow YAGNI principles
-- Reuse existing patterns in the codebase
-- Use the Standard Library over a dependency
-- Use an existing dependency over a new one
-- Use a one-liner where possible
-- Write the minimum code that works
-- For technical decisions
-  - Do not give much weight to development cost
-  - Prefer quality, simplicity, robustness & scalability
+This project follows Interpretable Context Methodology (ICM): agent workflows orchestrated through
+workspaces of folder structure, markdown and scripts, each a pipeline of stages with a defined
+input, process and output. Review gates MUST be respected - they are where a human inspects the
+work and hands it back.
 
-## Environment and Toolchain
+Start at `CONTEXT.md` in the repository root; it routes to the workspace that owns the work.
 
-Pkgdx is developed with Astral uv, which MUST be installed globally or in the venv.
+## Context hierarchy
 
-- **Language**: Python >=3.11
-- **OS**: Windows/Linux/WSL2
+Five layers. Layers 0 to 2 route; layers 3 and 4 carry content. Load a layer only when the work
+has reached it - reading ahead is how a stage acquires context it was designed not to have.
 
-## Navigation
+| Layer | Role              | Path                            | `immutable` | Budget |
+| ----- | ----------------- | ------------------------------- | ----------- | ------ |
+| 0     | Global identity   | `AGENTS.md`                     | false       | 900    |
+| 1     | Workspace routing | `CONTEXT.md`                    | false       | 300    |
+| 2     | Stage routing     | `ICM/*/CONTEXT.md`              | false       | 500    |
+| 2     | Stage contract    | `ICM/*/stages/**/CONTEXT.md`    | false       | 500    |
+| 3     | Reference material| `ICM/_config/reference-*.md`, both READMEs | true | 2500 |
+| 3     | Reference material| `specs/**/*.md`                 | false       | -      |
+| 4     | Working artifact  | `plans/*.md`                    | false       | -      |
+| 4     | Working artifact  | `ICM/*/stages/**/output/*.md`   | false       | -      |
 
-- `consumers/testing/` <- Astral workspace member - `testing`
-- `docs/` <- Project documentation & research
-- `ICM/` <- Task workspaces
-- `src/pkgdx/` <- Project sourcecode
-  - `logging/` <- Logging
-    - Logging functions, logging config TOML
-  - `standards/` <- Canonical standards
-    - `init` CLI, pre-commit hooks, toolchain configs
-  - `__main__.py` <- Main CLI
-  - `_core.py` <- Core CLI logic
-- `tests/` <- Project unit tests
-- `.pre-commit-hooks.yaml` <- Project pre-commit hooks
-- `.gitlab-ci.yml` <- Project CI/CD config
-- `.secrets.baseline` <- Secrets baseline (`detect-secrets`)
-- `AGENTS.md` <- Global project context
-- `CHANGELOG.md` <- Project CHANGELOG
-- `CLAUDE.md` <- Symbolic link to AGENTS.md
-- `CONTEXT.md` <- Task routing
-- `COPYRIGHT` <- Project COPYRIGHT
-- `Justfile` <- Just recipes
-- `LICENSE` <- Project LICENSE
-- `prek.toml` <- Prek pre-commit hook configuration
-- `pyproject.toml` <- Project configuration
-- `README.md` <- Project README
-- `uv.lock` <- Project lockfile
+### Frontmatter
 
-## Workspaces
+Every file above carries `context-hierarchy`, `context-hierarchy-role` and `immutable` as tabled,
+plus `recommended-context-tokens` where a target is given. Beyond those:
 
-Interpretable Context Methodology (ICM) is a structured filesystem hierarchy, where numbered
-folders represent pipeline stages and Markdown files carry prompts and context.
+- **Budgets are a signal, not an enforced limit.** A file that outgrows one is worth a look - it
+  may have started doing another layer's job. Specs are unbudgeted - a spec is as long as the
+  behaviour it declares.
+- **Layer 3** carries `tags: [keyword, ...]`. `immutable: true` marks the factory configuration,
+  amended deliberately, not in passing. Specs are not part of it: the pipeline exists to amend
+  them, and stage 01 owns every change.
+- **`plans/*.md`** carries `status` - `planned | in-progress | done | blocked | cancelled` - plus
+  the query fields `depends`, `specs`, `authors`, `issues` and `pr`, contracted in
+  `plans/README.md`. Every coverage and ripple check reads them.
+- **`ICM/*/stages/**/output/*.md`** carries `status: in-progress | in-review | done`. It is
+  ephemeral scratch, gitignored.
 
-Each ICM workspace has a `CONTEXT.md`, which is the main control point.
+## Design principles
 
-## Routing
+1. **One stage, one job** - each stage handles a single step of a workflow.
+2. **Plain text as the interface** - stages communicate through plain text.
+3. **Layered context loading** - agents load only what the current stage needs.
+4. **Output is an edit surface** - stage output can be opened, read, edited and saved.
+5. **Configure the factory, not the product** - new deliverables reuse the same configuration.
 
-User prompt tasking and workspace routing information is in the project root `CONTEXT.md`.
+## Stage contracts
 
-In Claude Code, the `/create-feature` command (`.claude/commands/`) is the preferred entry point.
-Unit-test, documentation and refactor tasks are routed through the root `CONTEXT.md`, which fans
-them out to the same consolidated `ICM/create-feature` workspace.
+Each stage defines a contract in three parts - what it reads, what it does, what it writes -
+stated in its own `ICM/*/stages/**/CONTEXT.md`, which is the authority for that stage.
 
-## Token Efficiency
-
-- Each task is performed within a specific ICM workspace
-- Each workspace is compartmentalised
-- Each workspace `CONTEXT.md` provides necessary context
-- Avoid unnecessary files listed in `.gitignore`
+A contract cites the rules it depends on rather than restating them. Where a stage and a reference
+disagree, the reference wins and the contract is what needs fixing.

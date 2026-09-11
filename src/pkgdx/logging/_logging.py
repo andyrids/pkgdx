@@ -1,33 +1,48 @@
 """Logging configuration for `pkgdx`.
 
-NOTE: All logging handlers are on the `pkgdx` logger.
+The Rich global `Console` (`GLOBAL_CONSOLE`) is configured to use STDERR
+(`reconfigure(stderr=True)`) for logging and progress display. A separate
+`Console` instance (`CLI_CONSOLE`) is used for CLI output on STDOUT.
+
+When a `RichHandler` (logging handler) and `Status`/`Progress` share the same
+`Console` instance (`GLOBAL_CONSOLE`), the output can be automatically
+coordinated by Rich.
+
+NOTE: When `RichHandler` is initialised without a `Console` instance, it will
+use the global `Console` returned by `get_console()` (`GLOBAL_CONSOLE`).
 """
 
 import logging.config
 import pathlib
+import sys
 
 import tomllib
-from rich import get_console
+from rich import get_console, reconfigure
+from rich.console import Console
 
 CONFIG_PATH = pathlib.Path(__file__).parent / "config.toml"
 CONFIG_STR = CONFIG_PATH.read_text(encoding="utf-8")
+
+reconfigure(stderr=True)
 GLOBAL_CONSOLE = get_console()
+CLI_CONSOLE = Console(force_terminal=sys.stdout.isatty())
 
 
 def configure_cli_logging(level: int = logging.WARNING) -> None:
-    """Configure CLI logging using the `config.toml` settings."""
+    """Configure CLI logging using the `config.toml` settings.
+
+    NOTE: CLI logs are prevented from propagating to the root logger to avoid
+    duplication.
+
+    Args:
+        level: The desired logging level. Defaults to `logging.WARNING`.
+    """
     logging.config.dictConfig(tomllib.loads(CONFIG_STR))
-
-    package = __package__.split(".")[0] if __package__ else "pkgdx"
-
-    logger = logging.getLogger(package)
+    logger = logging.getLogger("pkgdx")
     logger.setLevel(level)
-
-    # Prevent CLI logs from propagating & being duplicated
     logger.propagate = False
 
 
 def configure_pkg_logging() -> None:
     """Configure package logging using a `NullHandler`."""
-    package = __package__.split(".")[0] if __package__ else "pkgdx"
-    logging.getLogger(package).addHandler(logging.NullHandler())
+    logging.getLogger("pkgdx").addHandler(logging.NullHandler())

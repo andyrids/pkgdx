@@ -2,51 +2,47 @@ version = 1
 incremental = false
 disable_existing_loggers = false
 
-[formatters.standard]
+[formatters.stdlib-standard-format]
 format = "%(levelname)s: %(message)s"
 datefmt = "%Y-%m-%dT%H:%M:%S%z"
 
-[formatters.verbose]
-format = "[%(levelname)s|%(module)s|L%(lineno)d] %(asctime)s: %(message)s"
-datefmt = "%Y-%m-%dT%H:%M:%S%z"
-
-[formatters.rich]
+[formatters.rich-standard-format]
 format = "%(message)s"
 datefmt = "[%Y-%m-%dT%H:%M:%S%z]"
 
-[formatters.rich-verbose]
+[formatters.rich-verbose-format]
 format = "[%(funcName)s] %(message)s"
 datefmt = "[%Y-%m-%dT%H:%M:%S%z]"
 
-[filters]
-# Kept empty to match the expected dictionary structure
+[formatters.rich-extra-verbose-format]
+format = "[%(levelname)s|%(module)s|L%(lineno)d] %(asctime)s: %(message)s"
+datefmt = "%Y-%m-%dT%H:%M:%S%z"
 
-[handlers.stdout]
+[filters]
+# Unused, but kept to match expected `dictConfig` structure
+
+[handlers.rich-standard-handler]
 class = "rich.logging.RichHandler"
-formatter = "rich"
+formatter = "rich-standard-format"
 show_path = false
 rich_tracebacks = true
 markup = true
 omit_repeated_times = true
 
-[handlers.stdout-verbose]
+[handlers.rich-verbose-handler]
 class = "rich.logging.RichHandler"
-formatter = "rich-verbose"
+formatter = "rich-verbose-format"
 show_path = true
 rich_tracebacks = true
 markup = false
 omit_repeated_times = false
 
-[handlers.stderr]
+[handlers.stdlib-standard-handler]
 class = "logging.StreamHandler"
-formatter = "standard"
+formatter = "stdlib-standard-format"
 stream = "ext://sys.stderr"
 
 [loggers.pkgdx]
 level = "WARNING"
-handlers = ["stdout-verbose"]
+handlers = ["rich-verbose-handler"]
 propagate = true
-
-# [root]
-# level = "WARNING"
-# handlers = []

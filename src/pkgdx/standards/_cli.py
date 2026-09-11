@@ -7,11 +7,10 @@ from typing import TYPE_CHECKING, Any
 
 import tomlkit
 import tomlkit.exceptions
-from rich.console import Console
-from rich.logging import RichHandler
 from rich.progress import Progress, TaskID
 
 from pkgdx import _core, exceptions
+from pkgdx.logging import GLOBAL_CONSOLE
 
 if TYPE_CHECKING:
     import argparse
@@ -20,33 +19,27 @@ logger = logging.getLogger(__package__)
 
 
 @contextmanager
-def _setup_progress(console: Console) -> Generator[Progress, None, None]:
-    """Create a TTY-aware Rich progress bar for the setup command."""
+def _setup_progress() -> Generator[Progress, None, None]:
+    """Create a Rich progress bar for the setup command.
 
-    cli_logger = logging.getLogger("pkgdx")
-    handlers = [h for h in cli_logger.handlers if isinstance(h, RichHandler)]
+    NOTE: Like logs, progress bars and spinners are diagnostic metadata, which
+    are kept on STDERR and share the same console instance (`GLOBAL_CONSOLE`).
 
-    if not handlers:
-        logger.error("Failed to find logging handlers")
-        raise exceptions.RichHandlerNotFound
-
-    original_consoles = {h: h.console for h in handlers}
-
-    for h in handlers:
-        h.console = console
+    Returns:
+        A Rich `Progress` instance for use within a context manager.
+    """
 
     progress = Progress(
         *Progress.get_default_columns(),
-        console=console,
-        disable=not console.is_terminal,
+        console=GLOBAL_CONSOLE,
+        disable=not GLOBAL_CONSOLE.is_terminal,
     )
 
     try:
         with progress:
             yield progress
     finally:
-        for handler, original_console in original_consoles.items():
-            handler.console = original_console
+        pass
 
 
 def _advance_progress(
@@ -71,7 +64,7 @@ def command_init(ctx: _core.CLIContext) -> int:
         The integer process exit code. 0 indicates success, non-zero
         indicates failure. Uses `_core.ExitCode`.
     """
-    with _setup_progress(ctx.console) as progress:
+    with _setup_progress() as progress:
         task = progress.add_task("[cyan]pkgdx init", total=6)
 
         _advance_progress(progress, task, "[cyan]Find project root")
