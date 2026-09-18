@@ -43,6 +43,8 @@ def test_setup_progress_enabled_in_tty(
     """Progress is enabled when STDERR is a TTY."""
     with _setup_progress() as progress:
         assert progress.disable is False
+        assert progress.expand is True
+        assert progress.live.transient is False
 
 
 def test_setup_progress_shares_console_with_rich_handler(
@@ -79,7 +81,7 @@ def test_command_init_complete(
     mock_subprocess_run: mock.MagicMock,
     make_cli_context: ContextFactory,
 ) -> None:
-    """The init command advances through all six progress steps."""
+    """The init command tracks one overall task and six completed steps."""
 
     ctx = make_cli_context(
         args=argparse.Namespace(debug=False, reset=False),
@@ -110,9 +112,12 @@ def test_command_init_complete(
         exit_code = command_init(ctx)
 
     assert exit_code == ExitCode.EX_OK
-    assert mprogress.add_task.call_count == 1
+    assert mprogress.add_task.call_count == 7
+    first_add = mprogress.add_task.call_args_list[0]
+    assert first_add.kwargs["total"] == 6
+    assert first_add.kwargs["role"] == "overall"
     update_calls = mprogress.update.call_args_list
-    assert len(update_calls) == 7
+    assert len(update_calls) == 13
 
 
 def test_command_init_exits_on_missing_project_root(
@@ -143,6 +148,10 @@ def test_command_init_exits_on_missing_project_root(
         exit_code = command_init(ctx)
 
     assert exit_code == ExitCode.EX_FAILURE
+    assert any(
+        call.kwargs.get("failed") is True
+        for call in mprogress.update.call_args_list
+    )
 
 
 def test_command_init_exits_on_prek_config_error(
@@ -182,6 +191,10 @@ def test_command_init_exits_on_prek_config_error(
         exit_code = command_init(ctx)
 
     assert exit_code == ExitCode.EX_FAILURE
+    assert any(
+        call.kwargs.get("failed") is True
+        for call in mprogress.update.call_args_list
+    )
 
 
 def test_command_init_non_tty_runs_without_progress(
