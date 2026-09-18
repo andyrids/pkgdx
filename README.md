@@ -4,9 +4,9 @@ I created `pkgdx` as a way to improve DX for Python projects. The package is int
 installation as a development dependency, providing a main command-line interface (CLI) and
 a nested CLI commands and options for common development tasks.
 
-## Current Features
+## Current features
 
-### (1) Canonical Standards Maintenance
+### (1) Canonical standards maintenance
 
 `pkgdx` centralises creation and implementation of coding standards across projects, providing a
 single source of truth for toolchain configuration:
@@ -16,6 +16,12 @@ single source of truth for toolchain configuration:
 3. PyMarkdown (Markdown linting)
 4. detect-secrets (secret detection)
 5. Prek (hook framework)
+
+> [!INFO]
+> To quickly demo `pkgdx`, clone this repository and run the `test-consumer` Justfile recipe via
+> `just test-consumer`. If [Just](https://github.com/casey/just) command runner is unavailable,
+> run `uv run --directory consumers/testing pkgdx --debug init --reset` to use `pkgdx` against
+> the `consumers/testing` workspace package.
 
 #### Why?
 
@@ -54,10 +60,10 @@ To apply the canonical standards to a project, run the `init` command:
 uv run pkgdx init
 ```
 
-To see verbose output, use the `--verbose` or `-v` option:
+To see verbose logging output, use the `--debug` or `-d` option:
 
 ```bash
-uv run pkgdx -v init
+uv run pkgdx -d init
 ```
 
 To overwrite or reset an existing `prek.toml` in the project root, use the `--reset` option:
@@ -75,7 +81,7 @@ is also mirrored on GitHub.
 > Pkgdx installation is package-manager agnostic. Use another manager like Poetry and replace the
 > `uv run` accordingly or omit entirely, with an activated virtual environment.
 
-### Package Registry
+### Package registry
 
 ```bash
 uv add pkgdx --dev --index gitlab=https://gitlab.com/api/v4/projects/82928123/packages/pypi/simple
@@ -91,7 +97,7 @@ uv add --dev git+https://gitlab.com/apridya/pkgdx.git
 uv add --dev git+https://gitlab.com/apridya/pkgdx.git@v0.2.0
 ```
 
-## CI/CD Integration
+## CI/CD integration
 
 Pkgdx can be included in GitLab/Github CI/CD pipelines to enforce centralised standards without
 heavy boilerplate across each CI/CD YAML config.
@@ -99,15 +105,15 @@ heavy boilerplate across each CI/CD YAML config.
 > [!TIP]
 > See `ruff-lint-job` in the project [.gitlab-ci.yml](.gitlab-ci.yml) for an example.
 
-## Adopting Your Own Standards (External Users)
+## Adopting your own standards (external users)
 
 If you wish to use the Pkgdx framework, but want to apply your own rules, follow the steps below.
 
-### (1) Fork the Repo
+### (1) Fork the repo
 
 Start by forking the repo to your own namespace.
 
-### (2) Modify the Configuration Files
+### (2) Modify the configuration Files
 
 Modify the configuration files located in `src/pkgdx/standards/`.
 
@@ -120,39 +126,19 @@ Modify the configuration files located in `src/pkgdx/standards/`.
 > Hooks can be added to `hooks.toml` or removed as needed. The CLI `init` command parses this
 > file to determine which hooks should be configured in the consuming repository `prek.toml`.
 
-### (3) Update Hook Configuration URL
+### (3) Update hook configuration URL
 
 Edit the `src/pkgdx/standards/hooks.toml` and change the `repo` value from
 `"https://gitlab.com/andyrids/pkgdx"` to your forked repo URL and the `rev` to the new tag you
 will create once you have finished.
 
-### (4) Tag a New Release
+### (4) Tag a new release
 
 Tag a new release and the CI/CD pipeline will build and publish the package to your Package
 Registry. You can install your fork as a dev dependency in your projects via the repo URL or
 Package Registry URL.
 
-### Contribution
+## Contribution
 
 Contributions are welcome and these should be made through the
 [GitLab repository](https://gitlab.com/andyrids/pkgdx).
-
-## A Note on AI Usage
-
-This project is being used as a testbed for Interpretable Context Methodology (ICM), which uses
-folder structure as Agent Architecture. A copy of the research paper can be found at
-[docs/2603.16021v2.pdf](/docs/2603.16021v2.pdf).
-
-ICM replaces framework-level orchestration with filesystem structure. Numbered folders represent
-stages. Plain markdown files carry prompts and context that tell a single AI agent what role to
-play at each step.
-
-The system is self-documenting - read `AGENTS.md` (symlink -> `CLAUDE.md`), which provide
-development context. Navigate to `CONTEXT.md` as per `AGENTS.md` [`Routing`](AGENTS.md#routing)
-instructions to see the necessary routing, context and reference that an agent would follow.
-
-A community dedicated to this methodology can be found at [https://www.skool.com/cliefnotes](https://www.skool.com/cliefnotes/about?ref=478219c6d94340bd984dde6a8d1046e6).
-
-> [!NOTE]
-> ICM can leverage AI in a way that streamlines development, but also generates enough friction
-> in the right areas to promote continued development (Friction Doctrine).
