@@ -2,7 +2,6 @@
 
 import argparse
 import logging
-import sys
 from collections.abc import Callable
 from pathlib import Path
 from unittest import mock
@@ -29,27 +28,27 @@ ContextFactory = Callable[..., CLIContext]
 
 
 def test_setup_progress_disabled_in_non_tty(
-    tty_stdout_disable: None,
+    tty_stderr_disable: None,
     configured_logging: None,
 ) -> None:
-    """Progress is disabled when stdout is non-TTY."""
-    console = Console(force_terminal=sys.stdout.isatty())
-    with _setup_progress(console) as progress:
+    """Progress is disabled when STDERR is non-TTY."""
+    with _setup_progress() as progress:
         assert progress.disable is True
 
 
 def test_setup_progress_enabled_in_tty(
-    tty_stdout_enable: None,
+    tty_stderr_enable: None,
     configured_logging: None,
 ) -> None:
-    """Progress is enabled when stdout is a TTY."""
-    console = Console(force_terminal=sys.stdout.isatty())
-    with _setup_progress(console) as progress:
+    """Progress is enabled when STDERR is a TTY."""
+    with _setup_progress() as progress:
         assert progress.disable is False
+        assert progress.expand is True
+        assert progress.live.transient is False
 
 
 def test_setup_progress_shares_console_with_rich_handler(
-    tty_stdout_enable: None,
+    tty_stderr_enable: None,
     configured_logging: None,
 ) -> None:
     """The Progress instance shares a Console with RichHandler."""
@@ -57,13 +56,12 @@ def test_setup_progress_shares_console_with_rich_handler(
     handler = next(
         h for h in cli_logger.handlers if isinstance(h, RichHandler)
     )
-    console = Console(force_terminal=sys.stdout.isatty())
-    with _setup_progress(console) as progress:
+    with _setup_progress() as progress:
         assert progress.console is handler.console
 
 
 def test_setup_progress_restores_console_after_exit(
-    tty_stdout_enable: None,
+    tty_stderr_enable: None,
     configured_logging: None,
 ) -> None:
     """RichHandler console is restored after the Progress context exits."""
@@ -72,22 +70,21 @@ def test_setup_progress_restores_console_after_exit(
         h for h in cli_logger.handlers if isinstance(h, RichHandler)
     )
     original_console = handler.console
-    console = Console(force_terminal=sys.stdout.isatty())
-    with _setup_progress(console):
+    with _setup_progress():
         pass
     assert handler.console is original_console
 
 
 def test_command_init_complete(
     mock_project: Path,
-    tty_stdout_enable: None,
+    tty_stderr_enable: None,
     mock_subprocess_run: mock.MagicMock,
     make_cli_context: ContextFactory,
 ) -> None:
-    """The init command advances through all six progress steps."""
+    """The init command tracks one overall task and six completed steps."""
 
     ctx = make_cli_context(
-        args=argparse.Namespace(verbose=False, reset=False),
+        args=argparse.Namespace(debug=False, reset=False),
         console=Console(),
     )
 
@@ -115,19 +112,22 @@ def test_command_init_complete(
         exit_code = command_init(ctx)
 
     assert exit_code == ExitCode.EX_OK
-    assert mprogress.add_task.call_count == 1
+    assert mprogress.add_task.call_count == 7
+    first_add = mprogress.add_task.call_args_list[0]
+    assert first_add.kwargs["total"] == 6
+    assert first_add.kwargs["role"] == "overall"
     update_calls = mprogress.update.call_args_list
-    assert len(update_calls) == 7
+    assert len(update_calls) == 13
 
 
 def test_command_init_exits_on_missing_project_root(
     mock_project: Path,
-    tty_stdout_disable: None,
+    tty_stderr_disable: None,
     make_cli_context: ContextFactory,
 ) -> None:
     """The init command exits with code 1 when the project root is missing."""
     ctx = make_cli_context(
-        args=argparse.Namespace(verbose=False, reset=False),
+        args=argparse.Namespace(debug=False, reset=False),
         console=Console(),
     )
 
@@ -148,17 +148,21 @@ def test_command_init_exits_on_missing_project_root(
         exit_code = command_init(ctx)
 
     assert exit_code == ExitCode.EX_FAILURE
+    assert any(
+        call.kwargs.get("failed") is True
+        for call in mprogress.update.call_args_list
+    )
 
 
 def test_command_init_exits_on_prek_config_error(
     mock_project: Path,
-    tty_stdout_enable: None,
+    tty_stderr_enable: None,
     make_cli_context: ContextFactory,
 ) -> None:
     """The init command exits with code 1 when prek.toml config fails."""
 
     ctx = make_cli_context(
-        args=argparse.Namespace(verbose=False, reset=False),
+        args=argparse.Namespace(debug=False, reset=False),
         console=Console(),
     )
 
@@ -187,18 +191,22 @@ def test_command_init_exits_on_prek_config_error(
         exit_code = command_init(ctx)
 
     assert exit_code == ExitCode.EX_FAILURE
+    assert any(
+        call.kwargs.get("failed") is True
+        for call in mprogress.update.call_args_list
+    )
 
 
 def test_command_init_non_tty_runs_without_progress(
     mock_project: Path,
-    tty_stdout_disable: None,
+    tty_stderr_disable: None,
     mock_subprocess_run: mock.MagicMock,
     make_cli_context: ContextFactory,
 ) -> None:
     """The init command runs without progress rendering in non-TTY mode."""
 
     ctx = make_cli_context(
-        args=argparse.Namespace(verbose=False, reset=False),
+        args=argparse.Namespace(debug=False, reset=False),
         console=Console(),
     )
 
@@ -289,7 +297,10 @@ def _run_main(argv: list[str]) -> int:
         pytest.raises(SystemExit) as exc_info,
     ):
         __main__.main()
-    return int(exc_info.value.code)
+
+    code = exc_info.value.code
+    assert isinstance(code, int)
+    return code
 
 
 def test_main_maps_error_to_exit_1(
@@ -305,7 +316,7 @@ def test_main_maps_error_to_exit_1(
 
 
 def test_main_verbose_flag_reaches_init_context() -> None:
-    """`pkgdx --verbose init` parses & sets `CLIContext.is_verbose`."""
+    """`pkgdx --debug init` parses & sets `CLIContext.is_debug`."""
     recorded: dict[str, CLIContext] = {}
 
     def record(ctx: CLIContext) -> int:
@@ -313,6 +324,6 @@ def test_main_verbose_flag_reaches_init_context() -> None:
         return ExitCode.EX_OK
 
     with mock.patch(f"{STANDARDS_CLI}.command_init", side_effect=record):
-        exit_code = _run_main(["--verbose", "init"])
+        exit_code = _run_main(["--debug", "init"])
     assert exit_code == ExitCode.EX_OK
-    assert recorded["ctx"].is_verbose is True
+    assert recorded["ctx"].is_debug is True

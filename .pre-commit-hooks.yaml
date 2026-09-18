@@ -27,7 +27,8 @@
   types_or: ["python", "pyi"]
   exclude: "tests/"
   require_serial: true
-  pass_filenames: true
+  pass_filenames: false
+  verbose: true
   
 - id: pkgdx-markdown
   name: Markdown [PyMarkdown]
@@ -45,8 +46,7 @@
   entry: pkgdx-secrets-hook
   args: ["--baseline", ".secrets.baseline", "--no-verify"]
   language: python
-  types_or: ["python", "pyi"]
-  exclude: "(\\.secrets\\.baseline|.*\\.lock)"
+  exclude: "(\\.venv|\\.secrets\\.baseline|.*\\.lock)"
   require_serial: true
   pass_filenames: true
   stages: ["pre-commit"]

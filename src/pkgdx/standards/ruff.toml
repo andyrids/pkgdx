@@ -45,7 +45,6 @@ select = [
     "TC003",  # flake8-type-checking (typing-only-standard-library-import)
     "TC004",  # flake8-type-checking (runtime-import-in-type-checking-block)
     "TRY002", # tryceratops (raise-vanilla-class)
-    "TRY003", # tryceratops (raise-vanilla-args)
     "TRY004", # tryceratops (type-check-without-type-error)
     "TRY300", # tryceratops (try-consider-else)
     "TRY401", # tryceratops (verbose-log-message)

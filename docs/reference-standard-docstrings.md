@@ -1,15 +1,16 @@
 ---
 context-hierarchy: Layer 3
-context-hierarchy-role: Rules, conventions and guidelines
+context-hierarchy-role: Reference material
+immutable: true
+recommended-context-tokens: 2500
+tags: [docstrings]
 ---
 
-# Documentation
-
-## Docstrings
+# Standard - docstrings
 
 Docstrings follow the Google style guide and PEP 257 guidelines.
 
-### (1) Module-Level Docstrings
+## (1) Module-level docstrings
 
 - MUST follow existing codebase style
 - MUST include a summary line
@@ -28,7 +29,7 @@ License:
 """
 ```
 
-### (2) Functions and Methods
+## (2) Functions and methods
 
 - MUST follow existing codebase style
 - MUST use the imperative-style in the summary line
@@ -40,23 +41,30 @@ License:
 - COULD provide example usage or detail where needed
 
 ```python
-def install_prek_hooks(root: Path) -> None:
-    """Install pre-commit hooks if not installed.
+def format_help(lines: Sequence[str]) -> str:
+    """Format the contextual-disclosure `help[]` footer.
 
-    NOTE: A pre-existing `.git/hooks/pre-commit` is left alone - `prek
-    install` is only shelled out to on a repo that has none.
+    NOTE: AXI principle 9 (contextual disclosure, see `specs/principles.md`):
+    concrete next-step commands are surfaced instead of a static usage
+    summary.
 
     Args:
-        root: The root path of the consuming repo.
+        lines: Concrete next-step command suggestions.
+
+    Returns:
+        A `help[N]:` block, with indented lines for each suggestion.
+
+        ```
+        help[2]:
+            Run `venvaxi list` for the venv package list
+            Run `venvaxi show <package>` for package info
+        ```
     """
-    precommit_config = root / ".git" / "hooks" / "pre-commit"
-    if precommit_config.exists():
-        logger.debug("Prek pre-commit hooks already installed")
-        return
-    ...
+    body = "\n".join(f"  {line}" for line in lines)
+    return f"help[{len(lines)}]:\n{body}"
 ```
 
-### (3) Classes
+## (3) Classes
 
 - MUST follow existing codebase style
 - MUST have a summary line that describes what the class instance represents
