@@ -6,6 +6,7 @@ import logging
 import re
 import subprocess
 import sys
+from collections.abc import Iterable
 from itertools import chain
 from pathlib import Path
 from typing import Any
@@ -19,6 +20,8 @@ from tomlkit.items import Table
 from pkgdx import exceptions, standards
 from pkgdx._types import HookBuiltin, HookLocal, HookRemote
 
+__all__: list[str] = ["CLIGFormatter"]
+
 logger = logging.getLogger(__package__)
 
 
@@ -28,6 +31,7 @@ class ExitCode:
     EX_OK = 0
     EX_FAILURE = 1
     EX_SYNTAX = 2
+    EX_USAGE = 64
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -36,7 +40,32 @@ class CLIContext:
 
     args: argparse.Namespace
     console: Console
-    is_verbose: bool = False
+    is_debug: bool = False
+
+
+class CLIGFormatter(argparse.RawDescriptionHelpFormatter):
+    """Custom formatter for the CLI help output.
+
+    NOTE: Based on CLI guidance from https://clig.dev/.
+    """
+
+    def add_usage(
+        self,
+        usage: str | None,
+        actions: Iterable[argparse.Action],
+        groups: Iterable[argparse._MutuallyExclusiveGroup],
+        prefix: str | None = None,
+    ) -> None:
+        """Add a custom usage message to the CLI help output.
+
+        Args:
+            usage: The usage string to display.
+            actions: The list of actions for the parser.
+            groups: The list of mutually exclusive groups for the parser.
+            prefix: The prefix for the usage message.
+        """
+
+        super().add_usage(usage, actions, groups, prefix=prefix or "")
 
 
 def get_git_toplevel() -> Path:
