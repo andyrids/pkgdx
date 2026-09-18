@@ -33,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Primary CLI output is now on STDOUT.
 - Logs, errors, progress and other diagnostic metadata is now on STDERR.
 - CLI verbosity options (`-v` or `--verbose`) have been replaced with `-d` and `--debug`.
+- `pkgdx init` progress is now a multi-task checklist with a spinner, full-width overall bar, MofN
+  and elapsed   time.
 
 ### Removed
 
