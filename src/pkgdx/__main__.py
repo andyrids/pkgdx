@@ -3,9 +3,10 @@
 import argparse
 import logging
 import sys
+import textwrap
 from typing import NoReturn
 
-from pkgdx import _core, exceptions
+from pkgdx import __version__, _core, exceptions
 from pkgdx.logging import CLI_CONSOLE, configure_cli_logging
 from pkgdx.standards import _hooks
 from pkgdx.standards._cli import add_subparser as add_standards_subparser
@@ -74,35 +75,107 @@ def pymarkdown_lint() -> NoReturn:
 # MAIN CLI COMMANDS
 
 
+class CLIArgumentParser(argparse.ArgumentParser):
+    """Custom CLI ArgumentParser."""
+
+    def error(self, message: str) -> NoReturn:
+        """Handle CLI errors by printing a formatted message and exiting.
+
+        Args:
+            message: The error message to display.
+        """
+
+        CLI_CONSOLE.print(f"[red]ERROR:[/red] [b]{message}[/b]", end="\n\n")
+        self.print_usage(sys.stderr)
+        CLI_CONSOLE.print(
+            f"\n[dim]Try [cyan]{self.prog} --help[/cyan].[/dim]",
+        )
+
+        sys.exit(_core.ExitCode.EX_USAGE)
+
+
 def main() -> NoReturn:
     """Provide a unified `pkgdx` CLI entrypoint - init."""
 
-    parser = argparse.ArgumentParser(
-        prog=__package__, description="Canonical standards toolkit"
+    # Provides a base parser for shared arguments across subcommands
+    base_parser = CLIArgumentParser(add_help=False)
+    base_parser.add_argument(
+        "-h",
+        "--help",
+        action="help",
+        help="Show this help message and exit",
+    )
+
+    description = textwrap.dedent(
+        """pkgdx centralises creation and implementation of coding standards
+        across projects, providing a single source of truth for toolchain
+        configuration."""
+    )
+
+    epilog = textwrap.fill(
+        "For more information see https://gitlab.com/andyrids/pkgdx.",
+        width=79,
+        initial_indent="",
+    )
+
+    # Main parser for the CLI
+    parser = CLIArgumentParser(
+        prog=__package__,
+        description=textwrap.fill(description, width=79),
+        usage="USAGE:\n %(prog)s [options] <command>",
+        epilog=epilog,
+        add_help=False,
+        parents=[base_parser],
+        formatter_class=_core.CLIGFormatter,
+    )
+
+    parser._optionals.title = "OPTIONS"
+
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="Print debug output",
     )
 
     parser.add_argument(
         "-v",
-        "--verbose",
-        action="store_true",
-        help="Enable verbose logging [DEBUG]",
+        "--version",
+        action="version",
+        version=f"pkgdx version {__version__}",
+        help="Show program's version number and exit",
     )
 
     subparsers = parser.add_subparsers(
-        title="commands", dest="command", required=True
+        title="COMMANDS",
+        # Mitigate subparser usage display issue by explicitly setting prog
+        # https://github.com/python/cpython/issues/86463
+        prog=parser.prog,
+        dest="command",
+        required=False,
+        metavar="<command>",
     )
 
-    add_standards_subparser(subparsers)
+    add_standards_subparser(subparsers, base_parser)
 
     args = parser.parse_args()
 
-    # Configure logging based on verbosity
-    is_verbose = args.verbose
-    configure_cli_logging(logging.DEBUG if is_verbose else logging.WARNING)
+    # Empty command (`pkgdx`) shows header and help
+    if args.command is None:
+        sys.stdout.write(
+            f"Package Developer Experience (DX) Toolkit [v{__version__}]\n\n"
+        )
 
-    ctx = _core.CLIContext(
-        args=args, console=CLI_CONSOLE, is_verbose=is_verbose
-    )
+        # Prints; USAGE, description, OPTIONS, COMMANDS & epilog
+        parser.print_help()
+
+        sys.exit(_core.ExitCode.EX_OK)
+
+    # Configure logging based on debug flag
+    is_debug = args.debug
+    configure_cli_logging(logging.DEBUG if is_debug else logging.WARNING)
+
+    ctx = _core.CLIContext(args=args, console=CLI_CONSOLE, is_debug=is_debug)
 
     try:
         exit_code = int(args.func(ctx))

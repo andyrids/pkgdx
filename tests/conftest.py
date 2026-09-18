@@ -58,7 +58,7 @@ def make_cli_context() -> Callable[..., CLIContext]:
         defaults: dict[str, Any] = {
             "args": args,
             "console": Console(stderr=True),
-            "is_verbose": False,
+            "is_debug": False,
         }
         return CLIContext(**{**defaults, **overrides})
 

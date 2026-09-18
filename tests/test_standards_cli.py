@@ -2,7 +2,6 @@
 
 import argparse
 import logging
-import sys
 from collections.abc import Callable
 from pathlib import Path
 from unittest import mock
@@ -33,8 +32,7 @@ def test_setup_progress_disabled_in_non_tty(
     configured_logging: None,
 ) -> None:
     """Progress is disabled when stdout is non-TTY."""
-    console = Console(force_terminal=sys.stdout.isatty())
-    with _setup_progress(console) as progress:
+    with _setup_progress() as progress:
         assert progress.disable is True
 
 
@@ -43,8 +41,7 @@ def test_setup_progress_enabled_in_tty(
     configured_logging: None,
 ) -> None:
     """Progress is enabled when stdout is a TTY."""
-    console = Console(force_terminal=sys.stdout.isatty())
-    with _setup_progress(console) as progress:
+    with _setup_progress() as progress:
         assert progress.disable is False
 
 
@@ -57,8 +54,7 @@ def test_setup_progress_shares_console_with_rich_handler(
     handler = next(
         h for h in cli_logger.handlers if isinstance(h, RichHandler)
     )
-    console = Console(force_terminal=sys.stdout.isatty())
-    with _setup_progress(console) as progress:
+    with _setup_progress() as progress:
         assert progress.console is handler.console
 
 
@@ -72,8 +68,7 @@ def test_setup_progress_restores_console_after_exit(
         h for h in cli_logger.handlers if isinstance(h, RichHandler)
     )
     original_console = handler.console
-    console = Console(force_terminal=sys.stdout.isatty())
-    with _setup_progress(console):
+    with _setup_progress():
         pass
     assert handler.console is original_console
 
@@ -87,7 +82,7 @@ def test_command_init_complete(
     """The init command advances through all six progress steps."""
 
     ctx = make_cli_context(
-        args=argparse.Namespace(verbose=False, reset=False),
+        args=argparse.Namespace(debug=False, reset=False),
         console=Console(),
     )
 
@@ -127,7 +122,7 @@ def test_command_init_exits_on_missing_project_root(
 ) -> None:
     """The init command exits with code 1 when the project root is missing."""
     ctx = make_cli_context(
-        args=argparse.Namespace(verbose=False, reset=False),
+        args=argparse.Namespace(debug=False, reset=False),
         console=Console(),
     )
 
@@ -158,7 +153,7 @@ def test_command_init_exits_on_prek_config_error(
     """The init command exits with code 1 when prek.toml config fails."""
 
     ctx = make_cli_context(
-        args=argparse.Namespace(verbose=False, reset=False),
+        args=argparse.Namespace(debug=False, reset=False),
         console=Console(),
     )
 
@@ -198,7 +193,7 @@ def test_command_init_non_tty_runs_without_progress(
     """The init command runs without progress rendering in non-TTY mode."""
 
     ctx = make_cli_context(
-        args=argparse.Namespace(verbose=False, reset=False),
+        args=argparse.Namespace(debug=False, reset=False),
         console=Console(),
     )
 
@@ -305,7 +300,7 @@ def test_main_maps_error_to_exit_1(
 
 
 def test_main_verbose_flag_reaches_init_context() -> None:
-    """`pkgdx --verbose init` parses & sets `CLIContext.is_verbose`."""
+    """`pkgdx --debug init` parses & sets `CLIContext.is_debug`."""
     recorded: dict[str, CLIContext] = {}
 
     def record(ctx: CLIContext) -> int:
@@ -313,6 +308,6 @@ def test_main_verbose_flag_reaches_init_context() -> None:
         return ExitCode.EX_OK
 
     with mock.patch(f"{STANDARDS_CLI}.command_init", side_effect=record):
-        exit_code = _run_main(["--verbose", "init"])
+        exit_code = _run_main(["--debug", "init"])
     assert exit_code == ExitCode.EX_OK
-    assert recorded["ctx"].is_verbose is True
+    assert recorded["ctx"].is_debug is True

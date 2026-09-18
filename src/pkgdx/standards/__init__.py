@@ -1,4 +1,4 @@
-"""__init__ for pkgdx.standards.
+"""__init__ for `pkgdx.standards` module.
 
 Provides access to configuration files for supported tools such as; `mypy`,
 `prek`, `pymarkdown` and `ruff`.

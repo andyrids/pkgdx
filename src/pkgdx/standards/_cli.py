@@ -1,15 +1,21 @@
-"""Argparse CLI for the `pkgdx` canonical standards `init` command."""
+"""CLI commands for a canonical standards interface and pre-commit hooks.
+
+NOTE: The `__main__` `argparse.ArgumentParser` pgkdx CLI entry point uses this
+module to register subcommands (`add_subparser`) for managing canonical
+standards and pre-commit hooks.
+"""
 
 import logging
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 import tomlkit
 import tomlkit.exceptions
 from rich.progress import Progress, TaskID
 
 from pkgdx import _core, exceptions
+from pkgdx._core import CLIContext, CLIGFormatter, ExitCode
 from pkgdx.logging import GLOBAL_CONSOLE
 
 if TYPE_CHECKING:
@@ -51,7 +57,7 @@ def _advance_progress(
     progress.update(task_id, description=description, advance=1)
 
 
-def command_init(ctx: _core.CLIContext) -> int:
+def command_init(ctx: CLIContext) -> int:
     """Configure a consuming repo with `pkgdx` standards.
 
     Attempts to identify the root of the consuming repo and ensures that
@@ -76,7 +82,7 @@ def command_init(ctx: _core.CLIContext) -> int:
                 description="[red]Failed to find project root",
             )
             logger.exception("Failed to find project root")
-            return _core.ExitCode.EX_FAILURE
+            return ExitCode.EX_FAILURE
 
         _advance_progress(progress, task, "[cyan]Find Git top-level")
         try:
@@ -94,7 +100,7 @@ def command_init(ctx: _core.CLIContext) -> int:
                 description="[red][strike]Setup pre-commit hooks",
             )
             logger.exception("Failed to setup pre-commit hooks")
-            return _core.ExitCode.EX_FAILURE
+            return ExitCode.EX_FAILURE
 
         _advance_progress(
             progress, task, "[cyan]Prek install pre-commit hooks"
@@ -114,21 +120,35 @@ def command_init(ctx: _core.CLIContext) -> int:
                 description="[red][strike]Create `.secrets.baseline`",
             )
             logger.exception("Error creating `.secrets.baseline`")
-            return _core.ExitCode.EX_FAILURE
+            return ExitCode.EX_FAILURE
 
         progress.update(task, description="[green]pkgdx complete")
-        return _core.ExitCode.EX_OK
+        return ExitCode.EX_OK
 
 
-def add_subparser(subparsers: "argparse._SubParsersAction[Any]") -> None:
+def add_subparser(
+    subparsers: "argparse._SubParsersAction[Any]",
+    parent: Optional["argparse.ArgumentParser"] = None,
+) -> None:
     """Add the `init` subcommand with the shared `pkgdx` CLI parser.
 
     Args:
         subparsers: The main CLI parser's subparsers action.
+        parent: A parent parser to include for shared arguments.
     """
+
+    init_text = "Setup canonical standards & pre-commit hooks"
     parser_init = subparsers.add_parser(
-        "init", help="Setup canonical standards & pre-commit hooks"
+        "init",
+        help=init_text,
+        description=init_text,
+        usage="USAGE:\n %(prog)s [options]",
+        add_help=False,
+        parents=[parent] if parent else [],
+        formatter_class=CLIGFormatter,
     )
+
+    parser_init._optionals.title = "OPTIONS"
 
     parser_init.add_argument(
         "--reset", action="store_true", help="Reset existing pre-commit hooks"
