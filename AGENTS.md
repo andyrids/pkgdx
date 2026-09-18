@@ -10,61 +10,20 @@ recommended-context-tokens: 900
 The pkgdx project provides a DX toolkit, which centralises the maintenance and implementation of
 canonical standards for consuming projects.
 
-Agent eXperience Interface (AXI) CLI for token-efficient querying of
-venv dependencies. See `docs/architecture.md` for more details.
+This project adheres to [YAGNI](docs\reference-standard-yagni.md) principles.
 
-This project follows Interpretable Context Methodology (ICM): agent workflows orchestrated through
-workspaces of folder structure, markdown and scripts, each a pipeline of stages with a defined
-input, process and output. Review gates MUST be respected - they are where a human inspects the
-work and hands it back.
+## Markdown frontmatter
 
-Start at `CONTEXT.md` in the repository root; it routes to the workspace that owns the work.
+Mardown files carry `context-hierarchy`, `context-hierarchy-role` and `immutable` keys, plus
+`recommended-context-tokens` where a target is given. Beyond those:
 
-## Context hierarchy
+- Budgets are a signal, not an enforced limit. A file that outgrows one is worth a look - it may have
+  started doing another layer's job.
+- Layer 3 carries tags: [keyword, ...]. immutable: true marks the factory configuration, amended
+  deliberately, not in passing.
 
-Five layers. Layers 0 to 2 route; layers 3 and 4 carry content. Load a layer only when the work
-has reached it - reading ahead is how a stage acquires context it was designed not to have.
+## Reference
 
-| Layer | Role              | Path                            | `immutable` | Budget |
-| ----- | ----------------- | ------------------------------- | ----------- | ------ |
-| 0     | Global identity   | `AGENTS.md`                     | false       | 900    |
-| 1     | Workspace routing | `CONTEXT.md`                    | false       | 300    |
-| 2     | Stage routing     | `ICM/*/CONTEXT.md`              | false       | 500    |
-| 2     | Stage contract    | `ICM/*/stages/**/CONTEXT.md`    | false       | 500    |
-| 3     | Reference material| `ICM/_config/reference-*.md`, both READMEs | true | 2500 |
-| 3     | Reference material| `specs/**/*.md`                 | false       | -      |
-| 4     | Working artifact  | `plans/*.md`                    | false       | -      |
-| 4     | Working artifact  | `ICM/*/stages/**/output/*.md`   | false       | -      |
-
-### Frontmatter
-
-Every file above carries `context-hierarchy`, `context-hierarchy-role` and `immutable` as tabled,
-plus `recommended-context-tokens` where a target is given. Beyond those:
-
-- **Budgets are a signal, not an enforced limit.** A file that outgrows one is worth a look - it
-  may have started doing another layer's job. Specs are unbudgeted - a spec is as long as the
-  behaviour it declares.
-- **Layer 3** carries `tags: [keyword, ...]`. `immutable: true` marks the factory configuration,
-  amended deliberately, not in passing. Specs are not part of it: the pipeline exists to amend
-  them, and stage 01 owns every change.
-- **`plans/*.md`** carries `status` - `planned | in-progress | done | blocked | cancelled` - plus
-  the query fields `depends`, `specs`, `authors`, `issues` and `pr`, contracted in
-  `plans/README.md`. Every coverage and ripple check reads them.
-- **`ICM/*/stages/**/output/*.md`** carries `status: in-progress | in-review | done`. It is
-  ephemeral scratch, gitignored.
-
-## Design principles
-
-1. **One stage, one job** - each stage handles a single step of a workflow.
-2. **Plain text as the interface** - stages communicate through plain text.
-3. **Layered context loading** - agents load only what the current stage needs.
-4. **Output is an edit surface** - stage output can be opened, read, edited and saved.
-5. **Configure the factory, not the product** - new deliverables reuse the same configuration.
-
-## Stage contracts
-
-Each stage defines a contract in three parts - what it reads, what it does, what it writes -
-stated in its own `ICM/*/stages/**/CONTEXT.md`, which is the authority for that stage.
-
-A contract cites the rules it depends on rather than restating them. Where a stage and a reference
-disagree, the reference wins and the contract is what needs fixing.
+Standards and references live in `docs/` as reference-*.md files (Layer 3). See the reference
+`docs\reference-standard-naming.md` document for more information. Load a file when its subject
+is in play, which can be determined by the frontmatter.
