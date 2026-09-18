@@ -22,17 +22,21 @@ setup: && secrets-baseline
     uv sync
     uv run -m prek install
 
-[doc("Test `pkgdx` setup in workspace member")]
+[doc("Test `pkgdx` CLI in workspace member `consumers/testing`")]
 [group("DEV")]
 test-consumer *FLAGS:
-    uv run --directory consumers/testing pkgdx -d init {{FLAGS}}
+    uv run --directory consumers/testing pkgdx
+    uv run --directory consumers/testing pkgdx --version
+    uv run --directory consumers/testing pkgdx -debug init --help
+    uv run --directory consumers/testing pkgdx --debug init {{FLAGS}}
 
 [doc("Create `coverage` report")]
 [group("DEV")]
 coverage *FLAGS:
     @uv run coverage run -m pytest {{FLAGS}}
-    @uv run coverage report
+    @uv run coverage report --show-missing --skip-covered --fail-under=75
     @uv run coverage xml
+    @uv run coverage html
 
 [doc("Git prune (aggressive)")]
 [group("DEV")]
