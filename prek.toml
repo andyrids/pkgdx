@@ -55,6 +55,7 @@ types_or = ["python", "pyi"]
 exclude = "tests/"
 require_serial = true
 pass_filenames = false
+verbose = true
 
 # Use `pkgdx.standards` config
 [[repos.hooks]]
