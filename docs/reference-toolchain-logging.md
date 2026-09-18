@@ -28,21 +28,26 @@ applications:
 By default, the package is configured with a `NullHandler`. This prevents the library from
 polluting output when imported as a dependency.
 
-- Setup: `configure_pkg_logging()` is called in `src/venvaxi/__init__.py`.
+- Setup: `configure_pkg_logging()` is called in `src/pkgdx/__init__.py`.
 
 ### (2) CLI logging (application)
 
 When executed as a CLI, logging is configured from `CONFIG` - a single `logging.StreamHandler`
-on STDERR, attached to the `venvaxi` logger with `propagate = false`.
+on STDERR, attached to the `pkgdx` logger with `propagate = false`.
 
-- Setup: `configure_cli_logging(level)` is called in `src/venvaxi/__main__.py` after argument
-parsing. The level is `DEBUG` with `--verbose`, otherwise `WARNING`.
+- Setup: `configure_cli_logging(level)` is called in `src/pkgdx/__main__.py` after argument
+parsing. The level is `DEBUG` with `-d` or `--debug`, otherwise `WARNING`.
 
-## Why STDERR only
+## (3) CLI output
 
-The TOON block written to STDOUT *is* the CLI's report. Logs MUST never interleave with it, so
-there is no STDOUT handler and no rich-text console layer - a plain `StreamHandler` on STDERR is
-the whole logging surface.
+Send output to STDOUT. The primary output for your command should go to STDOUT. Anything that is
+machine readable should also go to STDOUT — this is where piping sends things by default.
 
-This is also why `__main__.main` writes a `format_error(...)` TOON block to STDOUT and only logs
-the same message at `DEBUG` - logging it at `ERROR` too would duplicate the report.
+Send messaging to STDERR. Log messages, errors, and so on should all be sent to STDERR. This means
+that when commands are piped together, these messages are displayed to the user and not fed into
+the next command.
+
+- STDOUT (`CLI_CONSOLE`): primary CLI output
+- STDERR (`GLOBAL_CONSOLE`): logs, errors, progress, and other diagnostic metadata
+
+Check TTY on the stream being written. Do not disable STDERR progress because STDOUT is piped.

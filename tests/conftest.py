@@ -11,7 +11,7 @@ import pytest
 from rich.console import Console
 
 from pkgdx._core import CLIContext
-from pkgdx.logging import configure_cli_logging
+from pkgdx.logging import GLOBAL_CONSOLE, configure_cli_logging
 
 
 @pytest.fixture
@@ -27,16 +27,16 @@ def configured_logging() -> Iterator[None]:
 
 
 @pytest.fixture
-def tty_stdout_enable() -> Iterator[None]:
-    """Mock `sys.stdout.isatty()` to return `True`."""
-    with mock.patch("sys.stdout.isatty", return_value=True):
+def tty_stderr_enable() -> Iterator[None]:
+    """Treat GLOBAL_CONSOLE (STDERR) as a TTY for progress/log tests."""
+    with mock.patch.object(GLOBAL_CONSOLE, "_force_terminal", True):
         yield
 
 
 @pytest.fixture
-def tty_stdout_disable() -> Iterator[None]:
-    """Mock `sys.stdout.isatty()` to return `False`."""
-    with mock.patch("sys.stdout.isatty", return_value=False):
+def tty_stderr_disable() -> Iterator[None]:
+    """Treat GLOBAL_CONSOLE (STDERR) as non-TTY for progress/log tests."""
+    with mock.patch.object(GLOBAL_CONSOLE, "_force_terminal", False):
         yield
 
 
