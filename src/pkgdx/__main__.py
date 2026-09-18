@@ -135,14 +135,14 @@ def main() -> NoReturn:
         "-d",
         "--debug",
         action="store_true",
-        help="Print debug output",
+        help="Show debug logging output",
     )
 
     parser.add_argument(
         "-v",
         "--version",
         action="version",
-        version=f"pkgdx version {__version__}",
+        version=f"v{__version__}",
         help="Show program's version number and exit",
     )
 

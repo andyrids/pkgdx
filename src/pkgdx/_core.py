@@ -7,12 +7,12 @@ import re
 import subprocess
 import sys
 from collections.abc import Iterable
+from enum import IntEnum
 from itertools import chain
 from pathlib import Path
 from typing import Any
 
 import tomlkit
-import tomlkit.exceptions
 from rich.console import Console
 from tomlkit import TOMLDocument
 from tomlkit.items import Table
@@ -23,8 +23,12 @@ from pkgdx._types import HookBuiltin, HookLocal, HookRemote
 logger = logging.getLogger(__package__)
 
 
-class ExitCode:
-    """Exit codes for the CLI commands."""
+class ExitCode(IntEnum):
+    """Exit codes for the CLI commands.
+
+    NOTE: Members can be passed to `sys.exit` as `int` type checks pass
+    due to `IntEnum` inheritance.
+    """
 
     EX_OK = 0
     EX_FAILURE = 1
@@ -34,7 +38,13 @@ class ExitCode:
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class CLIContext:
-    """Centralized state for the CLI commands."""
+    """Centralized state for the CLI commands.
+
+    Attributes:
+        args: The parsed command-line arguments from argparse.
+        console: The Rich console instance used for terminal output.
+        is_debug: Flag indicating if the CLI is running in debug mode.
+    """
 
     args: argparse.Namespace
     console: Console
@@ -113,7 +123,7 @@ def install_prek_hooks(root: Path) -> None:
     """
     precommit_config = root / ".git" / "hooks" / "pre-commit"
     if precommit_config.exists():
-        logger.debug("Prek pre-commit hooks already installed")
+        logger.debug("Git shims already installed at `.git/hooks/pre-commit`")
         return
     try:
         subprocess.run(
@@ -123,9 +133,9 @@ def install_prek_hooks(root: Path) -> None:
             check=True,
         )
     except (subprocess.CalledProcessError, FileNotFoundError):
-        logger.exception("Failed to install pre-commit hooks")
+        logger.exception("Failed to install Git shims")
     else:
-        logger.debug("Prek pre-commit hooks installed")
+        logger.debug("Git shims installed at `.git/hooks/pre-commit`")
 
 
 def update_prek_hooks(root: Path) -> None:
@@ -150,15 +160,15 @@ def update_prek_hooks(root: Path) -> None:
         match e.returncode:
             case 1:
                 logger.warning(msg)
-                logger.warning("Update `pkgdx` hooks with `prek update`")
+                logger.warning("Update remote hook revisions - `prek update`")
             case 2:
                 logger.error(msg)
             case _:
                 logger.exception(msg)
     except FileNotFoundError:
-        logger.exception("Check `prek.toml` exists")
+        logger.exception("Check `prek.toml` config exists")
     else:
-        logger.info("Prek pre-commit hooks are up-to-date")
+        logger.debug("Remote hook revisions are up-to-date")
 
 
 def _create_repo_table(
@@ -294,7 +304,7 @@ def setup_prek_config(root: Path, reset: bool = False) -> None:
     config_template = standards.PREK_CONFIG
 
     if reset or not config_existing.exists():
-        logger.info("Creating `prek.toml` from template")
+        logger.debug("Creating `prek.toml` from template")
         config_existing.write_text(config_template.read_text())
         return
 
@@ -326,7 +336,7 @@ def setup_prek_config(root: Path, reset: bool = False) -> None:
         config_existing.write_text(config_text)
         logger.debug("Added missing pre-commit hooks to `prek.toml`")
     else:
-        logger.info("Existing `prek.toml` correct & unchanged")
+        logger.debug("Existing `prek.toml` is correct & unchanged")
 
 
 def create_secrets_baseline(root: Path) -> None:
@@ -336,7 +346,7 @@ def create_secrets_baseline(root: Path) -> None:
         logger.debug("Using existing `.secrets.baseline`")
         return
 
-    logger.info("Creating `.secrets.baseline` at %s", root)
+    logger.debug("Creating `.secrets.baseline` at %s", root)
     try:
         with open(secrets_baseline, "w") as f:
             subprocess.run(
