@@ -20,8 +20,6 @@ from tomlkit.items import Table
 from pkgdx import exceptions, standards
 from pkgdx._types import HookBuiltin, HookLocal, HookRemote
 
-__all__: list[str] = ["CLIGFormatter"]
-
 logger = logging.getLogger(__package__)
 
 
