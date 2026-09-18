@@ -28,6 +28,7 @@
   exclude: "tests/"
   require_serial: true
   pass_filenames: false
+  verbose: true
   
 - id: pkgdx-markdown
   name: Markdown [PyMarkdown]

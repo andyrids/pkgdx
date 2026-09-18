@@ -32,6 +32,7 @@ types_or = ["python", "pyi"]
 exclude = "tests/"
 require_serial = true
 pass_filenames = false
+verbose = true
 
 [[repos]]
 repo = "builtin"
