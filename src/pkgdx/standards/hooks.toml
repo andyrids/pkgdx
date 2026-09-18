@@ -17,12 +17,21 @@ id = "pkgdx-markdown"
 name = "Check Markdown [PyMarkdown]"
 
 [[repos.hooks]]
-id = "pkgdx-typing"
-name = "Typing [Mypy]"
-
-[[repos.hooks]]
 id = "pkgdx-secrets"
 name = "Detect Secrets [detect-secrets]"
+
+[[repos]]
+repo = "local"
+
+[[repos.hooks]]
+id = "pkgdx-typing"
+name = "Typing [Mypy]"
+entry = "uv run pkgdx-typing-hook"
+language = "system"
+types_or = ["python", "pyi"]
+exclude = "tests/"
+require_serial = true
+pass_filenames = false
 
 [[repos]]
 repo = "builtin"
