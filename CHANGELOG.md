@@ -16,6 +16,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > - `Fixed` for any bug fixes.
 > - `Security` in case of vulnerabilities.
 
+## [0.3.0] - 2026-09-18
+
+### Added
+
+- New documentation for project standards & toolchain guidance ([`docs/`](docs/)).
+- Custom argparse help formatter (`_core.CLIGFormatter`).
+- Custom argparse.ArgumentParser class `CLIArgumentParser` with rich error formatting.
+- Concise help display on empty CLI command (`pkgdx`).
+- A new CLI version option - `-v` or `--version`.
+
+### Changed
+
+- Excluded `.venv` from `detect-secrets` scan in `secrets-baseline` Justfile recipe.
+- Made `pkgdx-typing` (mypy) hook output verbose and local only in bundled Prek config.
+- Primary CLI output is now on STDOUT.
+- Logs, errors, progress and other diagnostic metadata is now on STDERR.
+- CLI verbosity options (`-v` or `--verbose`) have been replaced with `-d` and `--debug`.
+- `pkgdx init` progress is now a multi-task checklist with a spinner, full-width overall bar, MofN
+  and elapsed   time.
+
+### Removed
+
+- `tryceratops` [TRY003](https://docs.astral.sh/ruff/rules/raise-vanilla-args/) rule was removed
+  due to false positives (builtin exceptions like `ValueError` & `TypeError`).
+
+### Fixed
+
+- Removed `types_or: ["python", "pyi"]` constraint from `pkgdx-secrets` hook, which defeated secret
+  detection.
+- GitLab CI no longer creates a duplicate push pipeline when an MR is already open.
+
 ## [0.2.0] - 2026-08-06
 
 ### Removed
