@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed `types_or: ["python", "pyi"]` constraint from `pkgdx-secrets` hook, which defeated secret
   detection.
+- GitLab CI no longer creates a duplicate push pipeline when an MR is already open.
 
 ## [0.2.0] - 2026-08-06
 
