@@ -38,6 +38,7 @@ def configure_cli_logging(level: int = logging.WARNING) -> None:
         level: The desired logging level. Defaults to `logging.WARNING`.
     """
     logging.config.dictConfig(tomllib.loads(CONFIG_STR))
+
     logger = logging.getLogger("pkgdx")
     logger.setLevel(level)
     logger.propagate = False
