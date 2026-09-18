@@ -27,7 +27,7 @@
   types_or: ["python", "pyi"]
   exclude: "tests/"
   require_serial: true
-  pass_filenames: true
+  pass_filenames: false
   
 - id: pkgdx-markdown
   name: Markdown [PyMarkdown]
