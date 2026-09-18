@@ -17,7 +17,7 @@ single source of truth for toolchain configuration:
 4. detect-secrets (secret detection)
 5. Prek (hook framework)
 
-> [!INFO]
+> [!TIP]
 > To quickly demo `pkgdx`, clone this repository and run the `test-consumer` Justfile recipe via
 > `just test-consumer`. If [Just](https://github.com/casey/just) command runner is unavailable,
 > run `uv run --directory consumers/testing pkgdx --debug init --reset` to use `pkgdx` against
