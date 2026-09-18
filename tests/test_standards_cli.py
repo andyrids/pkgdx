@@ -28,25 +28,25 @@ ContextFactory = Callable[..., CLIContext]
 
 
 def test_setup_progress_disabled_in_non_tty(
-    tty_stdout_disable: None,
+    tty_stderr_disable: None,
     configured_logging: None,
 ) -> None:
-    """Progress is disabled when stdout is non-TTY."""
+    """Progress is disabled when STDERR is non-TTY."""
     with _setup_progress() as progress:
         assert progress.disable is True
 
 
 def test_setup_progress_enabled_in_tty(
-    tty_stdout_enable: None,
+    tty_stderr_enable: None,
     configured_logging: None,
 ) -> None:
-    """Progress is enabled when stdout is a TTY."""
+    """Progress is enabled when STDERR is a TTY."""
     with _setup_progress() as progress:
         assert progress.disable is False
 
 
 def test_setup_progress_shares_console_with_rich_handler(
-    tty_stdout_enable: None,
+    tty_stderr_enable: None,
     configured_logging: None,
 ) -> None:
     """The Progress instance shares a Console with RichHandler."""
@@ -59,7 +59,7 @@ def test_setup_progress_shares_console_with_rich_handler(
 
 
 def test_setup_progress_restores_console_after_exit(
-    tty_stdout_enable: None,
+    tty_stderr_enable: None,
     configured_logging: None,
 ) -> None:
     """RichHandler console is restored after the Progress context exits."""
@@ -75,7 +75,7 @@ def test_setup_progress_restores_console_after_exit(
 
 def test_command_init_complete(
     mock_project: Path,
-    tty_stdout_enable: None,
+    tty_stderr_enable: None,
     mock_subprocess_run: mock.MagicMock,
     make_cli_context: ContextFactory,
 ) -> None:
@@ -117,7 +117,7 @@ def test_command_init_complete(
 
 def test_command_init_exits_on_missing_project_root(
     mock_project: Path,
-    tty_stdout_disable: None,
+    tty_stderr_disable: None,
     make_cli_context: ContextFactory,
 ) -> None:
     """The init command exits with code 1 when the project root is missing."""
@@ -147,7 +147,7 @@ def test_command_init_exits_on_missing_project_root(
 
 def test_command_init_exits_on_prek_config_error(
     mock_project: Path,
-    tty_stdout_enable: None,
+    tty_stderr_enable: None,
     make_cli_context: ContextFactory,
 ) -> None:
     """The init command exits with code 1 when prek.toml config fails."""
@@ -186,7 +186,7 @@ def test_command_init_exits_on_prek_config_error(
 
 def test_command_init_non_tty_runs_without_progress(
     mock_project: Path,
-    tty_stdout_disable: None,
+    tty_stderr_disable: None,
     mock_subprocess_run: mock.MagicMock,
     make_cli_context: ContextFactory,
 ) -> None:
@@ -284,7 +284,10 @@ def _run_main(argv: list[str]) -> int:
         pytest.raises(SystemExit) as exc_info,
     ):
         __main__.main()
-    return int(exc_info.value.code)
+
+    code = exc_info.value.code
+    assert isinstance(code, int)
+    return code
 
 
 def test_main_maps_error_to_exit_1(
