@@ -23,6 +23,8 @@ single source of truth for toolchain configuration:
 > run `uv run --directory consumers/testing pkgdx --debug init --reset` to use `pkgdx` against
 > the `consumers/testing` workspace package.
 
+![Demo Preview](docs/consumer-demo.gif)
+
 #### Why?
 
 Other methods of maintaining standards include templating tools like `Cookiecutter` or `Copier`,
