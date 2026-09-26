@@ -1,5 +1,6 @@
 """Unit tests for canonical standards hook command builders."""
 
+import pathlib
 from collections.abc import Callable
 from unittest import mock
 
@@ -82,3 +83,27 @@ def test_detect_secrets_preserves_explicit_baseline(
 
     mock_subprocess_run.assert_called_once_with(["detect-secrets-hook", *args])
     assert returncode == 0
+
+
+def test_mypy_typing_defaults_to_project_and_excludes_tests(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """No-args mypy checks the cwd project and excludes tests (issue #1)."""
+    monkeypatch.chdir(tmp_path)
+
+    demo_package = tmp_path / "src" / "demo"
+    demo_package.mkdir(parents=True)
+    (demo_package / "__init__.py").write_text(
+        "def add(a: int, b: int) -> int:\n    return a + b\n"
+    )
+
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir()
+    (tests_dir / "test_demo.py").write_text("def test_x(a):\n    return a\n")
+
+    assert _hooks.core_mypy_typing([]) == 0
+
+    (demo_package / "__init__.py").write_text('x: int = "a"\n')
+
+    assert _hooks.core_mypy_typing([]) == 1

@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added `dist_name = "pkgdx"` to `[tool.hatch.version.raw-options]`, enabling
   `SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PKGDX` to work correctly in CI/CD context.
+- `pkgdx-typing` hook defaults to checking the project (`files = .`, tests excluded) instead of
+  failing with "Missing target".
 
 ## [0.3.0] - 2026-09-18
 
