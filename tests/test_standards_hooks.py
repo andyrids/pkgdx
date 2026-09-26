@@ -1,5 +1,6 @@
 """Unit tests for canonical standards hook command builders."""
 
+import pathlib
 from collections.abc import Callable
 from unittest import mock
 
@@ -33,6 +34,7 @@ from pkgdx.standards import _hooks
                 "pymarkdown",
                 "--config",
                 standards.PYMARKDOWN_CONFIG.as_posix(),
+                "--continue-on-error",
                 "scan",
             ],
             ["README.md"],
@@ -82,3 +84,55 @@ def test_detect_secrets_preserves_explicit_baseline(
 
     mock_subprocess_run.assert_called_once_with(["detect-secrets-hook", *args])
     assert returncode == 0
+
+
+def test_mypy_typing_defaults_to_project_and_excludes_tests(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """No-args mypy checks the cwd project and excludes tests (issue #1)."""
+    monkeypatch.chdir(tmp_path)
+
+    demo_package = tmp_path / "src" / "demo"
+    demo_package.mkdir(parents=True)
+    (demo_package / "__init__.py").write_text(
+        "def add(a: int, b: int) -> int:\n    return a + b\n"
+    )
+
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir()
+    (tests_dir / "test_demo.py").write_text("def test_x(a):\n    return a\n")
+
+    assert _hooks.core_mypy_typing([]) == 0
+
+    (demo_package / "__init__.py").write_text('x: int = "a"\n')
+
+    assert _hooks.core_mypy_typing([]) == 1
+
+
+def test_pymarkdown_lint_continues_past_a_crashing_document(
+    tmp_path: pathlib.Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    """A `BadTokenizationError` on one file does not abort the scan (issue #2).
+
+    With `markdown-tables` enabled, pymarkdownlnt 0.9.40 crashes tokenizing a
+    quoted list containing a pipe (`|`) character. `--continue-on-error`
+    keeps the scan going so later files are still linted and named alongside
+    the crashing one.
+    """
+    crash = tmp_path / "crash.md"
+    crash.write_text("> quote\n>\n> - `A | B` first item\n> - second item\n")
+
+    lint = tmp_path / "lint.md"
+    lint.write_text("# Lint\n\nText.\n* item\n")
+
+    returncode = _hooks.core_pymarkdown_lint([str(crash), str(lint)])
+
+    captured = capfd.readouterr()
+    output = captured.out + captured.err
+
+    assert returncode == 1
+    assert str(lint) in output
+    assert "MD032" in output
+    assert str(crash) in output
