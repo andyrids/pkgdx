@@ -7,14 +7,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 > [!NOTE]
-> Types of changes:
 >
+> - `[SemVer] - yyyy-mm-dd` or `[Unreleased]` for release heading.
 > - `Added` for new features.
 > - `Changed` for changes in existing functionality.
 > - `Deprecated` for soon-to-be removed features.
 > - `Removed` for now removed features.
 > - `Fixed` for any bug fixes.
 > - `Security` in case of vulnerabilities.
+
+## [Unreleased]
+
+### Added
+
+- CI clean-tree and wheel-name guards in `build-package-job` for tag builds.
+
+### Changed
+
+- Added `{ git = { commit = true, tags = true } }` to `cache-keys` for uv.
+- Added `maintainers`, `keywords` and `Documentation` URL to project metadata.
+- Declared explicit sdist `include` and wheel `packages` build targets.
+
+### Fixed
+
+- Added `dist_name = "pkgdx"` to `[tool.hatch.version.raw-options]`, enabling
+  `SETUPTOOLS_SCM_PRETEND_VERSION_FOR_PKGDX` to work correctly in CI/CD context.
 
 ## [0.3.0] - 2026-09-18
 
