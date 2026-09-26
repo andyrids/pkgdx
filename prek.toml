@@ -48,8 +48,7 @@ pass_filenames = false
 [[repos.hooks]]
 id = "typing"
 name = "Typing [Mypy]"
-entry = "uv run mypy"
-args = ["-p", "pkgdx", "--config-file", "src/pkgdx/standards/mypy.ini"]
+entry = "uv run pkgdx-typing-hook"
 language = "system"
 types_or = ["python", "pyi"]
 exclude = "tests/"
