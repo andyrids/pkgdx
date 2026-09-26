@@ -39,5 +39,11 @@ def core_detect_secrets(args: list[str]) -> int:
 def core_pymarkdown_lint(args: list[str]) -> int:
     """Core logic for pymarkdown linting."""
     config = standards.PYMARKDOWN_CONFIG.as_posix()
-    cmd = ["pymarkdown", "--config", config, "scan"] + args
+    cmd = [
+        "pymarkdown",
+        "--config",
+        config,
+        "--continue-on-error",
+        "scan",
+    ] + args
     return subprocess.run(cmd).returncode

@@ -28,36 +28,28 @@ not raise.
 
 ## Gotcha - `BadTokenizationError`
 
-A pipe character inside a **nested** list item crashes the tokenizer:
+With the `markdown-tables` extension enabled (as in the bundled config), a pipe inside certain list
+items crashes the PyMarkdown tokenizer - an upstream bug, present in 0.9.40. Known triggers:
 
 ```markdown
 - User review & acceptance MUST be explicit before continuation:
   - "approved" | "continue" - proceed as presented
 ```
 
+```markdown
+> quote
+>
+> - `A | B` first item
+> - second item
+```
+
+Escaping the pipe (`\|`) does not help. The hook passes `--continue-on-error`, so the crash fails
+only the affected file and names it, while every other file is still linted:
+
 ```text
-Check Markdown [PyMarkdown]..............................................Failed
-  Unexpected Error(BadTokenizationError): An unhandled error occurred
-  processing the document.
+docs/example.md:0:0: An unhandled error occurred processing the document.
 ```
 
-The same pipe at the top level of a list is fine. Nesting depth alone does not predict it -
-existing three-level items carrying pipes survive, so the trigger is narrower than 'pipes when
-nested'.
-
-**The diagnostic names no file, line or rule**, which is what makes this expensive. Bisect by
-file first:
-
-```sh
-for f in <changed files>; do
-  echo "$f" $(uv run -m prek run pkgdx-markdown --files "$f" 2>&1 \
-    | grep -c BadTokenization)
-done
-```
-
-Then bisect within the file by rewriting one block at a time. The fix is to drop the pipes -
-write 'or' - rather than to restructure the list, since restructuring does not reliably help.
-
-This is worth writing down precisely because the tool gives no signal. Contrast Ruff, which names
-the rule and prints the remedy; a reference entry duplicating *that* would rot while the tool
-stays right.
+The diagnostic names no line or rule, so bisect within the file by rewriting one block at a time.
+The fix is to drop the pipe - write 'or' - rather than to restructure the list, since restructuring
+does not reliably help.
