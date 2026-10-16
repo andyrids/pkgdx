@@ -15,8 +15,8 @@ use the global `Console` returned by `get_console()` (`GLOBAL_CONSOLE`).
 import logging.config
 import pathlib
 import sys
-
 import tomllib
+
 from rich import get_console, reconfigure
 from rich.console import Console
 
