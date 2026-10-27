@@ -74,6 +74,13 @@ To overwrite or reset an existing `prek.toml` in the project root, use the `--re
 uv run pkgdx init --reset
 ```
 
+To see which configuration file each hook uses, run the `config` command. See
+[Adopting your own standards](#adopting-your-own-standards-external-users).
+
+```bash
+uv run pkgdx config
+```
+
 ## Installation
 
 Currently, this project is hosted on GitLab and deployed to a project Package Registry. The project
@@ -109,36 +116,99 @@ heavy boilerplate across each CI/CD YAML config.
 
 ## Adopting your own standards (external users)
 
-If you wish to use the Pkgdx framework, but want to apply your own rules, follow the steps below.
+`pkgdx` ships bundled canonical standards. To change them without forking, place your own files in a
+user config directory. Forking remains an option for teams that want versioned, tagged standards
+(see [Fork the repo](#fork-the-repo-alternative-for-teams)).
 
-### (1) Fork the repo
+### (1) Know where the user config directory is
 
-Start by forking the repo to your own namespace.
+`pkgdx` looks for the user config directory in this order:
 
-### (2) Modify the configuration Files
+1. The directory named by the `PKGDX_CONFIG_DIR` environment variable, if it is set and non-empty.
+2. The platform default:
+   - Windows: `%APPDATA%\pkgdx`
+   - Linux, macOS and other OSes: `$XDG_CONFIG_HOME/pkgdx` if `XDG_CONFIG_HOME` is an absolute
+     path, otherwise `~/.config/pkgdx`
 
-Modify the configuration files located in `src/pkgdx/standards/`.
+If `PKGDX_CONFIG_DIR` is set but is not an existing directory, the lint, format, typing and markdown
+hooks, `pkgdx init` and `pkgdx config` fail with exit code 1 and a single error message without a
+traceback. A missing platform directory is normal and is ignored.
 
+### (2) Add your configuration files
+
+Place any of these files in the user config directory:
+
+- `ruff.toml` - Ruff linting & formatting rules
 - `mypy.ini` - Mypy static typing rules
 - `pymarkdown.toml` - PyMarkdown linting rules
-- `ruff.toml` - Ruff linting & formatting rules
 - `hooks.toml` - Prek config template
 
-> [!TIP]
-> Hooks can be added to `hooks.toml` or removed as needed. The CLI `init` command parses this
-> file to determine which hooks should be configured in the consuming repository `prek.toml`.
+Each file is chosen independently. If the user config directory holds a file with one of these
+names, `pkgdx` uses it; otherwise it uses the bundled file. A directory holding only `ruff.toml`
+overrides Ruff and nothing else.
 
-### (3) Update hook configuration URL
+detect-secrets has no configuration file, so it always uses its bundled settings.
 
-Edit the `src/pkgdx/standards/hooks.toml` and change the `repo` value from
-`"https://gitlab.com/andyrids/pkgdx"` to your forked repo URL and the `rev` to the new tag you
-will create once you have finished.
+> [!IMPORTANT]
+> `hooks.toml` affects only `pkgdx init`, which uses it to write the `prek.toml` template. A
+> `prek.toml` that was already copied keeps its old hooks. After upgrading `pkgdx` or changing
+> `hooks.toml`, refresh the copy with `uv run pkgdx init --reset`.
 
-### (4) Tag a new release
+### (3) Check and seed with `pkgdx config`
 
-Tag a new release and the CI/CD pipeline will build and publish the package to your Package
-Registry. You can install your fork as a dev dependency in your projects via the repo URL or
-Package Registry URL.
+```bash
+uv run pkgdx config
+```
+
+This prints the user config directory, the environment variable that can override it, and, for
+each file, its source (`user` or `bundled`) and resolved path. Output goes to standard output.
+
+To start from the bundled files, export them into the user config directory:
+
+```bash
+uv run pkgdx config --export
+```
+
+`--export` creates the platform directory if needed, copies each bundled file that is missing, and
+never overwrites an existing file. It reports which files were written and which were skipped.
+
+### (4) CI & team parity
+
+The user config directory lives on your machine. Without further action, CI and collaborators fall
+back to the bundled config, so results can differ between local runs and pipelines.
+
+Recommended pattern:
+
+1. Keep the four files in your own standards Git repository.
+2. Clone that repository locally and either use it as the user config directory or point
+   `PKGDX_CONFIG_DIR` at it.
+3. In CI, clone the same repository and export `PKGDX_CONFIG_DIR` to the clone.
+
+```yaml
+lint-job:
+  variables:
+    PKGDX_CONFIG_DIR: $CI_PROJECT_DIR/.pkgdx-standards
+  before_script:
+    - git clone --depth 1 https://gitlab.com/your-group/your-standards.git "$PKGDX_CONFIG_DIR"
+  script:
+    - uv run pkgdx-lint-hook
+```
+
+Alternative: commit the four files to each project (for example in `.pkgdx/`) and set
+`PKGDX_CONFIG_DIR=.pkgdx`. A relative path is resolved against the working directory.
+
+### Fork the repo (alternative for teams)
+
+Use a fork when you want standards that are versioned and released with the package.
+
+1. Fork the repo to your own namespace.
+2. Modify the files in `src/pkgdx/standards/` (`mypy.ini`, `pymarkdown.toml`, `ruff.toml` and
+   `hooks.toml`).
+3. In `src/pkgdx/standards/hooks.toml`, change the `repo` value from
+   `"https://gitlab.com/andyrids/pkgdx"` to your forked repo URL, and set `rev` to the tag you
+   will create.
+4. Tag a new release. The CI/CD pipeline builds and publishes the package to your Package
+   Registry, which you can install as a dev dependency via the repo URL or Package Registry URL.
 
 ## Contribution
 

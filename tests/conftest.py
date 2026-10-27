@@ -14,6 +14,17 @@ from pkgdx._core import CLIContext
 from pkgdx.logging import GLOBAL_CONSOLE, configure_cli_logging
 
 
+@pytest.fixture(autouse=True)
+def isolated_user_config(
+    tmp_path_factory: pytest.TempPathFactory,
+    monkeypatch: pytest.MonkeyPatch,
+) -> pathlib.Path:
+    """Point `PKGDX_CONFIG_DIR` at an empty dir so real config can't leak."""
+    config_dir = tmp_path_factory.mktemp("user_config")
+    monkeypatch.setenv("PKGDX_CONFIG_DIR", str(config_dir))
+    return config_dir
+
+
 @pytest.fixture
 def configured_logging() -> Iterator[None]:
     """Configure CLI logging for tests & clean up handlers afterwards."""

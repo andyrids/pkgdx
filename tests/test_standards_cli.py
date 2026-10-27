@@ -290,6 +290,20 @@ def test_setup_prek_config_rejects_malformed_consumer_file(
         setup_prek_config(tmp_path)
 
 
+def test_setup_prek_config_uses_user_hooks_toml(
+    tmp_path: Path, isolated_user_config: Path
+) -> None:
+    """A user `hooks.toml` replaces the bundled template."""
+    user_hooks = isolated_user_config / "hooks.toml"
+    user_hooks.write_text('[[repos]]\nrepo = "local"\nhooks = []\n# user')
+    project = tmp_path / "proj"
+    project.mkdir()
+
+    setup_prek_config(project)
+
+    assert (project / "prek.toml").read_text() == user_hooks.read_text()
+
+
 def test_create_secrets_baseline_forces_utf8_mode(
     tmp_path: Path,
     mock_subprocess_run: mock.MagicMock,
@@ -344,3 +358,49 @@ def test_main_verbose_flag_reaches_init_context() -> None:
         exit_code = _run_main(["--debug", "init"])
     assert exit_code == ExitCode.EX_OK
     assert recorded["ctx"].is_debug is True
+
+
+CONFIG_NAMES = ["mypy.ini", "hooks.toml", "pymarkdown.toml", "ruff.toml"]
+
+
+def test_config_reports_bundled(capsys: pytest.CaptureFixture[str]) -> None:
+    """With an empty user dir every file resolves to bundled."""
+    assert _run_main(["config"]) == ExitCode.EX_OK
+    rows = capsys.readouterr().out.splitlines()
+    for name in CONFIG_NAMES:
+        assert any(r.startswith(f"{name}\tbundled\t") for r in rows)
+
+
+def test_config_reports_user_override(
+    isolated_user_config: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A user file is reported with source `user`."""
+    (isolated_user_config / "ruff.toml").write_text("")
+    assert _run_main(["config"]) == ExitCode.EX_OK
+    out = capsys.readouterr().out
+    assert "ruff.toml\tuser\t" in out
+    assert "mypy.ini\tbundled\t" in out
+
+
+def test_config_export_writes_files(isolated_user_config: Path) -> None:
+    """`--export` copies all bundled files into the user dir."""
+    assert _run_main(["config", "--export"]) == ExitCode.EX_OK
+    written = sorted(p.name for p in isolated_user_config.iterdir())
+    assert written == sorted(CONFIG_NAMES)
+
+
+def test_config_export_never_overwrites(isolated_user_config: Path) -> None:
+    """`--export` leaves existing user files untouched."""
+    existing = isolated_user_config / "ruff.toml"
+    existing.write_text("# mine")
+    assert _run_main(["config", "--export"]) == ExitCode.EX_OK
+    assert existing.read_text() == "# mine"
+    assert (isolated_user_config / "mypy.ini").is_file()
+
+
+def test_config_bad_env_dir_exits_1(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An invalid `PKGDX_CONFIG_DIR` exits 1."""
+    monkeypatch.setenv("PKGDX_CONFIG_DIR", str(tmp_path / "nope"))
+    assert _run_main(["config"]) == ExitCode.EX_FAILURE

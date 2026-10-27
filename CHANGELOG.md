@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- User config directory: `ruff.toml`, `mypy.ini`, `pymarkdown.toml` and `hooks.toml` are read from
+  `%APPDATA%\pkgdx` on Windows, or `$XDG_CONFIG_HOME/pkgdx` (else `~/.config/pkgdx`) elsewhere.
+  Each file falls back to the bundled one. `PKGDX_CONFIG_DIR` overrides the directory and fails
+  with exit code 1 when it is not an existing directory.
+- `pkgdx config` shows the user config directory and the source (user or bundled) of each file.
+  `pkgdx config --export` copies the bundled files into the user config directory without
+  overwriting existing files.
+
 ### Changed
 
 - pkgdx's own `secrets` hook in `prek.toml` runs `pkgdx-secrets-hook` instead of

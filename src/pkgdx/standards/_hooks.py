@@ -10,21 +10,21 @@ from pkgdx import standards
 
 def core_ruff_format(args: list[str]) -> int:
     """Core logic for ruff formatting."""
-    config = standards.RUFF_CONFIG.as_posix()
+    config = standards.resolve_config(standards.RUFF_CONFIG).as_posix()
     cmd = ["ruff", "format", "--config", config] + args
     return subprocess.run(cmd).returncode
 
 
 def core_ruff_lint(args: list[str]) -> int:
     """Core logic for ruff linting."""
-    config = standards.RUFF_CONFIG.as_posix()
+    config = standards.resolve_config(standards.RUFF_CONFIG).as_posix()
     cmd = ["ruff", "check", "--config", config] + args
     return subprocess.run(cmd).returncode
 
 
 def core_mypy_typing(args: list[str]) -> int:
     """Core logic for mypy type checking."""
-    config = standards.MYPY_CONFIG.as_posix()
+    config = standards.resolve_config(standards.MYPY_CONFIG).as_posix()
     cmd = ["mypy", "--config-file", config] + args
     return subprocess.run(cmd).returncode
 
@@ -42,7 +42,7 @@ def core_detect_secrets(args: list[str]) -> int:
 
 def core_pymarkdown_lint(args: list[str]) -> int:
     """Core logic for pymarkdown linting."""
-    config = standards.PYMARKDOWN_CONFIG.as_posix()
+    config = standards.resolve_config(standards.PYMARKDOWN_CONFIG).as_posix()
     cmd = [
         "pymarkdown",
         "--config",
