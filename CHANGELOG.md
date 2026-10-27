@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Releases are published to PyPI via Trusted Publishing, after the GitLab Package Registry.
 - User config directory: `ruff.toml`, `mypy.ini`, `pymarkdown.toml` and `hooks.toml` are read from
   `%APPDATA%\pkgdx` on Windows, or `$XDG_CONFIG_HOME/pkgdx` (else `~/.config/pkgdx`) elsewhere.
   Each file falls back to the bundled one. `PKGDX_CONFIG_DIR` overrides the directory and fails
@@ -30,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Release tag pipelines run lint and tests before the package is built and published.
 - pkgdx's own `secrets` hook in `prek.toml` runs `pkgdx-secrets-hook` instead of
   `detect-secrets-hook` directly.
 

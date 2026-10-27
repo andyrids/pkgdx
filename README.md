@@ -23,7 +23,7 @@ single source of truth for toolchain configuration:
 > run `uv run --directory consumers/testing pkgdx --debug init --reset` to use `pkgdx` against
 > the `consumers/testing` workspace package.
 
-![Demo Preview](docs/consumer-demo.gif)
+![Demo Preview](https://gitlab.com/andyrids/pkgdx/-/raw/main/docs/consumer-demo.gif)
 
 #### Why?
 
@@ -83,12 +83,18 @@ uv run pkgdx config
 
 ## Installation
 
-Currently, this project is hosted on GitLab and deployed to a project Package Registry. The project
-is also mirrored on GitHub.
+This project is hosted on GitLab and each release is published to PyPI and the GitLab project
+Package Registry. The project is also mirrored on GitHub.
 
 > [!NOTE]
 > Pkgdx installation is package-manager agnostic. Use another manager like Poetry and replace the
 > `uv run` accordingly or omit entirely, with an activated virtual environment.
+
+### PyPI
+
+```bash
+uv add --dev pkgdx
+```
 
 ### Package registry
 
@@ -103,7 +109,7 @@ uv add --dev git+https://gitlab.com/andyrids/pkgdx.git
 ```
 
 ```bash
-uv add --dev git+https://gitlab.com/andyrids/pkgdx.git@v0.2.0
+uv add --dev git+https://gitlab.com/andyrids/pkgdx.git@v0.4.1
 ```
 
 ## CI/CD integration
@@ -112,7 +118,8 @@ Pkgdx can be included in GitLab/Github CI/CD pipelines to enforce centralised st
 heavy boilerplate across each CI/CD YAML config.
 
 > [!TIP]
-> See `ruff-lint-job` in the project [.gitlab-ci.yml](.gitlab-ci.yml) for an example.
+> See `ruff-lint-job` in the project
+> [.gitlab-ci.yml](https://gitlab.com/andyrids/pkgdx/-/blob/main/.gitlab-ci.yml) for an example.
 
 ## Adopting your own standards (external users)
 
@@ -209,6 +216,9 @@ Use a fork when you want standards that are versioned and released with the pack
    will create.
 4. Tag a new release. The CI/CD pipeline builds and publishes the package to your Package
    Registry, which you can install as a dev dependency via the repo URL or Package Registry URL.
+5. The `publish-pypi-job` uploads to PyPI from protected `v*` tags only. To publish your fork
+   there, rename the package and register your own PyPI trusted publisher; otherwise delete the
+   job.
 
 ## Contribution
 
