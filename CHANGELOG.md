@@ -16,6 +16,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > - `Fixed` for any bug fixes.
 > - `Security` in case of vulnerabilities.
 
+## [Unreleased]
+
+### Changed
+
+- pkgdx's own `secrets` hook in `prek.toml` runs `pkgdx-secrets-hook` instead of
+  `detect-secrets-hook` directly.
+
+### Fixed
+
+- `pkgdx-secrets` hook and `.secrets.baseline` creation run `detect-secrets` in Python UTF-8 mode
+  (`PYTHONUTF8=1`), matching Linux CI. On Windows, UTF-8 files with characters that cp1252 cannot
+  decode (e.g. Rich's heavy box-drawing `━`) were silently skipped. Windows users may see new
+  findings and should audit or refresh their `.secrets.baseline`.
+
 ## [0.4.1] - 2026-10-16
 
 ### Changed

@@ -18,6 +18,7 @@ from pkgdx._core import (
     CLIContext,
     ExitCode,
     _validate_prek_repos,
+    create_secrets_baseline,
     setup_prek_config,
 )
 from pkgdx.standards._cli import _setup_progress, command_init
@@ -287,6 +288,22 @@ def test_setup_prek_config_rejects_malformed_consumer_file(
     (tmp_path / "prek.toml").write_text('[[repos]]\nrev = "1.0.0"')
     with pytest.raises(exceptions.PrekConfigError):
         setup_prek_config(tmp_path)
+
+
+def test_create_secrets_baseline_forces_utf8_mode(
+    tmp_path: Path,
+    mock_subprocess_run: mock.MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Baseline scans run in UTF-8 mode so non-cp1252 files are not skipped."""
+    monkeypatch.setenv("PYTHONUTF8", "0")
+    monkeypatch.setenv("PKGDX_SENTINEL", "kept")
+
+    create_secrets_baseline(tmp_path)
+
+    env = mock_subprocess_run.call_args.kwargs["env"]
+    assert env["PYTHONUTF8"] == "1"
+    assert env["PKGDX_SENTINEL"] == "kept"
 
 
 def _run_main(argv: list[str]) -> int:

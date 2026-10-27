@@ -1,5 +1,6 @@
 """Unit tests for canonical standards hook command builders."""
 
+import os
 import pathlib
 from collections.abc import Callable
 from unittest import mock
@@ -69,7 +70,8 @@ def test_detect_secrets_injects_default_baseline_when_missing(
             "--baseline",
             ".secrets.baseline",
             "--no-verify",
-        ]
+        ],
+        env=mock.ANY,
     )
     assert returncode == 0
 
@@ -82,8 +84,26 @@ def test_detect_secrets_preserves_explicit_baseline(
 
     returncode = _hooks.core_detect_secrets(args)
 
-    mock_subprocess_run.assert_called_once_with(["detect-secrets-hook", *args])
+    mock_subprocess_run.assert_called_once_with(
+        ["detect-secrets-hook", *args], env=mock.ANY
+    )
     assert returncode == 0
+
+
+def test_detect_secrets_forces_utf8_mode_and_preserves_environment(
+    mock_subprocess_run: mock.MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """UTF-8 mode is forced on top of the caller's environment."""
+    monkeypatch.setenv("PYTHONUTF8", "0")
+    monkeypatch.setenv("PKGDX_SENTINEL", "kept")
+
+    _hooks.core_detect_secrets([])
+
+    env = mock_subprocess_run.call_args.kwargs["env"]
+    assert env["PYTHONUTF8"] == "1"
+    assert env["PKGDX_SENTINEL"] == "kept"
+    assert env["PATH"] == os.environ["PATH"]
 
 
 def test_mypy_typing_defaults_to_project_and_excludes_tests(

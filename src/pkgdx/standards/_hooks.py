@@ -1,5 +1,6 @@
 """Core pre-commit hook logic for the `pkgdx` canonical standards."""
 
+import os
 import subprocess
 
 from pkgdx import standards
@@ -33,7 +34,10 @@ def core_detect_secrets(args: list[str]) -> int:
     if "--baseline" not in args:
         args = ["--baseline", ".secrets.baseline"] + args
     cmd = ["detect-secrets-hook"] + args
-    return subprocess.run(cmd).returncode
+    # detect-secrets opens files with the locale encoding & silently skips
+    # files that fail to decode (cp1252 on Windows), so force UTF-8 mode.
+    env = os.environ | {"PYTHONUTF8": "1"}
+    return subprocess.run(cmd, env=env).returncode
 
 
 def core_pymarkdown_lint(args: list[str]) -> int:

@@ -3,6 +3,7 @@
 import argparse
 import dataclasses
 import logging
+import os
 import re
 import subprocess
 import sys
@@ -359,6 +360,7 @@ def create_secrets_baseline(root: Path) -> None:
                     r"(.*\.lock)",
                 ],
                 cwd=root,
+                env=os.environ | {"PYTHONUTF8": "1"},
                 stdout=f,
                 check=True,
             )
