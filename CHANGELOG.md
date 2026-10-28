@@ -16,6 +16,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > - `Fixed` for any bug fixes.
 > - `Security` in case of vulnerabilities.
 
+## [Unreleased]
+
+### Added
+
+- Releases are published to PyPI via Trusted Publishing, after the GitLab Package Registry.
+- User config directory: `ruff.toml`, `mypy.ini`, `pymarkdown.toml` and `hooks.toml` are read from
+  `%APPDATA%\pkgdx` on Windows, or `$XDG_CONFIG_HOME/pkgdx` (else `~/.config/pkgdx`) elsewhere.
+  Each file falls back to the bundled one. `PKGDX_CONFIG_DIR` overrides the directory and fails
+  with exit code 1 when it is not an existing directory.
+- `pkgdx config` shows the user config directory and the source (user or bundled) of each file.
+  `pkgdx config --export` copies the bundled files into the user config directory without
+  overwriting existing files.
+
+### Changed
+
+- Release tag pipelines run lint and tests before the package is built and published.
+- pkgdx's own `secrets` hook in `prek.toml` runs `pkgdx-secrets-hook` instead of
+  `detect-secrets-hook` directly.
+
+### Fixed
+
+- `pkgdx-secrets` hook and `.secrets.baseline` creation run `detect-secrets` in Python UTF-8 mode
+  (`PYTHONUTF8=1`), matching Linux CI. On Windows, UTF-8 files with characters that cp1252 cannot
+  decode (e.g. Rich's heavy box-drawing `━`) were silently skipped. Windows users may see new
+  findings and should audit or refresh their `.secrets.baseline`.
+
 ## [0.4.1] - 2026-10-16
 
 ### Changed

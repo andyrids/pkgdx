@@ -10,7 +10,7 @@ recommended-context-tokens: 900
 The pkgdx project provides a DX toolkit, which centralises the maintenance and implementation of
 canonical standards for consuming projects.
 
-This project adheres to [YAGNI](docs\reference-standard-yagni.md) principles.
+This project adheres to [YAGNI](docs/guidance/standard-yagni.md) principles.
 
 ## Markdown frontmatter
 
@@ -24,6 +24,5 @@ Mardown files carry `context-hierarchy`, `context-hierarchy-role` and `immutable
 
 ## Reference
 
-Standards and references live in `docs/` as reference-*.md files (Layer 3). See the reference
-`docs\reference-standard-naming.md` document for more information. Load a file when its subject
-is in play, which can be determined by the frontmatter.
+Standards and references live in `docs/guidance/` as `standard-*.md` and `toolchain-*.md` files
+(Layer 3). Load a file when its subject is in play, which can be determined by the frontmatter.

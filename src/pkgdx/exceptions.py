@@ -31,3 +31,7 @@ class GitTopLevelError(Error):
 
 class RichHandlerNotFound(Error):
     """Raised on missing Rich logging handler."""
+
+
+class ConfigDirError(Error):
+    """Raised on an invalid `PKGDX_CONFIG_DIR`."""

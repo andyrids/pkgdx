@@ -6,6 +6,8 @@ standards and pre-commit hooks.
 """
 
 import logging
+import shutil
+import sys
 from collections.abc import Generator, Iterable
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Optional
@@ -27,7 +29,7 @@ from rich.progress import (
 from rich.table import Column
 from rich.text import Text
 
-from pkgdx import _core, exceptions
+from pkgdx import _core, exceptions, standards
 from pkgdx._core import CLIContext, CLIGFormatter, ExitCode
 from pkgdx.logging import GLOBAL_CONSOLE
 
@@ -258,6 +260,44 @@ def command_init(ctx: CLIContext) -> int:
         return ExitCode.EX_OK
 
 
+def command_config(ctx: CLIContext) -> int:
+    """Show resolved config sources, or export bundled configs.
+
+    Data rows go to STDOUT; messages go to STDERR.
+
+    Args:
+        ctx: The CLI context.
+
+    Returns:
+        The integer process exit code. Uses `_core.ExitCode`.
+
+    Raises:
+        ConfigDirError: If `PKGDX_CONFIG_DIR` is set but not a directory.
+    """
+    user_dir = standards.user_config_dir()
+
+    if ctx.args.export:
+        user_dir.mkdir(parents=True, exist_ok=True)
+        for bundled in standards.BUNDLED_CONFIGS:
+            target = user_dir / bundled.name
+            if target.exists():
+                GLOBAL_CONSOLE.print(
+                    f"Skipped existing {target}", soft_wrap=True
+                )
+                continue
+            shutil.copyfile(bundled, target)
+            GLOBAL_CONSOLE.print(f"Wrote {target}", soft_wrap=True)
+
+    sys.stdout.write(
+        f"user dir: {user_dir} (env: {standards.CONFIG_DIR_ENV})\n"
+    )
+    for bundled in standards.BUNDLED_CONFIGS:
+        resolved = standards.resolve_config(bundled)
+        source = "bundled" if resolved == bundled else "user"
+        sys.stdout.write(f"{bundled.name}\t{source}\t{resolved}\n")
+    return ExitCode.EX_OK
+
+
 def add_subparser(
     subparsers: "argparse._SubParsersAction[Any]",
     parent: Optional["argparse.ArgumentParser"] = None,
@@ -287,3 +327,24 @@ def add_subparser(
     )
 
     parser_init.set_defaults(func=command_init)
+
+    config_text = "Show config sources or export bundled configs"
+    parser_config = subparsers.add_parser(
+        "config",
+        help=config_text,
+        description=config_text,
+        usage="USAGE:\n %(prog)s [options]",
+        add_help=False,
+        parents=[parent] if parent else [],
+        formatter_class=CLIGFormatter,
+    )
+
+    parser_config._optionals.title = "OPTIONS"
+
+    parser_config.add_argument(
+        "--export",
+        action="store_true",
+        help="Copy bundled configs into the user config directory",
+    )
+
+    parser_config.set_defaults(func=command_config)

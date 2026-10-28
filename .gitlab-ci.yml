@@ -1,10 +1,7 @@
 variables:
   UV_CACHE_DIR: .uv-cache
   UV_LINK_MODE: copy
-  UV_PUBLISH_URL: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/pypi"
-  UV_PUBLISH_PASSWORD: "$CI_JOB_TOKEN"
-  UV_PUBLISH_USERNAME: gitlab-ci-token
-  UV_VERSION: 0.11.26-trixie
+  UV_VERSION: 0.13.6-trixie
   GIT_DEPTH: 0
 
 stages:
@@ -38,6 +35,8 @@ workflow:
     # MR/push -> protected branch
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_PROTECTED == "true"'
     - if: '$CI_COMMIT_REF_PROTECTED == "true" && $CI_PIPELINE_SOURCE == "push"'
+    # Release tags - lint & test gate the Build & Publish stages
+    - if: '$CI_COMMIT_TAG'
 
 # ---------------------------------------------------------
 # Job Definitions
@@ -107,16 +106,50 @@ build-package-job:
       - dist/
     expire_in: 1 day
 
-publish-package-job:
+publish-gitlab-job:
   extends: .astral-uv
   stage: Publish
-  interruptible: true
+  interruptible: false
   needs:
     - job: build-package-job
       artifacts: true
   rules:
     - if: "$CI_COMMIT_TAG"
-  # Skip .astral-uv `before_script`
+  variables:
+    UV_PUBLISH_URL: "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/pypi"
+    UV_PUBLISH_PASSWORD: "$CI_JOB_TOKEN"
+    UV_PUBLISH_USERNAME: gitlab-ci-token
+  # Skip .astral-uv `before_script` & cache
   before_script: []
+  cache: []
   script:
-    - uv publish dist/*
+    # `--check-url` skips files already uploaded, so a retry is safe
+    - uv publish --check-url "$CI_API_V4_URL/projects/$CI_PROJECT_ID/packages/pypi/simple" dist/*
+
+publish-pypi-job:
+  extends: .astral-uv
+  stage: Publish
+  # PyPI uploads are permanent - never auto-cancel mid-upload
+  interruptible: false
+  needs:
+    - job: build-package-job
+      artifacts: true
+    # PyPI last: it is the only irreversible channel
+    - job: publish-gitlab-job
+      artifacts: false
+  rules:
+    # Protected `v*` tags only (Maintainers) - an unprotected tag never reaches PyPI
+    - if: '$CI_COMMIT_TAG && $CI_COMMIT_REF_PROTECTED == "true"'
+  # Must match the PyPI trusted publisher's environment name
+  environment:
+    name: pypi
+    url: https://pypi.org/project/pkgdx/
+  # Trusted Publishing - uv exchanges this OIDC token for a short-lived PyPI token
+  id_tokens:
+    PYPI_ID_TOKEN:
+      aud: pypi
+  # Skip .astral-uv `before_script` & cache
+  before_script: []
+  cache: []
+  script:
+    - uv publish --trusted-publishing always --check-url https://pypi.org/simple/ dist/*
