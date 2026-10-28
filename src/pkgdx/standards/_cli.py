@@ -54,7 +54,7 @@ class _StatusSpinnerColumn(SpinnerColumn):
             The spinner animation, or a finished-state glyph.
         """
         if task.fields.get("failed"):
-            return Text("✗", style="red")
+            return Text("□", style="red")
         return super().render(task)
 
 
@@ -116,7 +116,7 @@ def _setup_progress() -> Generator[Progress, None, None]:
         _StatusSpinnerColumn(
             spinner_name="dots",
             style="cyan",
-            finished_text="[green]✓",
+            finished_text="[green]■",
         ),
         TextColumn(
             "[progress.description]{task.description}",
@@ -153,7 +153,7 @@ def _add_step(progress: Progress, description: str) -> TaskID:
     Returns:
         The new step's task ID.
     """
-    return progress.add_task(description, total=1)
+    return progress.add_task(f"[i dim]{description}", total=1)
 
 
 def _complete_step(
@@ -208,21 +208,21 @@ def command_init(ctx: CLIContext) -> int:
     GLOBAL_CONSOLE.rule("[cyan]pkgdx init")
     with _setup_progress() as progress:
         overall = progress.add_task(
-            "[cyan]pkgdx init",
+            "[b reverse cyan]pkgdx init",
             total=_INIT_STEP_COUNT,
             role="overall",
         )
 
-        step = _add_step(progress, "[cyan]Find project root")
+        step = _add_step(progress, "identify project root")
         try:
             root = _core.get_project_root()
         except exceptions.ProjectRootNotFoundError:
-            _fail_step(progress, step, "Find project root")
+            _fail_step(progress, step, "find project root")
             logger.exception("Failed to find project root")
             return ExitCode.EX_FAILURE
         _complete_step(progress, overall, step)
 
-        step = _add_step(progress, "[cyan]Find Git top-level")
+        step = _add_step(progress, "identify Git top-level")
         try:
             git_toplevel = _core.get_git_toplevel()
         except exceptions.GitTopLevelError as e:
@@ -230,33 +230,33 @@ def command_init(ctx: CLIContext) -> int:
             git_toplevel = None
         _complete_step(progress, overall, step)
 
-        step = _add_step(progress, "[cyan]Configure pre-commit hooks")
+        step = _add_step(progress, "configure pre-commit hooks")
         try:
             _core.setup_prek_config(root, reset=ctx.args.reset)
         except tomlkit.exceptions.TOMLKitError:
-            _fail_step(progress, step, "Configure pre-commit hooks")
+            _fail_step(progress, step, "configure pre-commit hooks")
             logger.exception("Failed to configure pre-commit hooks")
             return ExitCode.EX_FAILURE
         _complete_step(progress, overall, step)
 
-        step = _add_step(progress, "[cyan]Prek install Git shims")
+        step = _add_step(progress, "prek install")
         _core.install_prek_hooks(git_toplevel or root)
         _complete_step(progress, overall, step)
-
-        step = _add_step(progress, "[cyan]Prek check hook revisions")
+        # prek update --check, -v
+        step = _add_step(progress, "prek update --check")
         _core.update_prek_hooks(root)
         _complete_step(progress, overall, step)
-
-        step = _add_step(progress, "[cyan]Configure `.secrets.baseline`")
+        # detect_secrets scan configure `.secrets.baseline
+        step = _add_step(progress, "detect-secrets scan")
         try:
             _core.create_secrets_baseline(root)
         except exceptions.Error:
-            _fail_step(progress, step, "Configure `.secrets.baseline`")
+            _fail_step(progress, step, "detect-secrets scan")
             logger.exception("Error configuring `.secrets.baseline`")
             return ExitCode.EX_FAILURE
         _complete_step(progress, overall, step)
 
-        progress.update(overall, description="[green]pkgdx init")
+        progress.update(overall, description="[b reverse green]pkgdx init")
         return ExitCode.EX_OK
 
 

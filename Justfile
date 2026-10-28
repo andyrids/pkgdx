@@ -2,7 +2,7 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
 [windows]
-set shell := ["cmd.exe", "/c"]
+set shell := ["pwsh.exe", "-c"]
 
 set dotenv-load := true
 
@@ -22,14 +22,6 @@ setup: && secrets-baseline
     uv sync
     uv run -m prek install
 
-[doc("Test `pkgdx` CLI in workspace member `consumers/testing`")]
-[group("DEV")]
-test-consumer *FLAGS:
-    uv run --directory consumers/testing pkgdx
-    uv run --directory consumers/testing pkgdx --version
-    uv run --directory consumers/testing pkgdx -debug init --help
-    uv run --directory consumers/testing pkgdx --debug init {{FLAGS}}
-
 [doc("Create `coverage` report")]
 [group("DEV")]
 coverage *FLAGS:
@@ -47,3 +39,15 @@ git-prune:
 [group("DEV")]
 symlink-agents:
     @uv run python -c "import pathlib; p=pathlib.Path('CLAUDE.md'); p.unlink(missing_ok=True); p.symlink_to('AGENTS.md')"
+
+[env("PKGDX_CONFIG_DIR", ".pkgdx")]
+[doc("Test `pkgdx init` command in workspace member `consumers/testing`")]
+[group("TEST")]
+consumer-init *FLAGS:
+    uv run --directory consumers/testing pkgdx init {{FLAGS}}
+
+[env("PKGDX_CONFIG_DIR", ".pkgdx")]
+[doc("Test `pkgdx config` command in workspace member `consumers/testing`")]
+[group("TEST")]
+consumer-config *FLAGS:
+    uv run --directory consumers/testing pkdx config {{FLAGS}}

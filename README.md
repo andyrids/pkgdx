@@ -1,12 +1,10 @@
 # Package Developer Experience (DX) Toolkit [`Pkgdx`]
 
-I created `pkgdx` as a way to improve DX for Python projects. The package is intended for
-installation as a development dependency, providing a main command-line interface (CLI) and
-a nested CLI commands and options for common development tasks.
+I created `pkgdx` as a way to improve DX for my Python projects. The package is installed as
+as a development dependency, providing a main command-line interface (CLI) for canonical standards
+configuration.
 
-## Current features
-
-### (1) Canonical standards maintenance
+## Overview
 
 `pkgdx` centralises creation and implementation of coding standards across projects, providing a
 single source of truth for toolchain configuration:
@@ -17,6 +15,13 @@ single source of truth for toolchain configuration:
 4. detect-secrets (secret detection)
 5. Prek (hook framework)
 
+To quickly demo `pkgdx`, clone this repository and run the `consumer-init` and `consumer-config`
+Justfile recipes:
+
+```sh
+just consumer-init --reset
+```
+
 > [!TIP]
 > To quickly demo `pkgdx`, clone this repository and run the `test-consumer` Justfile recipe via
 > `just test-consumer`. If [Just](https://github.com/casey/just) command runner is unavailable,
@@ -25,7 +30,7 @@ single source of truth for toolchain configuration:
 
 ![Demo Preview](https://gitlab.com/andyrids/pkgdx/-/raw/main/docs/consumer-demo.gif)
 
-#### Why?
+## Why?
 
 Other methods of maintaining standards include templating tools like `Cookiecutter` or `Copier`,
 which inject configurations directly into the project `pyproject.toml` and/or root directory.
@@ -36,7 +41,7 @@ removing the need for extensive `pyproject.toml` boilerplate.
 > [!TIP]
 > `pkgdx` compliments project templating tools - it does not replace them.
 
-#### How?
+## How?
 
 Configuration files and CLI are contained in the `standards/` subpackage and developments tools
 have console scripts (`[project.scripts]`) and pre-commit hooks (`.pre-commit-hooks.yaml`), which
