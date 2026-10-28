@@ -1,12 +1,13 @@
 """Unit tests for canonical standards hook command builders."""
 
+import os
 import pathlib
 from collections.abc import Callable
 from unittest import mock
 
 import pytest
 
-from pkgdx import standards
+from pkgdx import __main__, standards
 from pkgdx.standards import _hooks
 
 
@@ -69,7 +70,8 @@ def test_detect_secrets_injects_default_baseline_when_missing(
             "--baseline",
             ".secrets.baseline",
             "--no-verify",
-        ]
+        ],
+        env=mock.ANY,
     )
     assert returncode == 0
 
@@ -82,8 +84,26 @@ def test_detect_secrets_preserves_explicit_baseline(
 
     returncode = _hooks.core_detect_secrets(args)
 
-    mock_subprocess_run.assert_called_once_with(["detect-secrets-hook", *args])
+    mock_subprocess_run.assert_called_once_with(
+        ["detect-secrets-hook", *args], env=mock.ANY
+    )
     assert returncode == 0
+
+
+def test_detect_secrets_forces_utf8_mode_and_preserves_environment(
+    mock_subprocess_run: mock.MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """UTF-8 mode is forced on top of the caller's environment."""
+    monkeypatch.setenv("PYTHONUTF8", "0")
+    monkeypatch.setenv("PKGDX_SENTINEL", "kept")
+
+    _hooks.core_detect_secrets([])
+
+    env = mock_subprocess_run.call_args.kwargs["env"]
+    assert env["PYTHONUTF8"] == "1"
+    assert env["PKGDX_SENTINEL"] == "kept"
+    assert env["PATH"] == os.environ["PATH"]
 
 
 def test_mypy_typing_defaults_to_project_and_excludes_tests(
@@ -136,3 +156,44 @@ def test_pymarkdown_lint_continues_past_a_crashing_document(
     assert str(lint) in output
     assert "MD032" in output
     assert str(crash) in output
+
+
+@pytest.mark.parametrize(
+    ("hook", "name"),
+    [
+        (_hooks.core_ruff_format, "ruff.toml"),
+        (_hooks.core_ruff_lint, "ruff.toml"),
+        (_hooks.core_mypy_typing, "mypy.ini"),
+        (_hooks.core_pymarkdown_lint, "pymarkdown.toml"),
+    ],
+    ids=["ruff-format", "ruff-lint", "mypy-typing", "pymarkdown-lint"],
+)
+def test_config_hook_uses_user_config(
+    hook: Callable[[list[str]], int],
+    name: str,
+    isolated_user_config: pathlib.Path,
+    mock_subprocess_run: mock.MagicMock,
+) -> None:
+    """Config hooks pass the user config path when one exists."""
+    user_file = isolated_user_config / name
+    user_file.write_text("")
+
+    hook([])
+
+    assert user_file.as_posix() in mock_subprocess_run.call_args.args[0]
+
+
+def test_hook_entry_point_bad_env_dir_exits_1(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A bad `PKGDX_CONFIG_DIR` exits 1 with a one-line error."""
+    monkeypatch.setenv("PKGDX_CONFIG_DIR", str(tmp_path / "nope"))
+    monkeypatch.setattr("sys.argv", ["pkgdx-lint-hook"])
+    with pytest.raises(SystemExit) as exc_info:
+        __main__.ruff_lint()
+    assert exc_info.value.code == 1
+    err = capsys.readouterr().err
+    assert err.startswith("pkgdx: ")
+    assert "Traceback" not in err

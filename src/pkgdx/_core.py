@@ -3,6 +3,7 @@
 import argparse
 import dataclasses
 import logging
+import os
 import re
 import subprocess
 import sys
@@ -301,7 +302,7 @@ def setup_prek_config(root: Path, reset: bool = False) -> None:
     """
     changed = False
     config_existing = root / "prek.toml"
-    config_template = standards.PREK_CONFIG
+    config_template = standards.resolve_config(standards.PREK_CONFIG)
 
     if reset or not config_existing.exists():
         logger.debug("Creating `prek.toml` from template")
@@ -359,6 +360,7 @@ def create_secrets_baseline(root: Path) -> None:
                     r"(.*\.lock)",
                 ],
                 cwd=root,
+                env=os.environ | {"PYTHONUTF8": "1"},
                 stdout=f,
                 check=True,
             )

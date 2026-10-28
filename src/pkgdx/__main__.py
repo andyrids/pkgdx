@@ -4,6 +4,7 @@ import argparse
 import logging
 import sys
 import textwrap
+from collections.abc import Callable
 from typing import NoReturn
 
 from pkgdx import __version__, _core, exceptions
@@ -27,13 +28,27 @@ __all__: list[str] = [
 # PRE-COMMIT ENTRYPOINTS [project.scripts]
 
 
+def _run_hook(func: Callable[[list[str]], int]) -> NoReturn:
+    """Run a config hook, reporting `pkgdx` errors without a traceback.
+
+    Args:
+        func: The core hook logic, called with `sys.argv[1:]`.
+    """
+    try:
+        code = func(sys.argv[1:])
+    except exceptions.Error as err:
+        sys.stderr.write(f"pkgdx: {err}\n")
+        sys.exit(_core.ExitCode.EX_FAILURE)
+    sys.exit(code)
+
+
 def ruff_format() -> NoReturn:
     """Run ruff formatting with the configured settings.
 
     NOTE: Relates to pre-commit hook ID `pkgdx-format`, with
     entry point `pkgdx-format-hook`.
     """
-    sys.exit(_hooks.core_ruff_format(sys.argv[1:]))
+    _run_hook(_hooks.core_ruff_format)
 
 
 def ruff_lint() -> NoReturn:
@@ -42,7 +57,7 @@ def ruff_lint() -> NoReturn:
     NOTE: Relates to pre-commit hook ID `pkgdx-lint`, with
     entry point `pkgdx-lint-hook`.
     """
-    sys.exit(_hooks.core_ruff_lint(sys.argv[1:]))
+    _run_hook(_hooks.core_ruff_lint)
 
 
 def mypy_typing() -> NoReturn:
@@ -51,7 +66,7 @@ def mypy_typing() -> NoReturn:
     NOTE: Relates to pre-commit hook ID `pkgdx-typing`, with
     entry point `pkgdx-typing-hook`.
     """
-    sys.exit(_hooks.core_mypy_typing(sys.argv[1:]))
+    _run_hook(_hooks.core_mypy_typing)
 
 
 def detect_secrets() -> NoReturn:
@@ -69,7 +84,7 @@ def pymarkdown_lint() -> NoReturn:
     NOTE: Relates to pre-commit hook ID `pkgdx-markdown`, with
     entry point `pkgdx-markdown-hook`.
     """
-    sys.exit(_hooks.core_pymarkdown_lint(sys.argv[1:]))
+    _run_hook(_hooks.core_pymarkdown_lint)
 
 
 # MAIN CLI COMMANDS
