@@ -29,20 +29,6 @@ on the *New Oxford Style Manual* (*New Hart's Rules*).
 This is an example of sentence case capitalization.
 ```
 
-### H1 title convention
-
-Reference documents take an H1 naming the kind of document, mirroring the filename patterns in
-`reference-standard-naming.md`:
-
-| File pattern                    | H1 form                     |
-| ------------------------------- | --------------------------- |
-| `reference-standard-[name].md`  | `# Standard - [name]`       |
-| `reference-toolchain-[tool].md` | `# Toolchain - [tool]`      |
-
-Tracked artifacts keep their own `Kind: Name` prefixes, which are structural rather than
-prose - `# Command: <cli> find`, `# Behavior: Output contract`, `# Plan: [summary]`. Sentence
-case applies to the text after the prefix.
-
 ## (2) Punctuation and quotation
 
 - Use single quotation marks (`' '`) for primary quotes or emphasized terms.
@@ -111,8 +97,7 @@ stop - including the checkbox form:
 
 This is why the two notations do not mix inside one list. A block of modal fragments and a block
 of EARS requirements are each internally consistent; interleaved, they break the rule against
-mixing fragments and sentences in a single block. `reference-standard-validation.md` decides which
-one a given list takes.
+mixing fragments and sentences in a single block.
 
 The common failure is not missing stops but mixing both forms inside one block:
 
@@ -162,9 +147,6 @@ prose.
 
 | Tree                          | In scope | Frontmatter schema                          |
 | ----------------------------- | -------- | ------------------------------------------- |
-| `ICM/**`                      | Yes      | Per `AGENTS.md`, by layer                   |
-| `specs/**`                    | Yes      | Per `AGENTS.md`, by layer                   |
-| `plans/*.md`                  | Yes      | Per `AGENTS.md`, plus the plan query fields |
 | `AGENTS.md`, `CONTEXT.md`     | Yes      | Per `AGENTS.md`, by layer                   |
 | `.claude/**`                  | No       | Harness-owned (`name`, `description`)       |
 | `CHANGELOG.md`, `README.md`   | No       | None - format set by Keep a Changelog       |
