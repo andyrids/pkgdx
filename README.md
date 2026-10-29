@@ -34,13 +34,13 @@ To quickly demo `pkgdx`, clone this repository, cd into `./pkgdx/` and run the c
 just consumer-demo
 ```
 
-> [!INFO]
+> [!IMPORTANT]
 > Use `uvx rust-just consumer-demo` if [Just](https://just.systems/man/en/) command runner
 > is not installed.
 
-Further installation and setup guidance is available below.
-
 ![Demo Preview](./docs/pkgdx-demo.webp)
+
+Further installation and setup guidance is available below.
 
 ## Why?
 
