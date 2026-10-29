@@ -40,7 +40,7 @@ just consumer-demo
 
 Further installation and setup guidance is available below.
 
-![Demo Preview](https://gitlab.com/andyrids/pkgdx/-/raw/main/docs/pkgdx-demo.webp)
+![Demo Preview](./docs/pkgdx-demo.webp)
 
 ## Why?
 
