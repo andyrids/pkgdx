@@ -1,0 +1,9 @@
+==> Identify project root
+    C:\src\acme (pyproject.toml)
+==> Identify Git top-level
+    C:\src\acme
+==> Configure pre-commit hooks
+    Error: prek.toml could not be parsed
+    Invalid value (at line 12, column 9)
+    hint: Fix prek.toml, or regenerate it with `pkgdx init --reset`
+==> Failed after 2 steps

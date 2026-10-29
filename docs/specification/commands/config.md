@@ -23,18 +23,17 @@ Environment: `PKGDX_CONFIG_DIR`, as described in
 
 ## Outputs
 
-Without `--export`, standard output shows:
-
-- the resolved user config directory;
-- the environment variable that can override it;
-- one row per recognised file, giving the file name, its source (`user` or `bundled`) and the
-  resolved path.
+Without `--export`, standard output holds only one row per recognised file: the file name, its
+source (`user` or `bundled`) and the resolved path, as aligned columns with the path last. Standard
+error then gets one closing line, naming the resolved user config directory, whether
+`PKGDX_CONFIG_DIR` set it, and how many files are `user` and `bundled`.
 
 Each row reflects the same selection the hooks make at the same moment, so a `user` row means the
 hooks are using that file.
 
-With `--export`, the per-file messages reporting whether each file was written or skipped go to
-standard error, following the project's output convention.
+With `--export`, standard error gets one ledger line per file in the `pkgdx init` format (`created`,
+or `unchanged` when a file of that name already exists), then a closing line. Nothing is written to
+standard output.
 
 - The user config directory is created when it does not exist.
 - A bundled file is copied only when no file of that name exists in the user config directory.
@@ -44,8 +43,11 @@ standard error, following the project's output convention.
 ## Failure modes
 
 - If `PKGDX_CONFIG_DIR` is set and does not name an existing directory, then the command shall
-  exit with status 1 and write a single error message to standard error, without a traceback, with
-  no table written. This applies with and without `--export`.
+  exit with status 1 and write a single FAIL line, with its cause and a hint, to standard error,
+  without a traceback, with no rows written. This applies with and without `--export`.
+- If a file cannot be written during `--export`, then the command shall stop at that file and exit
+  with status 1, without a traceback. Files already written are kept, and the remaining files are
+  listed as not run. Running the export again is safe.
 
 ## Out of scope
 

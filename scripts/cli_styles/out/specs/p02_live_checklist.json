@@ -1,0 +1,52 @@
+{
+  "id": "live-checklist",
+  "name": "Live checklist",
+  "summary": "Every step appears up front as pending and is updated in place in a Rich Live table (glyph + label + detail), so the user sees the whole plan and where the run is. After a failure the remaining steps are marked 'skipped' rather than left frozen, and a single summary line follows when Live stops.",
+  "mockup": "SUCCESS (TTY, final frame)\npkgdx init\n ✓ identify project root       C:\\src\\acme (pyproject.toml)\n ✓ identify Git top-level      C:\\src\\acme\n ✓ configure pre-commit hooks  prek.toml updated, 2 hooks added\n ✓ prek install                Git shims already installed\n ✓ prek update --check         hook revisions up to date\n ✓ detect-secrets scan         .secrets.baseline created\n6 ok in 2.9s\n\n(mid-run frame)\n ✓ prek install                Git shims already installed\n ⠼ prek update --check         checking remote revisions... 1.1s\n · detect-secrets scan\n\nWARN (TTY, final frame)\npkgdx init\n ✓ identify project root       C:\\src\\acme (pyproject.toml)\n ! identify Git top-level      WARN not a Git repository, using project root\n                               hint: Run `git init` to enable pre-commit hooks\n ✓ configure pre-commit hooks  prek.toml unchanged\n ✓ prek install                Git shims installed at project root\n ! prek update --check         WARN pkgdx v0.4.2 -> v0.5.0 available\n                               hint: Update remote hook revisions - `prek update`\n ✓ detect-secrets scan         .secrets.baseline exists, reused\n4 ok, 2 warnings in 2.9s\n\nFAIL (TTY, final frame)\npkgdx init\n ✓ identify project root       C:\\src\\acme (pyproject.toml)\n ✓ identify Git top-level      C:\\src\\acme\n x configure pre-commit hooks  FAILED prek.toml could not be parsed\n                               Invalid value (at line 12, column 9)\n                               hint: Fix prek.toml, or regenerate it with `pkgdx init --reset`\n - prek install                skipped\n - prek update --check         skipped\n - detect-secrets scan         skipped\npkgdx init failed: 2 ok, 1 failed, 3 skipped",
+  "step_states": "pending: '·' dim, label dim | running: 'dots' spinner cyan, label bold, elapsed seconds shown only after 0.5s | ok: '✓' green, label normal | warn: '!' bold yellow + 'WARN' word + hint sub-row | fail: 'x' bold red + 'FAILED' word + message/hint sub-rows | skipped: '-' dim + 'skipped'",
+  "header": "One bold 'pkgdx init' line as the first row of the Live renderable (replaces both the rule and the reverse-video overall row).",
+  "success_summary": "'6 ok in 2.9s' (or 'N ok, M warnings in Xs'), one line after Live stops.",
+  "warning_presentation": "In the row: '!' glyph plus the word WARN and the detail, with a 'hint:' sub-row aligned to the detail column. Warnings are not logged above the display.",
+  "failure_presentation": "The failed row gets 'x' and the word FAILED, with the cause, the parser message and a hint stacked in the detail column. Later steps turn to '-' skipped and the summary counts them. Expected errors show no traceback; with -d it prints after Live stops. Ctrl-C: the running row becomes '- <label>  interrupted', the remaining rows 'skipped', summary 'pkgdx init interrupted', exit 130.",
+  "state_change_reporting": "The detail column shows Result.detail for every completed step, so created / updated / unchanged / reused is always visible.",
+  "non_tty_behaviour": "Live is disabled. As each step finishes, its final row is printed (ASCII glyphs: '+', '!', 'x', '-'), then the summary. No pending rows or spinner. Example: ' + prek update --check         hook revisions up to date' / ' - detect-secrets scan         skipped' / 'pkgdx init failed: 2 ok, 1 failed, 3 skipped'.",
+  "rich_primitives": [
+    "Live",
+    "Table.grid",
+    "Spinner",
+    "Text",
+    "Group"
+  ],
+  "custom_classes_estimate": 1,
+  "complexity": "medium",
+  "guidance_refs": [
+    "standard-cli §4",
+    "standard-cli §5",
+    "standard-cli §9",
+    "standard-cli §11",
+    "toolchain-logging §3",
+    "standard-yagni"
+  ],
+  "addresses_observations": [
+    1,
+    2,
+    3,
+    4,
+    6,
+    7,
+    8,
+    10,
+    11
+  ],
+  "risks": [
+    "'✓' (U+2713) is in Cascadia Code/Mono (Windows Terminal default) but not in Consolas or other legacy console fonts. Keep an ASCII glyph map ('+') and use it for non-TTY output.",
+    "The full step list must be known up front. That's fine for init, but subcommands that work out their steps at runtime need to append rows.",
+    "Rich Live redraws can interleave badly with log records emitted mid-run; any logger output during Live must go through the same console (it does via RichHandler), but it will appear above the table.",
+    "Success output is 8 lines, longer than the minimal pattern. It still meets 'brief', but only just."
+  ],
+  "file": "scripts/cli_styles/p02_live_checklist.py",
+  "merged_from": [
+    "glyph-checklist"
+  ],
+  "curation_note": "Merged with glyph-checklist (gh/pnpm): no bar, no M/N, no elapsed column per row; one footer summary. Pre-register every step as pending; mark remaining steps skipped after a failure."
+}

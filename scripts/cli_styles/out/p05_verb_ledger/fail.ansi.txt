@@ -1,0 +1,6 @@
+  [1;36mpkgdx init[0m  [2mC:\src\acme[0m
+[1;32m      Found[0m  C:\src\acme (pyproject.toml)
+[1;32m      Found[0m  C:\src\acme
+[1;31m      error[0m  prek.toml could not be parsed: Invalid value (at line 12, column 9)
+[2m       hint[0m  Fix prek.toml, or regenerate it with `pkgdx init --reset`
+[1;31m     Failed[0m  2 of 6 steps completed in 0.0s (re-run with -d for details)

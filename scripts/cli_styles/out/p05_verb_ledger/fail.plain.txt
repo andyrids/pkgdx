@@ -1,0 +1,6 @@
+  pkgdx init  C:\src\acme
+      Found  C:\src\acme (pyproject.toml)
+      Found  C:\src\acme
+      error  prek.toml could not be parsed: Invalid value (at line 12, column 9)
+       hint  Fix prek.toml, or regenerate it with `pkgdx init --reset`
+     Failed  2 of 6 steps completed in 0.0s (re-run with -d for details)

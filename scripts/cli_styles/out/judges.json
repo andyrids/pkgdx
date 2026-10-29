@@ -1,0 +1,1067 @@
+{
+  "A": {
+    "judge": "A",
+    "patterns": [
+      {
+        "stem": "p00_baseline",
+        "gates_pass": true,
+        "gate_notes": "STDOUT empty, Rich+stdlib, exits 0/0/1 (mediator-verified). Glyphs only reach the live display, which is disabled when not a TTY, so the piped encoding gate still passes. Ctrl-C ends in a traceback (not a gate).",
+        "scores": [
+          {
+            "criterion": 1,
+            "score": 1,
+            "evidence": "Without colour the only per-step signal is a filled '■' vs a hollow '□'. The '[red][strike]' label is lost in fail.txt, and a warned step shows the same '■ identify Git top-level' as an ok one."
+          },
+          {
+            "criterion": 2,
+            "score": 1,
+            "evidence": "fail.txt opens with 'ERROR [run] Failed to configure pre-commit hooks' and a 12-line traceback box. The cause 'RuntimeError: Invalid value' sits at the bottom of the box, with no hint and no -d advice. The overall row stays frozen at '⠋ pkgdx init ... 2/6'."
+          },
+          {
+            "criterion": 3,
+            "score": 2,
+            "evidence": "The only warning signal is RichHandler 'WARNING' log lines printed above the rows, not tied to a step. The step glyph stays '■' and the overall badge turns green."
+          },
+          {
+            "criterion": 4,
+            "score": 2,
+            "evidence": "success.txt has 8 lines that only say each step finished. The title appears twice (the rule and the 'pkgdx init' overall row), and a full-width bar plus '6/6 0:00:00' covers a 3s run."
+          },
+          {
+            "criterion": 5,
+            "score": 1,
+            "evidence": "Nothing says prek.toml was updated or .secrets.baseline created. In _core.py those are logger.debug only."
+          },
+          {
+            "criterion": 6,
+            "score": 1,
+            "evidence": "success.plain.txt is the rule alone. warn/fail plain output is timestamped RichHandler records with a path:line column and the traceback box."
+          },
+          {
+            "criterion": 7,
+            "score": 4,
+            "evidence": "A 'dots' spinner shows on the running step row, and the overall row shows the bar, M/N and a live TimeElapsedColumn."
+          },
+          {
+            "criterion": 8,
+            "score": 2,
+            "evidence": "_InitProgress, _OverallColumn and the role='overall' fields are specific to init. command_config does not use them and prints 'Wrote <path>' instead."
+          },
+          {
+            "criterion": 9,
+            "score": 3,
+            "evidence": "81 LOC and no _core change, but 3 classes override Rich internals (get_renderables, a column wrapper, a SpinnerColumn subclass)."
+          }
+        ],
+        "strengths": [
+          "Already shipped, so it needs no _core change",
+          "Live elapsed time and a spinner during the slow step"
+        ],
+        "weaknesses": [
+          "Status depends on colour and strike-through",
+          "Expected errors produce a traceback",
+          "Warnings are detached from their steps",
+          "Piped success is silent",
+          "State changes are invisible"
+        ],
+        "graft_ideas": [
+          "Live elapsed time on the running step (keep it only for the slow network step)"
+        ]
+      },
+      {
+        "stem": "p01_ledger_lines",
+        "gates_pass": true,
+        "gate_notes": "STDOUT empty, ASCII-only when piped, exits 0/0/1, Ctrl-C returns 130 with a 'stop' row.",
+        "scores": [
+          {
+            "criterion": 1,
+            "score": 5,
+            "evidence": "Every row leads with a fixed-width word: '  ok', '  warn', '  FAIL', 'stop'. NO_COLOR loses nothing."
+          },
+          {
+            "criterion": 2,
+            "score": 4,
+            "evidence": "'FAIL    configure pre-commit hooks  prek.toml could not be parsed', then the cause line, '-> Fix prek.toml...' and 'pkgdx init: failed at step 3/6 (3 steps not run)'. It has no -d hint and does not name the steps that did not run."
+          },
+          {
+            "criterion": 3,
+            "score": 5,
+            "evidence": "A 'warn' badge with its '-> hint' directly under the step, and the summary ends 'done in 0.0s with 2 warnings'."
+          },
+          {
+            "criterion": 4,
+            "score": 3,
+            "evidence": "7 lines on success: one per step plus the summary. Each line carries a detail, but the routine 'ok' rows are still noise."
+          },
+          {
+            "criterion": 5,
+            "score": 4,
+            "evidence": "The detail column shows 'prek.toml updated, 2 hooks added', '.secrets.baseline created' and 'prek.toml unchanged'. The text is free-form, not a fixed vocabulary."
+          },
+          {
+            "criterion": 6,
+            "score": 4,
+            "evidence": "Plain output is byte-identical to the TTY frame, streams per step and is greppable by the badge column ('^  FAIL'). Records are aligned columns, not key=value."
+          },
+          {
+            "criterion": 7,
+            "score": 3,
+            "evidence": "console.status(f\"{step.label} ...\", spinner='dots') shows the step name, but no position or elapsed time."
+          },
+          {
+            "criterion": 8,
+            "score": 4,
+            "evidence": "_row(console, badge, style, label, detail, w) is a generic primitive. config could print 'ok  export  <path>'. Its badge words differ from config's existing 'Wrote'/'Skipped existing'."
+          },
+          {
+            "criterion": 9,
+            "score": 5,
+            "evidence": "58 LOC, 0 classes, two small helpers and a dict of badges. The only _core change is moving logger.warning onto Result."
+          }
+        ],
+        "strengths": [
+          "Smallest robust implementation",
+          "Word badges satisfy NO_COLOR completely",
+          "TTY and plain output are the same, so there is one code path",
+          "The warning hint sits next to its step"
+        ],
+        "weaknesses": [
+          "No -d hint on failure",
+          "The steps that did not run are not named",
+          "Success lists every routine step",
+          "The running step shows no elapsed time or position"
+        ],
+        "graft_ideas": [
+          "Its badge column as the common row primitive for all subcommands"
+        ]
+      },
+      {
+        "stem": "p02_live_checklist",
+        "gates_pass": true,
+        "gate_notes": "STDOUT empty, plain output uses ASCII '+ ! x -', exits 0/0/1, Ctrl-C returns 130. '✓' and braille appear in the TTY only.",
+        "scores": [
+          {
+            "criterion": 1,
+            "score": 4,
+            "evidence": "WARN/FAILED/skipped words plus glyphs. ok rows rely on the '✓'/'+' glyph alone."
+          },
+          {
+            "criterion": 2,
+            "score": 4,
+            "evidence": "'x configure pre-commit hooks FAILED prek.toml could not be parsed', with cause and 'hint:' sub-rows, the remaining steps shown as '- ... skipped', and 'failed: 2 ok, 1 failed, 3 skipped'. It has no -d hint."
+          },
+          {
+            "criterion": 3,
+            "score": 5,
+            "evidence": "'! identify Git top-level  WARN not a Git repository...' with a 'hint:' sub-row, and the summary '4 ok, 2 warnings'."
+          },
+          {
+            "criterion": 4,
+            "score": 3,
+            "evidence": "8 lines on success: a header, 6 rows and a summary."
+          },
+          {
+            "criterion": 5,
+            "score": 4,
+            "evidence": "The detail column carries Result.detail ('prek.toml updated, 2 hooks added', '.secrets.baseline created'), as free text."
+          },
+          {
+            "criterion": 6,
+            "score": 3,
+            "evidence": "Streams one row per step, but '+' is an opaque status token for grep. warn/fail rows pad with trailing spaces in warn.plain.txt."
+          },
+          {
+            "criterion": 7,
+            "score": 5,
+            "evidence": "The whole plan shows as pending '·' rows, and the running row has a spinner, a bold label and elapsed seconds after 0.5s (`_step_rows` 'running' branch)."
+          },
+          {
+            "criterion": 8,
+            "score": 3,
+            "evidence": "Needs the step list up front and a Live render loop, which is heavy for config's handful of file writes."
+          },
+          {
+            "criterion": 9,
+            "score": 2,
+            "evidence": "146 LOC (the largest), Live plus get_renderable, three parallel state lists, and five helpers (_step_rows, _table, _summary, _grid, _execute)."
+          }
+        ],
+        "strengths": [
+          "Best in-progress feedback (the plan up front plus elapsed time)",
+          "Explicit 'skipped' rows after a failure"
+        ],
+        "weaknesses": [
+          "Largest and most complex",
+          "'+' is opaque in plain output",
+          "The redraw machinery buys little for a 6-step, ~3s command"
+        ],
+        "graft_ideas": [
+          "Show elapsed seconds on the running status line after 0.5s",
+          "Name the not-run steps after a failure"
+        ]
+      },
+      {
+        "stem": "p03_bluf_error_card",
+        "gates_pass": true,
+        "gate_notes": "STDOUT empty, plain output ASCII, exits 0/0/1, Ctrl-C returns 130. The panel box is TTY-only.",
+        "scores": [
+          {
+            "criterion": 1,
+            "score": 4,
+            "evidence": "'pkgdx init: done', '!' plus 'warning:' in plain, 'error:' in the panel title. Per-step status is never shown."
+          },
+          {
+            "criterion": 2,
+            "score": 5,
+            "evidence": "The panel title is 'error: pkgdx init failed at configure pre-commit hooks', with rows 'Cause', '= help', 'Done' and 'Not run', and the subtitle 're-run with -d for details'. It is the only fully BLUF failure in the set."
+          },
+          {
+            "criterion": 3,
+            "score": 4,
+            "evidence": "The heading reads 'done in 0.0s with 2 warnings', and each '! <step>: <detail>' has a '->' hint. Warnings only appear at the end."
+          },
+          {
+            "criterion": 4,
+            "score": 5,
+            "evidence": "success.txt is 2 lines: 'pkgdx init: done in 0.0s' and 'changed: prek.toml (updated, 2 hooks added), .secrets.baseline (created)'."
+          },
+          {
+            "criterion": 5,
+            "score": 3,
+            "evidence": "Lists created/updated files only, matched by the regex _CHANGE on the detail text. Unchanged and reused items are silent, and the warn case prints 'changed: nothing'."
+          },
+          {
+            "criterion": 6,
+            "score": 3,
+            "evidence": "Uses greppable 'pkgdx init: error: <step>: ...' and 'warning:' lines, but nothing streams per step, so a hung step is invisible in CI. The plain failure drops the -d hint."
+          },
+          {
+            "criterion": 7,
+            "score": 4,
+            "evidence": "The transient status reads 'pkgdx init  [5/6] prek update --check', showing position and label but no elapsed time. Finished steps leave no trace."
+          },
+          {
+            "criterion": 8,
+            "score": 3,
+            "evidence": "The 'pkgdx <cmd>: error:' shape is generic. The Done/Not run panel suits multi-step commands, and a Panel is a new idiom alongside config's plain lines."
+          },
+          {
+            "criterion": 9,
+            "score": 3,
+            "evidence": "109 LOC, a regex classifier, a Panel builder and separate TTY/plain report functions. Needs warnings moved off _core and, ideally, a change-kind field."
+          }
+        ],
+        "strengths": [
+          "Best failure block (BLUF, help, done/not-run, -d)",
+          "The tersest success output"
+        ],
+        "weaknesses": [
+          "No per-step record or streaming in CI",
+          "Change detection relies on regex over free text",
+          "A boxed panel is a new visual idiom"
+        ],
+        "graft_ideas": [
+          "A failure footer naming the step, a 'not run:' list and 're-run with -d for details'",
+          "A one-line 'changed:' recap"
+        ]
+      },
+      {
+        "stem": "p04_changes_only",
+        "gates_pass": true,
+        "gate_notes": "STDOUT empty, logfmt plain output ASCII, exits 0/0/1, Ctrl-C returns 130.",
+        "scores": [
+          {
+            "criterion": 1,
+            "score": 4,
+            "evidence": "Text prefixes 'warning:', 'error:', 'hint:' and verbs 'updated'/'created'. ok steps are silent, so status comes from the summary counts."
+          },
+          {
+            "criterion": 2,
+            "score": 4,
+            "evidence": "'error: prek.toml could not be parsed', the cause, 'hint: ...', then 'init failed at step 3 of 6 (configure pre-commit hooks); run with -d for details'. The step is named only in the last line."
+          },
+          {
+            "criterion": 3,
+            "score": 4,
+            "evidence": "'warning: not a Git repository...' with a 'hint:' line, and the summary 'with 2 warnings'. It does not name the step that warned."
+          },
+          {
+            "criterion": 4,
+            "score": 5,
+            "evidence": "success.txt is 3 lines: 'updated  prek.toml, 2 hooks added', 'created  .secrets.baseline' and 'init finished in 0.0s: 2 changed, 4 unchanged'."
+          },
+          {
+            "criterion": 5,
+            "score": 4,
+            "evidence": "Verb lines for changes, the count '2 changed, 4 unchanged', and 'change=changed|none' in logfmt. This depends on the _UNCHANGED regex including '^C:' and 'not a Git', which is brittle."
+          },
+          {
+            "criterion": 6,
+            "score": 5,
+            "evidence": "Plain output is one logfmt record per step (step=, n=, status=, change=, detail=, hint=) plus 'summary=finished ... changed=2 unchanged=4 warnings=0', the most parseable in the set. Caveats: the piped format is entirely different from the TTY one, and quoting varies between 'detail=C:\\src\\acme' and a json-escaped value."
+          },
+          {
+            "criterion": 7,
+            "score": 4,
+            "evidence": "The transient status reads '[5/6] prek update --check'."
+          },
+          {
+            "criterion": 8,
+            "score": 4,
+            "evidence": "Changes-only lines fit config --export ('created <path>' / 'skipped'), and _logfmt is generic."
+          },
+          {
+            "criterion": 9,
+            "score": 2,
+            "evidence": "119 LOC, '# noqa: C901', two regex heuristics, a logfmt serialiser and two divergent render paths. Needs warnings moved and a change flag on Result."
+          }
+        ],
+        "strengths": [
+          "Best machine-readable degradation",
+          "Very quiet on success while still reporting changes"
+        ],
+        "weaknesses": [
+          "Two output grammars to maintain",
+          "Regex change detection",
+          "Warnings and errors do not name their step",
+          "Puts machine records on STDERR, which sits uneasily with §1 and toolchain-logging §3"
+        ],
+        "graft_ideas": [
+          "A closing count: 'N changed, M unchanged'",
+          "[n/N] position in the status line"
+        ]
+      },
+      {
+        "stem": "p05_verb_ledger",
+        "gates_pass": true,
+        "gate_notes": "STDOUT empty, plain output ASCII, 'line' spinner is ASCII, exits 0/0/1, Ctrl-C returns 130.",
+        "scores": [
+          {
+            "criterion": 1,
+            "score": 4,
+            "evidence": "Right-aligned words 'Found', 'Updated', 'warning', 'error', 'Failed', 'hint'. 'Unchanged' is only dimmed, which is fine without colour, but the case mix (warning vs Updated) is a little uneven."
+          },
+          {
+            "criterion": 2,
+            "score": 4,
+            "evidence": "'error  prek.toml could not be parsed: Invalid value...', then 'hint', then 'Failed  2 of 6 steps completed in 0.0s (re-run with -d for details)'. It never names the failed step or the steps that did not run."
+          },
+          {
+            "criterion": 3,
+            "score": 3,
+            "evidence": "The 'warning' verb is inline, but the hints print after 'Finished' as a separate list, so 'hint  Run `git init`' is not tied to its warning."
+          },
+          {
+            "criterion": 4,
+            "score": 3,
+            "evidence": "8 lines. 'Found  C:\\src\\acme' appears twice with no label (the spec mockup had 'project root'/'Git top-level'), and the header repeats the root."
+          },
+          {
+            "criterion": 5,
+            "score": 5,
+            "evidence": "Every step gets a state verb: 'Updated prek.toml', 'Created .secrets.baseline', 'Unchanged Git shims', 'Reused', 'Installed'. This is the clearest created/updated/unchanged vocabulary in the set."
+          },
+          {
+            "criterion": 6,
+            "score": 4,
+            "evidence": "Plain output is identical to the TTY frame and streams per step. The verb column parses as the first token. The hints are detached from their warnings."
+          },
+          {
+            "criterion": 7,
+            "score": 3,
+            "evidence": "console.status(step.label, spinner='line') shows only the label, with no position or elapsed time."
+          },
+          {
+            "criterion": 8,
+            "score": 5,
+            "evidence": "_ledger(verb, text) matches command_config's existing 'Wrote {target}' / 'Skipped existing {target}' lines directly, making it the most consistent with current pkgdx output."
+          },
+          {
+            "criterion": 9,
+            "score": 3,
+            "evidence": "104 LOC, an 8-entry _STATE_PATTERNS regex map and a header derived from step 1's detail. A real version needs _core to return a change kind (the docstring says so)."
+          }
+        ],
+        "strengths": [
+          "Consistent with `pkgdx config` output",
+          "Best state-change vocabulary"
+        ],
+        "weaknesses": [
+          "The failed step is not named",
+          "Hints are separated from their warnings",
+          "'Found' rows are ambiguous",
+          "Depends on a regex verb map until Result gains a change kind"
+        ],
+        "graft_ideas": [
+          "A ChangeKind enum on Result (created/updated/unchanged/reused/installed) driving the detail wording",
+          "Verb vocabulary aligned with config ('Wrote'/'Skipped')"
+        ]
+      },
+      {
+        "stem": "p06_arrow_sections",
+        "gates_pass": true,
+        "gate_notes": "STDOUT empty, ASCII only, 'line' spinner, exits 0/0/1, Ctrl-C returns 130.",
+        "scores": [
+          {
+            "criterion": 1,
+            "score": 3,
+            "evidence": "'Warning:' and 'Error:' prefixes. ok steps carry no state word, and every heading looks identical ('==> ...' bold blue in every state)."
+          },
+          {
+            "criterion": 2,
+            "score": 3,
+            "evidence": "'Error: prek.toml could not be parsed', the cause and 'hint: ...' sit under the step heading, but the run ends '==> Failed after 2 steps' with no -d hint and no list of steps not run."
+          },
+          {
+            "criterion": 3,
+            "score": 4,
+            "evidence": "'Warning:' with a 'hint:' line under the step, and '==> Done with 2 warnings' in yellow."
+          },
+          {
+            "criterion": 4,
+            "score": 2,
+            "evidence": "13 lines for 6 routine steps, the longest success output, made of two-line sections."
+          },
+          {
+            "criterion": 5,
+            "score": 4,
+            "evidence": "The detail lines say 'prek.toml updated, 2 hooks added', '.secrets.baseline created' and 'prek.toml unchanged', as free text."
+          },
+          {
+            "criterion": 6,
+            "score": 4,
+            "evidence": "Identical ASCII output. The heading prints when a step starts, so a hung step is visible in a CI log. Each record spans two lines, which is less grep-friendly."
+          },
+          {
+            "criterion": 7,
+            "score": 3,
+            "evidence": "A heading plus an empty transient 'line' spinner on the next line. No elapsed time or position."
+          },
+          {
+            "criterion": 8,
+            "score": 3,
+            "evidence": "Generic sections, but they suit multi-step flows rather than config's one-line writes."
+          },
+          {
+            "criterion": 9,
+            "score": 5,
+            "evidence": "57 LOC, 0 classes, one helper. The only _core change is moving the warnings."
+          }
+        ],
+        "strengths": [
+          "Simplest code",
+          "Start-of-step heading helps CI diagnosis"
+        ],
+        "weaknesses": [
+          "Verbose on success",
+          "Capitalising labels mangles command names ('Prek install', 'Detect-secrets scan')",
+          "Weak failure footer"
+        ],
+        "graft_ideas": [
+          "Print the step label when the step starts in non-TTY mode, so hangs are visible"
+        ]
+      }
+    ],
+    "ranking": [
+      "p01_ledger_lines",
+      "p04_changes_only",
+      "p03_bluf_error_card",
+      "p05_verb_ledger",
+      "p02_live_checklist",
+      "p06_arrow_sections",
+      "p00_baseline"
+    ],
+    "recommendation": "Adopt p01 (ledger lines). It is 58 LOC with no classes, uses word badges that survive NO_COLOR, renders one way for both TTY and pipe, and puts each hint next to its step. Graft four things onto it:\n1. From p03, the failure footer: name the step, list the steps not run, and add 're-run with -d for details'.\n2. From p05, a ChangeKind field on Result (created/updated/unchanged/reused). It drives the detail wording and keeps verbs consistent with config's 'Wrote'/'Skipped'.\n3. From p03/p04, show '[n/N]' and, from p02, the elapsed time in the status line.\n4. Route expected errors through __main__'s existing `exceptions.Error -> logger.error` path, with no traceback.\nIn _core, return warnings on Result instead of calling logger.warning.",
+    "observation_verdicts": [
+      {
+        "observation": 1,
+        "verdict": "confirmed",
+        "note": "Both the console.rule('[cyan]pkgdx init') and the overall row '■ pkgdx init' render (success.txt lines 1 and 8)."
+      },
+      {
+        "observation": 2,
+        "verdict": "confirmed",
+        "note": "The warned step shows '■' like an ok one and the overall badge turns green. The only signal is RichHandler WARNING lines printed above the rows, not attached to a step."
+      },
+      {
+        "observation": 3,
+        "verdict": "confirmed",
+        "note": "'□' is a hollow box that reads as pending or unchecked. Strike-through and red vanish in fail.txt (NO_COLOR) and in many fonts."
+      },
+      {
+        "observation": 4,
+        "verdict": "confirmed",
+        "note": "Labels stay '[i dim]' after completion. _complete_step only sets completed=1, so the glyph swap (spinner to ■) is the only difference."
+      },
+      {
+        "observation": 5,
+        "verdict": "confirmed",
+        "note": "Progress is disabled when not a terminal. success.plain.txt is the rule alone."
+      },
+      {
+        "observation": 6,
+        "verdict": "confirmed",
+        "note": "_core reports 'Creating `.secrets.baseline`' and 'Added missing pre-commit hooks' only at logger.debug."
+      },
+      {
+        "observation": 7,
+        "verdict": "partly",
+        "note": "The bar (ratio=2) and M/N are overkill for 6 steps in ~3s. The elapsed time does give some reassurance during the 1.5s network step."
+      },
+      {
+        "observation": 8,
+        "verdict": "confirmed",
+        "note": "Neither command_init nor __main__ catches KeyboardInterrupt (grep finds none in src), so a traceback is printed."
+      },
+      {
+        "observation": 10,
+        "verdict": "confirmed",
+        "note": "fail.txt ends with '⠋ pkgdx init ... 2/6' because the overall task is never completed or marked failed before the return."
+      },
+      {
+        "observation": 11,
+        "verdict": "confirmed",
+        "note": "command_init uses logger.exception for TOMLKitError and ProjectRootNotFoundError, producing a 12-line traceback box, even though __main__ already has an `exceptions.Error -> logger.error(str(err))` path."
+      },
+      {
+        "observation": 12,
+        "verdict": "partly",
+        "note": "'■ □ ⠋' are custom glyphs, but they render only in the live display, which is disabled when piped. Piped output carries only the rule (Rich falls back to ASCII) and the logs. The practical risk is legacy console fonts in a TTY, not pipes."
+      }
+    ]
+  },
+  "B": {
+    "judge": "B",
+    "patterns": [
+      {
+        "stem": "p00_baseline",
+        "gates_pass": true,
+        "gate_notes": "STDOUT empty, Rich+stdlib only, no encoding errors. I re-ran it through a real cp1252 pipe: Progress is disabled when not interactive, so the custom glyphs never reach the pipe, and the rule and traceback box fall back to ASCII ('-----', '+-' and '|').",
+        "scores": [
+          {
+            "criterion": 1,
+            "score": 1,
+            "evidence": "With NO_COLOR, warn.txt shows every step as '■', the same as ok. In fail.txt the failed step is '□ configure pre-commit hooks', which reads as an unchecked box, and the strike style disappears."
+          },
+          {
+            "criterion": 2,
+            "score": 1,
+            "evidence": "fail.txt gives 13 lines of traceback box for 'RuntimeError: Invalid value (at line 12, column 9)'. It offers no hint and no -d prompt, and the overall row is left frozen at '⠋ pkgdx init ... 2/6'."
+          },
+          {
+            "criterion": 3,
+            "score": 2,
+            "evidence": "The only warning signal is the RichHandler 'WARNING [run] ...' lines printed above the step list, cut off from their steps. All steps show ■ and the final badge turns green."
+          },
+          {
+            "criterion": 4,
+            "score": 2,
+            "evidence": "Success is 8 lines: a rule, six bare labels and a '6/6 0:00:00' bar row. None of it tells the user what happened."
+          },
+          {
+            "criterion": 5,
+            "score": 1,
+            "evidence": "Result.detail is never rendered, so success.txt cannot be told apart from a re-run on an already-configured repo."
+          },
+          {
+            "criterion": 6,
+            "score": 1,
+            "evidence": "success.plain.txt is a single rule line. fail.plain.txt is a traceback box that wraps at 80 columns in a real pipe."
+          },
+          {
+            "criterion": 7,
+            "score": 4,
+            "evidence": "The source shows a dots spinner per step plus BarColumn, MofNCompleteColumn and TimeElapsedColumn on the overall row, so the user sees which step is running and that time is moving."
+          },
+          {
+            "criterion": 8,
+            "score": 3,
+            "evidence": "The _InitProgress, _OverallColumn and _StatusSpinnerColumn subclasses depend on a 'role'=='overall' task field. They could be reused, but each subcommand has to carry the overall-row plumbing."
+          },
+          {
+            "criterion": 9,
+            "score": 3,
+            "evidence": "81 LOC with 3 classes that subclass Rich Progress internals (get_renderables, column render). It implies no _core change, but it needs a try/raise RuntimeError just to log."
+          }
+        ],
+        "strengths": [
+          "The only pattern with M/N and elapsed time live during the slow step",
+          "Needs no _core change"
+        ],
+        "weaknesses": [
+          "Status depends on colour and glyph shape, and □ reads as pending",
+          "Warnings are detached log lines, and the steps still show done",
+          "A traceback for an expected parse error, with no next action",
+          "Piped success says nothing at all",
+          "Ctrl-C produces a traceback, and the overall spinner freezes on failure"
+        ],
+        "graft_ideas": [
+          "Live elapsed time for the running step (p02 already does this only after 0.5s)"
+        ]
+      },
+      {
+        "stem": "p01_ledger_lines",
+        "gates_pass": true,
+        "gate_notes": "Plain output is ASCII-only and identical to the TTY text. STDOUT is empty and Ctrl-C exits 130.",
+        "scores": [
+          {
+            "criterion": 1,
+            "score": 5,
+            "evidence": "A fixed-width word badge leads every line ('  ok', '  warn', '  FAIL'), so status is a scannable first column without colour or glyph fonts."
+          },
+          {
+            "criterion": 2,
+            "score": 4,
+            "evidence": "'FAIL configure pre-commit hooks prek.toml could not be parsed', then the cause and '-> Fix prek.toml, or regenerate it with `pkgdx init --reset`', then 'pkgdx init: failed at step 3/6 (3 steps not run)'. The cause sits beside the step, but there is no -d hint and the steps that did not run are not named."
+          },
+          {
+            "criterion": 3,
+            "score": 5,
+            "evidence": "The 'warn' badge sits in place with its '->' hint directly beneath, and the closing line reads 'done in 0.0s with 2 warnings'."
+          },
+          {
+            "criterion": 4,
+            "score": 4,
+            "evidence": "Success is 7 lines, each carrying a fact (path, 'prek.toml updated, 2 hooks added', '.secrets.baseline created'). There is no title chrome, but the routine 'ok' lines still print."
+          },
+          {
+            "criterion": 5,
+            "score": 4,
+            "evidence": "The detail column shows 'updated', 'created', 'unchanged' and 'exists, reused' verbatim, and a re-run reads 'prek.toml unchanged'. Changes are not set apart from no-ops, though: every one is just 'ok'."
+          },
+          {
+            "criterion": 6,
+            "score": 4,
+            "evidence": "plain.txt is byte-identical to the TTY frame and streams one line per step. 'grep FAIL' and 'grep warn' work. The format is aligned columns, not key=value."
+          },
+          {
+            "criterion": 7,
+            "score": 4,
+            "evidence": "console.status(f\"{step.label} ...\", spinner=\"dots\") names the running step. It shows no position or elapsed time."
+          },
+          {
+            "criterion": 8,
+            "score": 5,
+            "evidence": "_row(badge, label, detail) plus a 'pkgdx <cmd>: done/failed' line is generic. `pkgdx config` could use it unchanged."
+          },
+          {
+            "criterion": 9,
+            "score": 5,
+            "evidence": "58 LOC, no classes, one Table.grid helper, and no detail parsing or classification. The only _core change is moving logger.warning to the CLI layer."
+          }
+        ],
+        "strengths": [
+          "The clearest status column in the set for NO_COLOR and CI readers",
+          "TTY and plain output are the same text, so local and CI logs match",
+          "Smallest implementation with no regex heuristics",
+          "A re-run shows 'unchanged' and 'reused' per step"
+        ],
+        "weaknesses": [
+          "The failure summary has no -d hint and does not name the steps that did not run",
+          "Changes and no-ops share the 'ok' badge",
+          "A step that hangs is invisible in a CI log until it finishes"
+        ],
+        "graft_ideas": [
+          "Add p04's 'N changed, M unchanged' counts to the closing line",
+          "Add p03's -d hint and named 'not run' list to the failure summary"
+        ]
+      },
+      {
+        "stem": "p02_live_checklist",
+        "gates_pass": true,
+        "gate_notes": "Plain output uses ASCII '+ ! x -'. The TTY ✓ and braille spinner carry a Consolas font risk (noted in the docstring) but are fine in Windows Terminal/Cascadia. STDOUT is empty and Ctrl-C exits 130.",
+        "scores": [
+          {
+            "criterion": 1,
+            "score": 4,
+            "evidence": "Each state has its own glyph (✓ ! x -) plus the words 'WARN', 'FAILED' and 'skipped'. ok is glyph-only, and in plain mode it becomes '+', which a CI reader is less likely to read as 'ok' than a word."
+          },
+          {
+            "criterion": 2,
+            "score": 4,
+            "evidence": "'x configure pre-commit hooks FAILED prek.toml could not be parsed', with the cause and 'hint:' rows, then '- prek install skipped' x3 and 'failed: 2 ok, 1 failed, 3 skipped'. There is no -d hint, and the summary does not name the failed step."
+          },
+          {
+            "criterion": 3,
+            "score": 5,
+            "evidence": "'! identify Git top-level WARN not a Git repository...' with a 'hint:' sub-row, and the summary reads '4 ok, 2 warnings in 0.0s'."
+          },
+          {
+            "criterion": 4,
+            "score": 4,
+            "evidence": "Success is 8 lines: a 'pkgdx init' header, six ✓ rows with details and '6 ok in 0.0s'. It is informative but one line longer than p01."
+          },
+          {
+            "criterion": 5,
+            "score": 4,
+            "evidence": "The same Result.detail column as p01 ('prek.toml updated, 2 hooks added', 'prek.toml unchanged'). A change gets no distinct marker."
+          },
+          {
+            "criterion": 6,
+            "score": 4,
+            "evidence": "plain.txt prints each final row as it finishes, with ASCII glyphs and skipped rows. Hint rows carry trailing pad whitespace, and the '+' glyph is less greppable than a word."
+          },
+          {
+            "criterion": 7,
+            "score": 5,
+            "evidence": "The whole plan is visible as pending '·' rows. The running row gets a cyan spinner, a bold label and elapsed seconds after 0.5s, which is the richest in-flight feedback in the set."
+          },
+          {
+            "criterion": 8,
+            "score": 4,
+            "evidence": "Works for any subcommand with a known step list. It is overkill for a single-shot `pkgdx config` read."
+          },
+          {
+            "criterion": 9,
+            "score": 2,
+            "evidence": "146 LOC, the largest in the set: Live, a state list, a results list, a starts list, a show callback, and a _grid that renders all steps or a single step."
+          }
+        ],
+        "strengths": [
+          "The best experience for a first-time user: they see the plan, then watch it fill in",
+          "Steps that did not run are listed explicitly as 'skipped'",
+          "The most informative feedback during the 1.5s network check"
+        ],
+        "weaknesses": [
+          "Twice the code of p01 for a 6-step command",
+          "No -d hint",
+          "Plain hint rows carry trailing whitespace",
+          "ok uses a glyph rather than a word"
+        ],
+        "graft_ideas": [
+          "List skipped steps by name after a failure",
+          "Show elapsed time on the running step after 0.5s"
+        ]
+      },
+      {
+        "stem": "p03_bluf_error_card",
+        "gates_pass": true,
+        "gate_notes": "Plain output is ASCII-only. The TTY Panel uses box-drawing characters, which Windows Terminal renders, and Rich falls back to ASCII when piped. STDOUT is empty and Ctrl-C exits 130.",
+        "scores": [
+          {
+            "criterion": 1,
+            "score": 4,
+            "evidence": "The first line carries the verdict in words: 'pkgdx init: done in 0.0s with 2 warnings' and 'error: pkgdx init failed at configure pre-commit hooks'. TTY warnings use only '!', where plain mode uses 'warning:'."
+          },
+          {
+            "criterion": 2,
+            "score": 5,
+            "evidence": "The panel title names the failure first, then come rows for Cause, '= help' (the fix), Done and 'Not run', with the subtitle 're-run with -d for details'. This is the only pattern that covers BLUF, the fix, the steps not run and -d together."
+          },
+          {
+            "criterion": 3,
+            "score": 4,
+            "evidence": "The header reads 'done ... with 2 warnings' and each item is '! <step>: <detail>' with a '->' hint. It is distinct from ok, but it relies on '!' in the TTY."
+          },
+          {
+            "criterion": 4,
+            "score": 5,
+            "evidence": "Success is 2 lines: 'pkgdx init: done in 0.0s' and 'changed: prek.toml (updated, 2 hooks added), .secrets.baseline (created)'."
+          },
+          {
+            "criterion": 5,
+            "score": 3,
+            "evidence": "A 'changed:' list appears, but the _CHANGE regex matches only created and updated. The warn run prints 'changed: nothing' even though 'Git shims installed at project root' happened. Unchanged items are silent."
+          },
+          {
+            "criterion": 6,
+            "score": 3,
+            "evidence": "The plain lines grep well ('warning:', 'hint:', 'pkgdx init: error:', 'not run:'). A piped success leaves no record of which steps ran, and the plain fail output drops the -d hint."
+          },
+          {
+            "criterion": 7,
+            "score": 4,
+            "evidence": "A transient status line reads 'pkgdx init  [n/N] <step>' with a dots spinner. Completed steps leave no trace while it runs."
+          },
+          {
+            "criterion": 8,
+            "score": 4,
+            "evidence": "A done-plus-changed summary and an error card suit any subcommand. The change detection is a regex over detail wording."
+          },
+          {
+            "criterion": 9,
+            "score": 3,
+            "evidence": "109 LOC with a Panel, a grid, separate TTY and plain branches for both done and fail, and _CHANGE regex classification. It implies a change-kind field on Result."
+          }
+        ],
+        "strengths": [
+          "The best failure output in the set: verdict first, cause, fix, done and not-run, and a -d hint",
+          "A 2-line success, ideal for a re-run on a configured repo"
+        ],
+        "weaknesses": [
+          "The regex change detection misreports 'changed: nothing' in the warn scenario",
+          "A first-time user gets no per-step record of what init checked",
+          "The plain fail output drops the -d hint"
+        ],
+        "graft_ideas": [
+          "A plain one-line verdict, 'pkgdx init: failed at <step> (step n/N); re-run with -d for details', added to p01 without the box",
+          "Name the steps that did not run"
+        ]
+      },
+      {
+        "stem": "p04_changes_only",
+        "gates_pass": true,
+        "gate_notes": "Plain output is ASCII logfmt. STDOUT is empty and Ctrl-C exits 130.",
+        "scores": [
+          {
+            "criterion": 1,
+            "score": 4,
+            "evidence": "Words carry state: 'warning:', 'error:', the verbs 'updated', 'created' and 'installed', and 'init finished' or 'init failed'. Unchanged steps are counted, not shown."
+          },
+          {
+            "criterion": 2,
+            "score": 4,
+            "evidence": "'error: prek.toml could not be parsed', then the cause and 'hint: ...', then 'init failed at step 3 of 6 (configure pre-commit hooks); run with -d for details'. The step is named only on the last line, and the steps that did not run are not named."
+          },
+          {
+            "criterion": 3,
+            "score": 4,
+            "evidence": "'warning: not a Git repository, using project root' plus 'hint:', and the closing line reads 'with 2 warnings'. The warning line does not name its step."
+          },
+          {
+            "criterion": 4,
+            "score": 5,
+            "evidence": "Success is 3 lines ('updated prek.toml, 2 hooks added', 'created .secrets.baseline', 'init finished in 0.0s: 2 changed, 4 unchanged'). A re-run with no changes collapses to 'nothing to change'."
+          },
+          {
+            "criterion": 5,
+            "score": 5,
+            "evidence": "Changes lead each line with a bold verb, the summary counts '2 changed, 4 unchanged', and plain records carry 'change=changed|none'. The approach is right, but _UNCHANGED uses a demo-only '^C:' and 'not a Git' regex hack."
+          },
+          {
+            "criterion": 6,
+            "score": 5,
+            "evidence": "One logfmt record per step: 'step=... n=3/6 status=fail change=none detail=... hint=...' plus a 'summary=failed' record. It is the most machine-parseable output and is still readable. The fail record has no -d hint and does not list the steps that did not run."
+          },
+          {
+            "criterion": 7,
+            "score": 4,
+            "evidence": "console.status('[4/6] prek update --check') shows position and label with a spinner. Nothing appears for a step in progress in the CI log."
+          },
+          {
+            "criterion": 8,
+            "score": 3,
+            "evidence": "The quiet-unless-changed approach suits config. The _UNCHANGED and _VERB regexes are written around init's detail strings."
+          },
+          {
+            "criterion": 9,
+            "score": 2,
+            "evidence": "119 LOC with a noqa C901 run(), two completely different renderers (prose and logfmt), a logfmt encoder and two classifier regexes. A real adoption needs a change flag on Result."
+          }
+        ],
+        "strengths": [
+          "Best fit for a developer re-running init on a configured repo: one line when nothing changed",
+          "Best machine-parseable plain output",
+          "State changes are explicit and counted"
+        ],
+        "weaknesses": [
+          "The CI log and the local terminal show entirely different formats",
+          "The regex classifier is fragile ('^C:')",
+          "Warning lines do not name their step",
+          "A first-time user cannot see what was checked"
+        ],
+        "graft_ideas": [
+          "The 'N changed, M unchanged' / 'nothing to change' closing line",
+          "An explicit change field on Result instead of parsing detail"
+        ]
+      },
+      {
+        "stem": "p05_verb_ledger",
+        "gates_pass": true,
+        "gate_notes": "Plain output is ASCII-only and identical to the TTY text. STDOUT is empty and Ctrl-C exits 130.",
+        "scores": [
+          {
+            "criterion": 1,
+            "score": 4,
+            "evidence": "A right-aligned verb column ('Found', 'Updated', 'warning', 'error', 'Failed') shows state in words. Step labels are dropped, so some rows ('Found C:\\src\\acme') are ambiguous."
+          },
+          {
+            "criterion": 2,
+            "score": 3,
+            "evidence": "'error prek.toml could not be parsed: Invalid value...', then 'hint ...', then 'Failed 2 of 6 steps completed in 0.0s (re-run with -d for details)'. The failed step is never named, the steps that did not run are not listed, and 'Failed 2 of 6 steps completed' reads awkwardly."
+          },
+          {
+            "criterion": 3,
+            "score": 3,
+            "evidence": "A 'warning' verb in the ledger, but both hints are moved below 'Finished', away from the warnings they explain, so the reader has to match them up."
+          },
+          {
+            "criterion": 4,
+            "score": 3,
+            "evidence": "Success is 8 lines. The path appears three times (in the header and in two 'Found' rows) without saying what was found."
+          },
+          {
+            "criterion": 5,
+            "score": 5,
+            "evidence": "Each line leads with its change kind: 'Updated prek.toml', 'Created .secrets.baseline', 'Unchanged Git shims', 'Reused .secrets.baseline' and 'Installed Git shims'. This is the most explicit per-step change report."
+          },
+          {
+            "criterion": 6,
+            "score": 3,
+            "evidence": "Plain output equals TTY output and streams. The verb column greps well, but warnings and hints are split and steps are unlabelled, so a CI reader cannot tell which step warned."
+          },
+          {
+            "criterion": 7,
+            "score": 4,
+            "evidence": "console.status(step.label, spinner='line') shows the running step. The header does not appear until step 1 finishes."
+          },
+          {
+            "criterion": 8,
+            "score": 3,
+            "evidence": "The verb style fits other commands, but _header derives the root from the first step's detail.split(' (') and the verbs come from an init-specific regex map."
+          },
+          {
+            "criterion": 9,
+            "score": 3,
+            "evidence": "104 LOC with 8 regexes in _STATE_PATTERNS that rewrite detail text. It implies a change-kind field from _core."
+          }
+        ],
+        "strengths": [
+          "The clearest change-kind vocabulary (Created, Updated, Unchanged, Reused)",
+          "Familiar to uv and cargo users"
+        ],
+        "weaknesses": [
+          "Step labels are lost, so 'Found C:\\src\\acme' twice means nothing to a first-time user",
+          "Hints are separated from their warnings",
+          "The failure does not name the failed step"
+        ],
+        "graft_ideas": [
+          "Change-kind verbs (created, updated, unchanged, reused) as an enum on Result, shown in p01's detail column"
+        ]
+      },
+      {
+        "stem": "p06_arrow_sections",
+        "gates_pass": true,
+        "gate_notes": "ASCII-only, and plain output is identical to the TTY text. STDOUT is empty and Ctrl-C exits 130.",
+        "scores": [
+          {
+            "criterion": 1,
+            "score": 3,
+            "evidence": "Every heading is '==> <Step>' whatever the state. Status appears only in the body, through 'Warning:' or 'Error:', and ok has no word. The verdict is on the last line ('==> Done'/'==> Failed after 2 steps')."
+          },
+          {
+            "criterion": 2,
+            "score": 3,
+            "evidence": "'==> Configure pre-commit hooks', then 'Error: prek.toml could not be parsed', the cause and 'hint:'. The cause is beside the step, but there is no -d hint and no list of steps not run, and '==> Failed after 2 steps' does not name the step."
+          },
+          {
+            "criterion": 3,
+            "score": 4,
+            "evidence": "A literal 'Warning:' prefix plus 'hint:', and the summary reads '==> Done with 2 warnings'. In a 15-line warn run the warnings are easy to miss."
+          },
+          {
+            "criterion": 4,
+            "score": 2,
+            "evidence": "Success is 13 lines, two per step. Sentence-casing also garbles command names ('Prek install', 'Prek update --check', 'Detect-secrets scan')."
+          },
+          {
+            "criterion": 5,
+            "score": 3,
+            "evidence": "The detail lines say 'prek.toml updated, 2 hooks added' and 'prek.toml unchanged', but nothing marks them, so they are buried among the headings."
+          },
+          {
+            "criterion": 6,
+            "score": 3,
+            "evidence": "Plain output is identical and readable. Headings print when a step starts, so a hung step shows in the CI log. Status is not on the step's line, which makes grepping it harder."
+          },
+          {
+            "criterion": 7,
+            "score": 4,
+            "evidence": "The heading prints at step start and a transient 'line' spinner sits beneath it. Only this pattern shows the step in flight in non-TTY output."
+          },
+          {
+            "criterion": 8,
+            "score": 4,
+            "evidence": "Generic heading-plus-detail. It is heavy for a single-shot `pkgdx config`."
+          },
+          {
+            "criterion": 9,
+            "score": 5,
+            "evidence": "57 LOC, the smallest, with no classes, no parsing and plain Text prints."
+          }
+        ],
+        "strengths": [
+          "The simplest code",
+          "Start-of-step headings make a hung step visible in a CI log",
+          "ASCII-only"
+        ],
+        "weaknesses": [
+          "The noisiest success output",
+          "No state on the heading line",
+          "Capitalisation mangles command names",
+          "No -d hint"
+        ],
+        "graft_ideas": [
+          "In non-TTY mode only, print the step label at start so a hang shows in CI"
+        ]
+      }
+    ],
+    "ranking": [
+      "p01_ledger_lines",
+      "p04_changes_only",
+      "p03_bluf_error_card",
+      "p02_live_checklist",
+      "p05_verb_ledger",
+      "p06_arrow_sections",
+      "p00_baseline"
+    ],
+    "recommendation": "Adopt p01_ledger_lines. A word badge per step reads correctly without colour, plain output is identical to the TTY text, and it is the simplest code (58 LOC, no parsing). Grafts: (1) take p03's failure verdict as a plain line: 'pkgdx init: failed at <step> (step 3/6); re-run with -d for details', plus a named 'not run:' list (p02/p03); (2) end with p04's counts: 'done in Xs: 2 changed, 4 unchanged', or 'nothing to change'; (3) add an explicit change field (created/updated/unchanged/reused) on Result, following p04 and p05, rather than parsing detail text, and show it in the detail column. Move warning logging out of _core into the CLI layer.",
+    "observation_verdicts": [
+      {
+        "observation": 1,
+        "verdict": "confirmed",
+        "note": "'pkgdx init' appears in the top rule and again as the badge on the overall row."
+      },
+      {
+        "observation": 2,
+        "verdict": "confirmed",
+        "note": "A warned step renders '■', the same as ok, and the overall badge turns green. The only signal is the detached RichHandler 'WARNING' log lines, which are not tied to a step."
+      },
+      {
+        "observation": 3,
+        "verdict": "confirmed",
+        "note": "Under NO_COLOR the failed row is '□ configure pre-commit hooks', which reads as pending or unchecked. The strike style is lost entirely."
+      },
+      {
+        "observation": 4,
+        "verdict": "confirmed",
+        "note": "progress.update(completed=1) never changes the '[i dim]' description, so a finished row differs from a running one only by ■ versus the spinner."
+      },
+      {
+        "observation": 5,
+        "verdict": "confirmed",
+        "note": "success.plain.txt is just the rule, and a real cp1252 pipe gives '----- pkgdx init -----'."
+      },
+      {
+        "observation": 6,
+        "verdict": "confirmed",
+        "note": "Result.detail is never rendered, so 'updated', 'created' and 'unchanged' are invisible."
+      },
+      {
+        "observation": 7,
+        "verdict": "partly",
+        "note": "The bar repeats the step list and takes most of the width for 6 steps. The elapsed time and M/N are useful feedback during the 1.5s network step."
+      },
+      {
+        "observation": 8,
+        "verdict": "confirmed",
+        "note": "run() has no KeyboardInterrupt handling, so Ctrl-C produces a traceback."
+      },
+      {
+        "observation": 10,
+        "verdict": "confirmed",
+        "note": "fail.txt ends with '⠋ pkgdx init ... 2/6 0:00:00': the overall row is never marked failed."
+      },
+      {
+        "observation": 11,
+        "verdict": "confirmed",
+        "note": "logger.exception with rich_tracebacks prints a 13-line box for a TOML parse error, which is expected. In a real 80-column pipe it also wraps the message."
+      },
+      {
+        "observation": 12,
+        "verdict": "partly",
+        "note": "The glyphs are non-ASCII, but Progress is disabled when not interactive, so they never reach a pipe. Rich also falls back to ASCII for the rule and the traceback box (verified with cp1252 piped output). The real risk is legacy console fonts in a TTY."
+      }
+    ]
+  }
+}

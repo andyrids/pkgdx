@@ -1,12 +1,10 @@
 # Package Developer Experience (DX) Toolkit [`Pkgdx`]
 
-I created `pkgdx` as a way to improve DX for Python projects. The package is intended for
-installation as a development dependency, providing a main command-line interface (CLI) and
-a nested CLI commands and options for common development tasks.
+I created `pkgdx` as a way to improve DX for my Python projects. The package is installed as
+as a development dependency, providing a command-line interface (CLI) for canonical standards
+configuration.
 
-## Current features
-
-### (1) Canonical standards maintenance
+## Overview
 
 `pkgdx` centralises creation and implementation of coding standards across projects, providing a
 single source of truth for toolchain configuration:
@@ -17,15 +15,34 @@ single source of truth for toolchain configuration:
 4. detect-secrets (secret detection)
 5. Prek (hook framework)
 
-> [!TIP]
-> To quickly demo `pkgdx`, clone this repository and run the `test-consumer` Justfile recipe via
-> `just test-consumer`. If [Just](https://github.com/casey/just) command runner is unavailable,
-> run `uv run --directory consumers/testing pkgdx --debug init --reset` to use `pkgdx` against
-> the `consumers/testing` workspace package.
+## Quick start
 
-![Demo Preview](https://gitlab.com/andyrids/pkgdx/-/raw/main/docs/consumer-demo.gif)
+1. Run `uv add --dev pkgdx` for a consuming project
+2. Run `uv run pkgdx init` to configure hooks and install Git shims
+3. Run `uv run pkgdx config --export` to export toolchain config files
 
-#### Why?
+The config files; `hooks.toml`, `mypy.ini`, `pymarkdown.toml` and `ruff.toml` are exported to
+`$PKGDX_CONFIG_DIR` | `%APPDATA%/pkgdx` | `$XDG_CONFIG_HOME/pkgdx` | `~/.config/pkgdx`.
+
+1. Modify these files to maintain a new global canonical standards config
+2. Delete a file to revert to the repsective, bundled config
+3. Run `uv run pkgdx config` to check config detection and location
+
+To quickly demo `pkgdx`, clone this repository, cd into `./pkgdx/` and run the command below:
+
+```sh
+just consumer-demo
+```
+
+> [!IMPORTANT]
+> Use `uvx rust-just consumer-demo` if [Just](https://just.systems/man/en/) command runner
+> is not installed.
+
+![Demo Preview](./docs/pkgdx-demo.webp)
+
+Further installation and setup guidance is available below.
+
+## Why?
 
 Other methods of maintaining standards include templating tools like `Cookiecutter` or `Copier`,
 which inject configurations directly into the project `pyproject.toml` and/or root directory.
@@ -36,7 +53,7 @@ removing the need for extensive `pyproject.toml` boilerplate.
 > [!TIP]
 > `pkgdx` compliments project templating tools - it does not replace them.
 
-#### How?
+## How?
 
 Configuration files and CLI are contained in the `standards/` subpackage and developments tools
 have console scripts (`[project.scripts]`) and pre-commit hooks (`.pre-commit-hooks.yaml`), which
@@ -109,7 +126,7 @@ uv add --dev git+https://gitlab.com/andyrids/pkgdx.git
 ```
 
 ```bash
-uv add --dev git+https://gitlab.com/andyrids/pkgdx.git@v0.4.1
+uv add --dev git+https://gitlab.com/andyrids/pkgdx.git@v0.5.0
 ```
 
 ## CI/CD integration
@@ -167,8 +184,9 @@ detect-secrets has no configuration file, so it always uses its bundled settings
 uv run pkgdx config
 ```
 
-This prints the user config directory, the environment variable that can override it, and, for
-each file, its source (`user` or `bundled`) and resolved path. Output goes to standard output.
+This prints one row per file on standard output: its name, its source (`user` or `bundled`) and
+its resolved path. A summary line on standard error names the user config directory and whether
+`PKGDX_CONFIG_DIR` set it.
 
 To start from the bundled files, export them into the user config directory:
 
@@ -176,8 +194,9 @@ To start from the bundled files, export them into the user config directory:
 uv run pkgdx config --export
 ```
 
-`--export` creates the platform directory if needed, copies each bundled file that is missing, and
-never overwrites an existing file. It reports which files were written and which were skipped.
+`--export` creates the platform directory if needed, copies each bundled file that is missing and
+never overwrites an existing file. It prints one line per file, `created` or `unchanged`, in the
+same format as `pkgdx init`.
 
 ### (4) CI & team parity
 

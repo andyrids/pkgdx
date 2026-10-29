@@ -1,0 +1,48 @@
+{
+  "id": "verb-ledger",
+  "name": "Verb ledger (uv / cargo)",
+  "summary": "Borrows from uv and cargo: each step becomes one terse past-tense line with a right-aligned bold verb (Resolved, Updated, Created, Reused), printed only when the step finishes. A transient spinner status line shows only the in-flight step, and the title is the first and only header.",
+  "mockup": "SUCCESS (stderr, TTY, final frame)\n  pkgdx init  C:\\src\\acme\n      Found  project root C:\\src\\acme (pyproject.toml)\n      Found  Git top-level C:\\src\\acme\n    Updated  prek.toml, 2 hooks added\n  Unchanged  Git shims\n  Unchanged  hook revisions (up to date)\n    Created  .secrets.baseline\n   Finished  6 steps in 2.9s\n\nWARN\n  pkgdx init  C:\\src\\acme\n      Found  project root C:\\src\\acme (pyproject.toml)\n    warning  not a Git repository, using project root\n  Unchanged  prek.toml\n  Installed  Git shims at project root\n    warning  pkgdx v0.4.2 -> v0.5.0 available\n     Reused  .secrets.baseline\n   Finished  6 steps in 2.9s, 2 warnings\n       hint  Run `git init` to enable pre-commit hooks\n       hint  Update remote hook revisions - `prek update`\n\nFAIL\n  pkgdx init  C:\\src\\acme\n      Found  project root C:\\src\\acme (pyproject.toml)\n      Found  Git top-level C:\\src\\acme\n      error  prek.toml could not be parsed: Invalid value (at line 12, column 9)\n       hint  Fix prek.toml, or regenerate it with `pkgdx init --reset`\n     Failed  2 of 6 steps completed in 0.5s (re-run with -d for traceback)\n\n(live: while 'prek update --check' runs, a spinner line '  ⠋ Checking hook revisions' sits at the bottom and is erased on completion)",
+  "step_states": "pending: not shown (no list of future steps). running: single transient bottom line with Rich status spinner (dots, ASCII fallback '|/-\\\\') plus the step label, dim. ok: permanent line with bold green right-aligned verb in a 10-col field; unchanged uses dim verb 'Unchanged'. warn: bold yellow 'warning' verb. fail: bold red 'error' verb, then bold red 'Failed' summary verb. Verb word carries the state, so NO_COLOR still reads correctly.",
+  "header": "One line: bold 'pkgdx init' plus dim project root. No rule, no second title row.",
+  "success_summary": "'Finished  6 steps in 2.9s' with bold green verb; omit the step count when all unchanged and print 'Finished  nothing to change' instead.",
+  "warning_presentation": "Inline in sequence as a yellow 'warning' verb line carrying Result.detail; hints collected after the summary as git-style 'hint' lines (dim verb, normal text) so next actions land last, where the eye ends. Summary counts warnings.",
+  "failure_presentation": "Red 'error' line with detail and message, one 'hint' line, then red 'Failed' summary stating progress (2 of 6). No traceback for expected errors; a dim pointer to -d. Overall status is final, never a frozen spinner.",
+  "state_change_reporting": "Carried by the verb itself: Created / Updated / Reused / Unchanged / Installed, derived from Result.detail. Every state change is visible without -d.",
+  "non_tty_behaviour": "Identical lines without colour, without the spinner and without right-alignment padding changes (same 10-col field so it greps well). Lines flush as steps finish. Header line is kept. Example plain line: '    Updated  prek.toml, 2 hooks added'.",
+  "rich_primitives": [
+    "Console.print",
+    "Text/Text.assemble with right-justified verb field",
+    "Console.status (transient spinner, interactive only)",
+    "Style bold green/yellow/red/dim"
+  ],
+  "custom_classes_estimate": 0,
+  "complexity": "low",
+  "guidance_refs": [
+    "standard-cli §4 brief output on success and inform on state change",
+    "standard-cli §5 BLUF and rewrite errors",
+    "standard-cli §9 show progress",
+    "toolchain-logging §3 stderr via console, TTY check on the written stream",
+    "standard-yagni"
+  ],
+  "addresses_observations": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    10,
+    11
+  ],
+  "risks": [
+    "Verb vocabulary must be derived from Result.detail (or extend Result with a verb field), mild coupling",
+    "Hints appearing after the summary requires collecting them in a list",
+    "Right-aligned verbs need a fixed 10-col width; long verbs would overflow",
+    "Ctrl-C (obs 8) not handled by layout alone; needs a KeyboardInterrupt wrapper printing 'Interrupted' and exiting 130"
+  ],
+  "file": "scripts/cli_styles/p05_verb_ledger.py",
+  "merged_from": [],
+  "curation_note": "uv/cargo style. Derive the verb from Result.detail with a small keyword map and document in the module docstring that a real implementation needs _core to return a change kind."
+}

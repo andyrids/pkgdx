@@ -1,0 +1,47 @@
+{
+  "id": "arrow-sections",
+  "name": "Arrow sections with indented detail (Homebrew)",
+  "summary": "Borrows from Homebrew: each step is a bold '==> label' arrow heading and its result is an indented detail line beneath, with git-style 'hint:' lines for next actions. A narrative top-to-bottom transcript, not a dashboard.",
+  "mockup": "SUCCESS\n==> Identifying project root\n    C:\\src\\acme (pyproject.toml)\n==> Identifying Git top-level\n    C:\\src\\acme\n==> Configuring pre-commit hooks\n    prek.toml updated, 2 hooks added\n==> Running prek install\n    Git shims already installed\n==> Checking hook revisions\n    up to date\n==> Scanning for secrets\n    .secrets.baseline created\n==> Done in 2.9s\n\nWARN\n==> Identifying Git top-level\n    Warning: not a Git repository, using project root\n    hint: Run `git init` to enable pre-commit hooks\n...\n==> Checking hook revisions\n    Warning: pkgdx v0.4.2 -> v0.5.0 available\n    hint: Update remote hook revisions - `prek update`\n==> Done with 2 warnings in 2.9s\n\nFAIL\n==> Identifying project root\n    C:\\src\\acme (pyproject.toml)\n==> Configuring pre-commit hooks\n    Error: prek.toml could not be parsed\n    Invalid value (at line 12, column 9)\n    hint: Fix prek.toml, or regenerate it with `pkgdx init --reset`\n==> Failed after 2 steps",
+  "step_states": "pending: not shown. running: the arrow heading is printed immediately in bold blue and a transient spinner sits on the line below it, replaced by the detail line. ok: detail line plain (heading turns bold green only in colour; no glyph needed). warn: detail line prefixed literal 'Warning:' in bold yellow. fail: prefixed literal 'Error:' in bold red. Prefix words, not colour, differentiate.",
+  "header": "None; the first '==>' is the header. Optional '==> pkgdx init' root heading with steps as '  ->' children was rejected for noise.",
+  "success_summary": "Final '==> Done in 2.9s' arrow line in bold green.",
+  "warning_presentation": "Inline 'Warning:' line under the offending step and a 'hint:' line immediately after it (context stays adjacent). Closing arrow reports the warning count.",
+  "failure_presentation": "Inline 'Error:' prefix, message on following indented line, 'hint:' line, then '==> Failed after 2 steps' in bold red. Output ends on the failure so BLUF holds for the reader at the bottom.",
+  "state_change_reporting": "The indented detail line is the state report ('prek.toml updated', '.secrets.baseline created'); optionally make the changed noun bold.",
+  "non_tty_behaviour": "Identical text with colour stripped; headings are only printed when the step starts, so a hung step is visible in a CI log. No spinner. Headings and details are one write each.",
+  "rich_primitives": [
+    "Console.print",
+    "Text.assemble",
+    "Console.status (transient, interactive only)",
+    "Padding/indent via string prefix"
+  ],
+  "custom_classes_estimate": 0,
+  "complexity": "low",
+  "guidance_refs": [
+    "standard-cli §4 brief and inform on change",
+    "standard-cli §5 rewrite errors for humans",
+    "standard-cli §9 show progress",
+    "toolchain-logging §3"
+  ],
+  "addresses_observations": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    10,
+    11
+  ],
+  "risks": [
+    "Roughly doubles the line count (12+ lines vs 6) which conflicts with 'keep it brief' in §4",
+    "Needs progressive-form labels ('Identifying...') instead of the existing imperative labels in _cli.py",
+    "Heading printed before the result means a warning appears after its heading, spreads one step across two lines",
+    "Ctrl-C needs a wrapper (print '==> Interrupted', exit 130)"
+  ],
+  "file": "scripts/cli_styles/p06_arrow_sections.py",
+  "merged_from": [],
+  "curation_note": "Homebrew style. Keep the existing imperative labels from _cli.py for headings (do not invent progressive forms). Its distinctive property is that the heading prints when a step STARTS, so a hung step is visible in a piped CI log - keep that."
+}

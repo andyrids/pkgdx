@@ -1,0 +1,7 @@
+[31m┌─[0m[1;31m error: pkgdx init failed at configure pre-commit hooks [0m[31m────────────────────────────────────────[0m[31m─┐[0m
+[31m│[0m [1mCause  [0m[1m  [0mprek.toml could not be parsed                                                           [31m│[0m
+[31m│[0m [1m         [0mInvalid value (at line 12, column 9)                                                    [31m│[0m
+[31m│[0m [1m= help [0m[1m  [0m[32mFix prek.toml, or regenerate it with `pkgdx init --reset`[0m                               [31m│[0m
+[31m│[0m [1mDone   [0m[1m  [0midentify project root, identify Git top-level                                           [31m│[0m
+[31m│[0m [1mNot run[0m[1m  [0mprek install, prek update --check, detect-secrets scan                                  [31m│[0m
+[31m└─[0m[31m────────────────────────────────────────────────────────────────────[0m[31m re-run with -d for details [0m[31m─┘[0m

@@ -1,0 +1,4 @@
+error: prek.toml could not be parsed
+  Invalid value (at line 12, column 9)
+  hint: Fix prek.toml, or regenerate it with `pkgdx init --reset`
+init failed at step 3 of 6 (configure pre-commit hooks); run with -d for details

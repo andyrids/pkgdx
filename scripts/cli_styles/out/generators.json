@@ -1,0 +1,137 @@
+{
+  "p01_ledger_lines": {
+    "stem": "p01_ledger_lines",
+    "model": "sonnet",
+    "effort": "low",
+    "file": "D:\\Projects\\gitlab\\pkgdx\\scripts\\cli_styles\\p01_ledger_lines.py",
+    "gates_pass": true,
+    "pipe_test": "Real pipe: success exit=0, warn exit=0, fail exit=1. No \\u escapes or mojibake (ASCII-only output). The interactive=False path has no spinner.",
+    "lint_clean": true,
+    "design_notes": "One one-row Table.grid per step, printed when the step finishes. Badges are ok / warn / FAIL, with stop for Ctrl-C. Detail is always shown. Warn prints an indented '-> hint' line. Fail prints a cause line, a hint line, then 'pkgdx init: failed at step N/M (K steps not run)'. No skip rows, as the curation note says. A transient console.status('dots') shows only when interactive=True. The summary is the only mention of the command, and the warning count is appended when relevant. KeyboardInterrupt prints a 'stop' row and 'pkgdx init: interrupted, no cleanup performed', then returns 130. Differences from the spec: the badge column is 8 wide (it includes the 2-space indent), so the gap to the label is wider than in the mockup. I did not add a '-d' hint. Label column width is computed from the longest label in the scenario, so no fixed width is hard-coded. The dots spinner needs braille glyphs, which Cascadia has and some Consolas setups may not.",
+    "core_changes_implied": [
+      "Warnings render inline, so the logger.warning calls for step warnings move out of _core into the CLI layer.",
+      "Step results (outcome, detail, message, hint) must be returned to the CLI rather than logged inside _core.",
+      "Expected FAIL results must be returned or raised as typed errors with no traceback. The logger traceback prints only with -d."
+    ],
+    "risks": [
+      "No view of remaining steps while running; the spinner line shows only the current label.",
+      "Braille spinner may not render in legacy fonts; the 'line' spinner is the fallback.",
+      "Elapsed time shows 0.0s in the showcase because it runs at speed 0.",
+      "Output has no title or header, so the first line is a step row."
+    ]
+  },
+  "p02_live_checklist": {
+    "stem": "p02_live_checklist",
+    "model": "sonnet",
+    "effort": "medium",
+    "file": "D:\\Projects\\gitlab\\pkgdx\\scripts\\cli_styles\\p02_live_checklist.py",
+    "gates_pass": true,
+    "pipe_test": "Exit codes 0/0/1 for success/warn/fail through a real pipe. No \\u escapes and no mojibake; plain output uses ASCII glyphs (+ ! x -). The pipe test did not exercise Ctrl-C or a real-TTY Live frame, so those two paths are untested.",
+    "lint_clean": true,
+    "design_notes": "Implements the spec with no custom classes. Rendering is a Live(get_renderable=...) over a borderless Table.grid with glyph, label and detail columns, plus a Group with a bold \"pkgdx init\" header. All steps start as pending and are redrawn in place. The running row shows a cyan dots spinner and elapsed seconds once past 0.5s. Warn rows show \"WARN\" and a \"hint:\" sub-row. Fail rows show \"FAILED\", then Result.message, then a hint. Steps after a failure become \"-  skipped\". Ctrl-C marks the running row \"interrupted\", skips the rest, and returns 130. The non-TTY path prints the header once, then each step's final row with ASCII glyphs as it finishes, then the summary. Departures from the spec: (1) The summary is a row inside the Live renderable (shown once the run ends) rather than printed after Live stops. On a non-terminal console Live's final frame has no trailing newline, so a separate print ran into the last row in the recordings. (2) The summary text drops the command name so it appears once. It reads \"6 ok in Xs\", \"failed: 2 ok, 1 failed, 3 skipped\" or \"interrupted: ...\". (3) I did not add the \"run with -d for details\" hint. The \"-d prints a traceback after Live stops\" behaviour in the spec is not implemented, since the harness has no -d flag. The plain-mode rows use a per-row grid, so a few detail cells carry trailing padding spaces.",
+    "core_changes_implied": [
+      "_core must stop logging warnings (logger.warning of message and hint) and return them in the step result, because this pattern renders them inline in the row.",
+      "_cli must know the full step list up front so it can register every row as pending. Steps that are only discovered at runtime would need to append rows.",
+      "Expected failures (Result.outcome FAIL) should return as results and not raise, so the checklist shows them as a row with no traceback. Any traceback for -d would be printed by _cli after Live stops.",
+      "Logger output emitted during Live goes through the same console and appears above the table. Mid-run logging should be avoided or kept to a minimum."
+    ],
+    "risks": [
+      "The check glyph U+2713 is not in Consolas, and the braille spinner is missing from legacy console fonts. It is fine in Cascadia Mono. The plain mode uses ASCII.",
+      "The live-TTY path and Ctrl-C were not tested in a real terminal.",
+      "A very long hint wraps under the detail column on narrow terminals, which is acceptable but untested.",
+      "Success output is 8 lines, longer than the minimal patterns.",
+      "Live redraws can interleave with log records emitted mid-run."
+    ]
+  },
+  "p03_bluf_error_card": {
+    "stem": "p03_bluf_error_card",
+    "model": "sonnet",
+    "effort": "medium",
+    "file": "D:\\Projects\\gitlab\\pkgdx\\scripts\\cli_styles\\p03_bluf_error_card.py",
+    "gates_pass": true,
+    "pipe_test": "success exit 0, warn exit 0, fail exit 1 via real pipe (CLI_STYLES_SPEED=0, 2>&1 | cat). No \\u escapes (grep -F count 0 for all three) and no mojibake. Output is ASCII-only in the non-interactive shape. Ctrl-C path (exit 130) was not exercised.",
+    "lint_clean": true,
+    "design_notes": "Implemented per spec and the curation note, with no custom classes and 109 LOC. While running there is one transient console.status line, \"pkgdx init  [n/N] <step>\". Completed steps leave no trace. Success prints \"pkgdx init: done in Xs\" and one \"changed:\" line. Warnings print after the heading (\"with N warnings\") as \"  ! step: detail\" with a \"      -> hint\" line, unboxed. Failure prints a red ROUNDED Panel titled \"error: pkgdx init failed at <step>\". It has Cause (detail plus message), \"= help\" (hint, the rustc-style fix line), Done and Not run rows, and a \"re-run with -d for details\" subtitle. There is no traceback. Ctrl-C prints one line, \"pkgdx init: interrupted during <step>, no cleanup performed\", and returns 130. Non-TTY output is ASCII GNU-style and uses the command name once per block: \"pkgdx init: done ...\" then \"warning: ...\" plus \"  hint: ...\", and \"changed: ...\". A failure prints \"pkgdx init: error: step: detail\", then message, hint and \"not run:\" lines. Departures from the spec: (1) The non-TTY \"warning:\" and \"changed:\" lines do not repeat the \"pkgdx init:\" prefix, because the task rule says the command name appears at most once. (2) The status line has no \"elapsed after 0.5s\" part, to keep it simple (YAGNI). (3) \"changed:\" is classified by regex on Result.detail (\"<file> created/updated ...\"). Entries are rendered as \"file (what)\", and unchanged or reused items are silent. (4) The status line's \".start()\" is gated on `interactive`. In the showcase's recording the transient status prints nothing, and the final block is printed persistently. The Panel uses box-drawing characters in interactive mode only. They are present in Cascadia Mono and Consolas. The \"!\" and \"->\" markers are ASCII. Interactive recordings of the fail card showed square corners (the box falls back, probably because the recording console is not a legacy-Windows terminal), which is harmless. Splitting `run` into small helpers was needed to satisfy ruff C901.",
+    "core_changes_implied": [
+      "_core must stop logging warnings (logger.warning for the message and hint) and return them via Result, since this pattern renders them inline and logging them too would double-report.",
+      "Result needs a change-kind field (created/updated/unchanged) to replace the regex on Result.detail, otherwise 'changed:' depends on keyword wording in the detail strings.",
+      "_cli.py needs a typed StepError or known-exception map so expected failures become a card and unexpected ones keep the traceback behind -d. A -d flag is referenced in the card's subtitle.",
+      "Steps must expose the full ordered label list up front so the card can show 'Done' and 'Not run'. _cli.py would also need the elapsed time and the Result of each step passed to the summary."
+    ],
+    "risks": [
+      "No record of completed steps on success. The user must use -v to see what ran.",
+      "On a real non-terminal console the transient status prints nothing, so only the final block is visible. This is intended.",
+      "The error-card Panel can wrap on narrow terminals. Box-drawing glyphs depend on font and legacy_windows fallback.",
+      "The 'changed:' keyword classification is brittle if detail wording changes.",
+      "The 'with -d for details' subtitle promises detail that the harness cannot demonstrate, because -d does not exist in the demo.",
+      "The Ctrl-C path was not exercised in testing."
+    ]
+  },
+  "p04_changes_only": {
+    "stem": "p04_changes_only",
+    "model": "sonnet",
+    "effort": "low",
+    "file": "D:\\Projects\\gitlab\\pkgdx\\scripts\\cli_styles\\p04_changes_only.py",
+    "gates_pass": true,
+    "pipe_test": "success=0, warn=0, fail=1 via real pipe. No \\u escapes and no mojibake. Output is ASCII logfmt.",
+    "lint_clean": true,
+    "design_notes": "Interactive mode shows a transient console.status line '[i/N] label' while each step runs. Changed steps print '  verb  detail' with a bold green verb. Warnings print 'warning:' in bold yellow plus an indented 'hint:' line. A failure prints 'error:', the cause, 'hint:', and 'init failed at step N of M (label); run with -d for details'. No traceback is shown. One summary line closes the run: 'init finished in Xs[ with N warnings]: C changed, U unchanged', or 'nothing to change'. Non-interactive mode is ASCII logfmt, one 'step=' record per step plus one summary record. Per the curation note it carries status, change, detail, message and hint.\n\nDepartures from the spec:\n- The command name appears only in the summary record ('pkgdx=init'), not on every step record as the curation example shows, to meet the at-most-once rule.\n- Changed vs unchanged is guessed with a regex on Result.detail, as the spec's risks anticipated. Detail strings that read as no-ops (unchanged, reused, already, up to date, a bare path, 'not a Git') count as unchanged. The verb (created, updated or installed) is lifted out of the detail, falling back to 'changed'.\n- Warning steps count as unchanged in the summary, which matches the spec mockup.\n- Because run() is branchy, I added '# noqa: C901' to its def line rather than split it.\n- The 'interrupted:' line and the 130 return are in place, but I did not test Ctrl-C.\n- Glyph risk: the transient spinner uses Rich's braille dots, which are fine in Cascadia Mono and only partial in Consolas. It is transient, so the risk is low.",
+    "core_changes_implied": [
+      "_core must stop logging warnings (logger.warning), because this pattern renders them inline as 'warning:' + 'hint:'.",
+      "Result needs an explicit changed flag (or a created/updated verb field) instead of regex-guessing Result.detail.",
+      "_cli must catch KeyboardInterrupt and print the one-line interruption, returning 130.",
+      "The 'run with -d for details' hint assumes a -d flag exists."
+    ],
+    "risks": [
+      "The regex classification can hide a real change (a false 'unchanged') or show a no-op as changed.",
+      "Output is sparse for first-time users, since routine steps are only counted in the summary.",
+      "In interactive mode on a real terminal, a warn step that also changed state shows only the warning line (no changed line), and the summary counts it as unchanged.",
+      "Logfmt escapes backslashes through json.dumps ('C:\\\\src'), but only when the value contains whitespace, quotes or '='. Paths therefore appear in two forms. Parsers handle this, but it reads inconsistently.",
+      "Interactive live rendering was not seen on a real TTY, only through the showcase recording and the pipe test."
+    ]
+  },
+  "p05_verb_ledger": {
+    "stem": "p05_verb_ledger",
+    "model": "haiku",
+    "effort": "medium",
+    "file": "scripts/cli_styles/p05_verb_ledger.py",
+    "gates_pass": true,
+    "pipe_test": "Before the final grid change: exit 0/0/1 for success/warn/fail with CLI_STYLES_SPEED=0 piped through cat. After it: showcase.py exits 0 with gates pass; stdout is 0 bytes for all three scenarios; no literal \\u escapes and no non-ASCII bytes in stderr for any scenario. Exit codes were not re-run after the final edit, but the edit only changed how rows are built, not the return paths.",
+    "lint_clean": true,
+    "design_notes": "Ledger built from Result via a small regex map: verb phrases (already installed, unchanged, up to date, exists, reused, updated, created, installed) become the verb and are stripped from the detail; otherwise the verb is Found. Warnings render inline as a yellow 'warning' line with detail only (message not repeated), hints collected and printed after the Finished summary. Failures print error (detail: message), an immediate hint, and a Failed summary with 'N of M steps completed' and a '-d' pointer; no traceback, no logger use. Verb column is an 11-col right-aligned Table.grid so wrapped detail stays aligned. Header takes the project root from the first step's detail (text before ' ('). Interactive live line uses Rich's 'line' spinner (ASCII, Consolas-safe) with the step label; plain mode has no spinner. Summary says 'nothing to change' when every step is Unchanged and there are no warnings. KeyboardInterrupt prints one 'Interrupted' line and returns 130. Deviations from mockup: the noun phrases ('project root', 'Git top-level') are not shown because the Step carries only Result.detail; 'hook revisions (up to date)' renders as 'hook revisions' because the phrase is stripped. The spec's '-d' flag is not implemented in cli_main, so the pointer is text only. Guidance docs (standard-cli, toolchain-logging) were not re-read; the spec's refs were used.",
+    "core_changes_implied": [
+      "_core should return a change kind (created, updated, reused, unchanged, installed) on each step result instead of free text, so the verb is not inferred from detail with a regex.",
+      "_core should return warnings and hints to the caller instead of calling logger.warning, so this pattern can render them inline without double-reporting.",
+      "_core failures should return the message and hint without logger.exception, so expected failures do not print tracebacks."
+    ],
+    "risks": [
+      "Verb inference relies on keyword matching against Result.detail; a new wording in _core (for example 'refreshed') falls back to Found. Fix by returning a change kind from _core.",
+      "The fail scenario's hint text contains 'pkgdx init --reset', so the command name appears twice in that output (header plus hint). The harness hint text was not edited; the requirement that the name appears at most once conflicts with harness data.",
+      "Wide non-UTF-8 terminals: the ledger uses only ASCII glyphs, so there is no Consolas/Cascadia risk in the output. The interactive status spinner is ASCII ('line').",
+      "KeyboardInterrupt path is implemented but was not exercised by a test run.",
+      "The header root is derived by splitting the first step's detail on ' (', which is fragile if the first step is a warning or failure with a different detail shape."
+    ]
+  },
+  "p06_arrow_sections": {
+    "stem": "p06_arrow_sections",
+    "model": "haiku",
+    "effort": "low",
+    "file": "D:\\Projects\\gitlab\\pkgdx\\scripts\\cli_styles\\p06_arrow_sections.py",
+    "gates_pass": true,
+    "pipe_test": "Real pipe (2>&1 | cat) with CLI_STYLES_SPEED=0: success exit=0, warn exit=0, fail exit=1. No backslash-u escapes in any output (grep hits were false positives on 'pre-commit'/'update'). Output is ASCII-only. Showcase gates pass (13/15/9 lines).",
+    "lint_clean": true,
+    "design_notes": "Implemented the Homebrew arrow-section spec. Each step prints a bold blue '==> <Label>' heading when it starts, then an indented detail line (Result.detail). The label is the harness imperative label with its first letter capitalised; no progressive forms, per the curation note. Interactive mode wraps step.run() in console.status with the ASCII 'line' spinner, so no Unicode is used in either mode. Warnings print 'Warning:' (bold yellow) plus an indented 'hint:' line inline. Result.message is not printed for warnings, because the spec's warn mockup shows only detail and hint. Failures print 'Error:' with detail, the message and hint, then '==> Failed after N steps' (N = steps completed before the failure). No traceback, no command name in output. The closing line is '==> Done in X.Xs' (bold green) or '==> Done with N warnings in X.Xs' (bold yellow). Ctrl-C prints '==> Interrupted' and returns 130. Departures from the spec: the heading stays bold blue in all states instead of turning green on success, since re-styling a printed line would need Live and the spec allows the colour change only where colour is available. The file was reformatted by ruff format; lint and gates pass after that. Zero custom classes.",
+    "core_changes_implied": [
+      "_core must stop calling logger.warning for warnings and instead return the warning message and hint on Result, so _cli.py can render them inline under the step (the warning is then not double-reported).",
+      "_cli.py must print failures as 'Error:' detail, message and hint with no traceback, instead of logger.exception.",
+      "_cli.py must print each step heading when the step starts, which means step start must be signalled to the CLI before _core runs the step."
+    ],
+    "risks": [
+      "Heading prints before the result, so a warning appears after its heading and splits each step across two lines (about 2x the line count of the current style).",
+      "Imperative labels from the harness are capitalised mechanically ('Prek install'), which may read slightly unlike Homebrew's own phrasing.",
+      "The bold blue heading does not turn green on success (spec departure, see design_notes).",
+      "Interactive spinner uses Rich's ASCII 'line' spinner, so there is no Cascadia/Consolas glyph risk, but the live spinner was not visually verified in a real terminal (showcase records a non-terminal console).",
+      "Failure hint has no 'run with -d for details' line; the output has no -d flag to point to."
+    ]
+  }
+}

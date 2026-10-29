@@ -1,0 +1,51 @@
+{
+  "id": "ledger-lines",
+  "name": "Ledger lines (minimal)",
+  "summary": "One aligned, permanent line per step printed as the step finishes, led by a word badge (ok / warn / FAIL), with one transient console.status spinner for the step in flight. No Live, no Progress, no title; TTY and non-TTY output are the same lines.",
+  "mockup": "SUCCESS (TTY, final frame)\n  ok    identify project root        C:\\src\\acme (pyproject.toml)\n  ok    identify Git top-level       C:\\src\\acme\n  ok    configure pre-commit hooks   prek.toml updated, 2 hooks added\n  ok    prek install                 Git shims already installed\n  ok    prek update --check          hook revisions up to date\n  ok    detect-secrets scan          .secrets.baseline created\npkgdx init: done in 2.9s\n\n(while running, a single transient line sits under the ledger:)\n⠹ prek update --check ...\n\nWARN (TTY, final frame)\n  ok    identify project root        C:\\src\\acme (pyproject.toml)\n  warn  identify Git top-level       not a Git repository, using project root\n        -> Run `git init` to enable pre-commit hooks\n  ok    configure pre-commit hooks   prek.toml unchanged\n  ok    prek install                 Git shims installed at project root\n  warn  prek update --check          pkgdx v0.4.2 -> v0.5.0 available\n        -> Update remote hook revisions - `prek update`\n  ok    detect-secrets scan          .secrets.baseline exists, reused\npkgdx init: done in 2.9s with 2 warnings\n\nFAIL (TTY, final frame)\n  ok    identify project root        C:\\src\\acme (pyproject.toml)\n  ok    identify Git top-level       C:\\src\\acme\n  FAIL  configure pre-commit hooks   prek.toml could not be parsed\n        Invalid value (at line 12, column 9)\n        -> Fix prek.toml, or regenerate it with `pkgdx init --reset`\npkgdx init: failed at step 3/6 (3 steps not run)",
+  "step_states": "pending: not shown | running: transient console.status line, 'dots' spinner + label + '...' | ok: 'ok' green | warn: 'warn' bold yellow + indented '->' hint line | fail: 'FAIL' bold red reverse-free, uppercase so it differs from ok/warn without colour, + message line + '->' hint",
+  "header": "None. The command name appears once, in the closing summary line.",
+  "success_summary": "'pkgdx init: done in <elapsed>' (plus ' with N warnings' when relevant), one line.",
+  "warning_presentation": "Inline under the step that warned: the warn badge, the detail in the detail column, and an indented '->' next-action line. Nothing is logged above the ledger; the warning logging moves out of _core into the CLI layer.",
+  "failure_presentation": "Inline at the failing step: FAIL badge, cause in the detail column, raw parser message indented beneath, '->' next action, then the summary line naming the step number and how many steps did not run. No traceback for expected errors; with -d the logger's traceback prints after the ledger. Ctrl-C: the status line is replaced by '  stop  prek update --check   interrupted' and 'pkgdx init: interrupted, no cleanup performed', exit 130.",
+  "state_change_reporting": "The detail column of every step always shows Result.detail (created / updated / unchanged / reused), so state changes are visible by default without -d.",
+  "non_tty_behaviour": "Identical lines without ANSI and without the status spinner (Rich drops styling on a non-terminal console). Each line is printed when its step finishes, so a CI log streams. Example: '  ok    prek update --check          hook revisions up to date' ... 'pkgdx init: done in 2.9s'.",
+  "rich_primitives": [
+    "Console.status",
+    "Table.grid (one-row grid per step with fixed column widths)",
+    "Text"
+  ],
+  "custom_classes_estimate": 0,
+  "complexity": "low",
+  "guidance_refs": [
+    "standard-cli §4",
+    "standard-cli §5",
+    "standard-cli §9",
+    "standard-cli §11",
+    "toolchain-logging §3",
+    "standard-yagni"
+  ],
+  "addresses_observations": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    10,
+    11
+  ],
+  "risks": [
+    "Column widths must be fixed up front (longest label), or rows printed one at a time won't line up.",
+    "No view of the remaining steps, so the user can't see how far through the run is (no 'step 3 of 6' while running unless the status text says so).",
+    "The braille spinner from console.status needs a font that has braille (Cascadia does; legacy conhost fonts may not). Spinner 'line' (-\\|/) is the safe fallback.",
+    "Moving warning logging out of _core into the CLI layer is a real refactor, not just a styling change."
+  ],
+  "file": "scripts/cli_styles/p01_ledger_lines.py",
+  "merged_from": [
+    "status-badges"
+  ],
+  "curation_note": "Merged with status-badges (systemd): keep the word-badge ledger; badges are fixed-width words (ok / warn / FAIL / skip), not brackets. After a FAIL, do not print skip rows - the summary line states how many steps did not run."
+}

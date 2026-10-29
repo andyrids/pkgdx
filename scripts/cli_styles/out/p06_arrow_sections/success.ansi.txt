@@ -1,0 +1,13 @@
+[1;34m==> Identify project root[0m
+    C:\src\acme (pyproject.toml)
+[1;34m==> Identify Git top-level[0m
+    C:\src\acme
+[1;34m==> Configure pre-commit hooks[0m
+    prek.toml updated, 2 hooks added
+[1;34m==> Prek install[0m
+    Git shims already installed
+[1;34m==> Prek update --check[0m
+    hook revisions up to date
+[1;34m==> Detect-secrets scan[0m
+    .secrets.baseline created
+[1;32m==> Done in 0.0s[0m

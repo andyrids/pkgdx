@@ -1,0 +1,7 @@
+┌─ error: pkgdx init failed at configure pre-commit hooks ─────────────────────────────────────────┐
+│ Cause    prek.toml could not be parsed                                                           │
+│          Invalid value (at line 12, column 9)                                                    │
+│ = help   Fix prek.toml, or regenerate it with `pkgdx init --reset`                               │
+│ Done     identify project root, identify Git top-level                                           │
+│ Not run  prek install, prek update --check, detect-secrets scan                                  │
+└───────────────────────────────────────────────────────────────────── re-run with -d for details ─┘

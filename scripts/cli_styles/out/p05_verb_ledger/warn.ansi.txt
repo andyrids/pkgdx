@@ -1,0 +1,10 @@
+  [1;36mpkgdx init[0m  [2mC:\src\acme[0m
+[1;32m      Found[0m  C:\src\acme (pyproject.toml)
+[1;33m    warning[0m  not a Git repository, using project root
+[2m  Unchanged[0m  prek.toml
+[1;32m  Installed[0m  Git shims at project root
+[1;33m    warning[0m  pkgdx v0.4.2 -> v0.5.0 available
+[1;32m     Reused[0m  .secrets.baseline
+[1;32m   Finished[0m  6 steps in 0.0s, 2 warnings
+[2m       hint[0m  Run `git init` to enable pre-commit hooks
+[2m       hint[0m  Update remote hook revisions - `prek update`

@@ -1,0 +1,48 @@
+{
+  "id": "changes-only",
+  "name": "Quiet until it matters (git / cargo)",
+  "summary": "Borrows from git and cargo: show a single transient status line while working, then print only what changed or needs attention, followed by one terse summary. Unchanged and routine steps are collapsed into the summary count, matching the common idempotent re-run of init.",
+  "mockup": "SUCCESS (first run)\n  updated  prek.toml (2 hooks added)\n  created  .secrets.baseline\ninit finished in 2.9s: 2 changed, 4 unchanged\n\nSUCCESS (re-run, nothing changed)\ninit finished in 2.1s: nothing to change\n\nWARN\nwarning: not a Git repository, using project root\n  hint: Run `git init` to enable pre-commit hooks\nwarning: pkgdx v0.4.2 -> v0.5.0 available\n  hint: Update remote hook revisions - `prek update`\ninit finished in 2.9s with 2 warnings: 0 changed, 6 unchanged\n\nFAIL\nerror: prek.toml could not be parsed\n  Invalid value (at line 12, column 9)\n  hint: Fix prek.toml, or regenerate it with `pkgdx init --reset`\ninit failed at step 3 of 6 (configure pre-commit hooks)\n\nLIVE: bottom line only '⠋ [4/6] prek update --check' erased on finish",
+  "step_states": "pending: not shown. running: one transient spinner line with step index and label (the single place M/N survives, because it is useful only while waiting). ok: no row unless the step changed state. warn: 'warning:' prefix in bold yellow. fail: 'error:' prefix in bold red. changed: dim-free bold verb (created/updated). Text prefixes carry state.",
+  "header": "None.",
+  "success_summary": "One line: 'init finished in 2.9s: N changed, M unchanged' (or 'nothing to change'), summary verb bold green.",
+  "warning_presentation": "Warnings are printed as they occur, 'warning:' prefix plus 'hint:' line beneath, and counted in the summary. This is the closest to today's log-line behaviour but with consistent wording.",
+  "failure_presentation": "BLUF: 'error:' line, detail, 'hint:' line, and a one-line summary naming the failed step and index. No traceback for expected failures; unexpected exceptions still go through the logger with traceback.",
+  "state_change_reporting": "This pattern's focus: only created/updated steps get a line, derived from Result.detail; 'unchanged'/'reused' counted in the summary. Satisfies 'when changing state, inform the user' with minimal noise.",
+  "non_tty_behaviour": "Same lines minus the spinner. Because success is already short, piped output is naturally brief: just the changed lines and the summary. With --plain the prefixes stay.",
+  "rich_primitives": [
+    "Console.status (transient)",
+    "Console.print",
+    "Text.assemble"
+  ],
+  "custom_classes_estimate": 0,
+  "complexity": "low",
+  "guidance_refs": [
+    "standard-cli §4 keep it brief, inform on state change",
+    "standard-cli §5 signal-to-noise and BLUF",
+    "standard-yagni",
+    "toolchain-logging §3"
+  ],
+  "addresses_observations": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    10,
+    11
+  ],
+  "risks": [
+    "Users cannot see that each step ran, so trust relies on the summary; hide-by-default may feel too sparse for first-time users (mitigate with -v listing all steps)",
+    "Requires classifying a step as changed or unchanged, which means parsing Result.detail or adding a flag to the result",
+    "Classifying 'unchanged' wrongly would hide real changes",
+    "Ctrl-C needs a wrapper (print 'init interrupted', exit 130)"
+  ],
+  "file": "scripts/cli_styles/p04_changes_only.py",
+  "merged_from": [
+    "change-receipt"
+  ],
+  "curation_note": "Graft from change-receipt: the non-TTY form is logfmt (one record per step + one summary record), e.g. 'pkgdx init step=\"prek install\" status=ok change=none detail=\"...\"'. TTY form stays git/cargo-terse: changed + attention lines only, then one summary."
+}

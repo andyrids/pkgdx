@@ -1,0 +1,10 @@
+[1mpkgdx init[0m
+[32m✓[0m identify project root      C:\src\acme (pyproject.toml)                                   
+[32m✓[0m identify Git top-level     C:\src\acme                                                    
+[1;31mx[0m configure pre-commit hooks [1;31mFAILED [0m[31mprek.toml could not be parsed[0m                           
+                             Invalid value (at line 12, column 9)                           
+                             [2mhint: Fix prek.toml, or regenerate it with `pkgdx init --reset`[0m
+[2m-[0m [2mprek install              [0m [2mskipped[0m                                                        
+[2m-[0m [2mprek update --check       [0m [2mskipped[0m                                                        
+[2m-[0m [2mdetect-secrets scan       [0m [2mskipped[0m                                                        
+[1;31mfailed: 2 ok, 1 failed, 3 skipped[0m

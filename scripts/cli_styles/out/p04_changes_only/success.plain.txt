@@ -1,0 +1,7 @@
+step="identify project root" n=1/6 status=ok change=none detail="C:\\src\\acme (pyproject.toml)"
+step="identify Git top-level" n=2/6 status=ok change=none detail=C:\src\acme
+step="configure pre-commit hooks" n=3/6 status=ok change=changed detail="prek.toml updated, 2 hooks added"
+step="prek install" n=4/6 status=ok change=none detail="Git shims already installed"
+step="prek update --check" n=5/6 status=ok change=none detail="hook revisions up to date"
+step="detect-secrets scan" n=6/6 status=ok change=changed detail=".secrets.baseline created"
+summary=finished pkgdx=init took=0.0s changed=2 unchanged=4 warnings=0

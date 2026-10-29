@@ -1,0 +1,2 @@
+pkgdx init: done in 0.0s
+changed: prek.toml (updated, 2 hooks added), .secrets.baseline (created)

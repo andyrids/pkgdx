@@ -1,0 +1,515 @@
+[
+  {
+    "lens": "guidance",
+    "patterns": [
+      {
+        "id": "ledger-lines",
+        "name": "Ledger lines (minimal)",
+        "summary": "One aligned, permanent line per step printed as the step finishes, led by a word badge (ok / warn / FAIL), with one transient console.status spinner for the step in flight. No Live, no Progress, no title; TTY and non-TTY output are the same lines.",
+        "mockup": "SUCCESS (TTY, final frame)\n  ok    identify project root        C:\\src\\acme (pyproject.toml)\n  ok    identify Git top-level       C:\\src\\acme\n  ok    configure pre-commit hooks   prek.toml updated, 2 hooks added\n  ok    prek install                 Git shims already installed\n  ok    prek update --check          hook revisions up to date\n  ok    detect-secrets scan          .secrets.baseline created\npkgdx init: done in 2.9s\n\n(while running, a single transient line sits under the ledger:)\n⠹ prek update --check ...\n\nWARN (TTY, final frame)\n  ok    identify project root        C:\\src\\acme (pyproject.toml)\n  warn  identify Git top-level       not a Git repository, using project root\n        -> Run `git init` to enable pre-commit hooks\n  ok    configure pre-commit hooks   prek.toml unchanged\n  ok    prek install                 Git shims installed at project root\n  warn  prek update --check          pkgdx v0.4.2 -> v0.5.0 available\n        -> Update remote hook revisions - `prek update`\n  ok    detect-secrets scan          .secrets.baseline exists, reused\npkgdx init: done in 2.9s with 2 warnings\n\nFAIL (TTY, final frame)\n  ok    identify project root        C:\\src\\acme (pyproject.toml)\n  ok    identify Git top-level       C:\\src\\acme\n  FAIL  configure pre-commit hooks   prek.toml could not be parsed\n        Invalid value (at line 12, column 9)\n        -> Fix prek.toml, or regenerate it with `pkgdx init --reset`\npkgdx init: failed at step 3/6 (3 steps not run)",
+        "step_states": "pending: not shown | running: transient console.status line, 'dots' spinner + label + '...' | ok: 'ok' green | warn: 'warn' bold yellow + indented '->' hint line | fail: 'FAIL' bold red reverse-free, uppercase so it differs from ok/warn without colour, + message line + '->' hint",
+        "header": "None. The command name appears once, in the closing summary line.",
+        "success_summary": "'pkgdx init: done in <elapsed>' (plus ' with N warnings' when relevant), one line.",
+        "warning_presentation": "Inline under the step that warned: the warn badge, the detail in the detail column, and an indented '->' next-action line. Nothing is logged above the ledger; the warning logging moves out of _core into the CLI layer.",
+        "failure_presentation": "Inline at the failing step: FAIL badge, cause in the detail column, raw parser message indented beneath, '->' next action, then the summary line naming the step number and how many steps did not run. No traceback for expected errors; with -d the logger's traceback prints after the ledger. Ctrl-C: the status line is replaced by '  stop  prek update --check   interrupted' and 'pkgdx init: interrupted, no cleanup performed', exit 130.",
+        "state_change_reporting": "The detail column of every step always shows Result.detail (created / updated / unchanged / reused), so state changes are visible by default without -d.",
+        "non_tty_behaviour": "Identical lines without ANSI and without the status spinner (Rich drops styling on a non-terminal console). Each line is printed when its step finishes, so a CI log streams. Example: '  ok    prek update --check          hook revisions up to date' ... 'pkgdx init: done in 2.9s'.",
+        "rich_primitives": [
+          "Console.status",
+          "Table.grid (one-row grid per step with fixed column widths)",
+          "Text"
+        ],
+        "custom_classes_estimate": 0,
+        "complexity": "low",
+        "guidance_refs": [
+          "standard-cli §4",
+          "standard-cli §5",
+          "standard-cli §9",
+          "standard-cli §11",
+          "toolchain-logging §3",
+          "standard-yagni"
+        ],
+        "addresses_observations": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          10,
+          11
+        ],
+        "risks": [
+          "Column widths must be fixed up front (longest label), or rows printed one at a time won't line up.",
+          "No view of the remaining steps, so the user can't see how far through the run is (no 'step 3 of 6' while running unless the status text says so).",
+          "The braille spinner from console.status needs a font that has braille (Cascadia does; legacy conhost fonts may not). Spinner 'line' (-\\|/) is the safe fallback.",
+          "Moving warning logging out of _core into the CLI layer is a real refactor, not just a styling change."
+        ]
+      },
+      {
+        "id": "live-checklist",
+        "name": "Live checklist",
+        "summary": "Every step appears up front as pending and is updated in place in a Rich Live table (glyph + label + detail), so the user sees the whole plan and where the run is. After a failure the remaining steps are marked 'skipped' rather than left frozen, and a single summary line follows when Live stops.",
+        "mockup": "SUCCESS (TTY, final frame)\npkgdx init\n ✓ identify project root       C:\\src\\acme (pyproject.toml)\n ✓ identify Git top-level      C:\\src\\acme\n ✓ configure pre-commit hooks  prek.toml updated, 2 hooks added\n ✓ prek install                Git shims already installed\n ✓ prek update --check         hook revisions up to date\n ✓ detect-secrets scan         .secrets.baseline created\n6 ok in 2.9s\n\n(mid-run frame)\n ✓ prek install                Git shims already installed\n ⠼ prek update --check         checking remote revisions... 1.1s\n · detect-secrets scan\n\nWARN (TTY, final frame)\npkgdx init\n ✓ identify project root       C:\\src\\acme (pyproject.toml)\n ! identify Git top-level      WARN not a Git repository, using project root\n                               hint: Run `git init` to enable pre-commit hooks\n ✓ configure pre-commit hooks  prek.toml unchanged\n ✓ prek install                Git shims installed at project root\n ! prek update --check         WARN pkgdx v0.4.2 -> v0.5.0 available\n                               hint: Update remote hook revisions - `prek update`\n ✓ detect-secrets scan         .secrets.baseline exists, reused\n4 ok, 2 warnings in 2.9s\n\nFAIL (TTY, final frame)\npkgdx init\n ✓ identify project root       C:\\src\\acme (pyproject.toml)\n ✓ identify Git top-level      C:\\src\\acme\n x configure pre-commit hooks  FAILED prek.toml could not be parsed\n                               Invalid value (at line 12, column 9)\n                               hint: Fix prek.toml, or regenerate it with `pkgdx init --reset`\n - prek install                skipped\n - prek update --check         skipped\n - detect-secrets scan         skipped\npkgdx init failed: 2 ok, 1 failed, 3 skipped",
+        "step_states": "pending: '·' dim, label dim | running: 'dots' spinner cyan, label bold, elapsed seconds shown only after 0.5s | ok: '✓' green, label normal | warn: '!' bold yellow + 'WARN' word + hint sub-row | fail: 'x' bold red + 'FAILED' word + message/hint sub-rows | skipped: '-' dim + 'skipped'",
+        "header": "One bold 'pkgdx init' line as the first row of the Live renderable (replaces both the rule and the reverse-video overall row).",
+        "success_summary": "'6 ok in 2.9s' (or 'N ok, M warnings in Xs'), one line after Live stops.",
+        "warning_presentation": "In the row: '!' glyph plus the word WARN and the detail, with a 'hint:' sub-row aligned to the detail column. Warnings are not logged above the display.",
+        "failure_presentation": "The failed row gets 'x' and the word FAILED, with the cause, the parser message and a hint stacked in the detail column. Later steps turn to '-' skipped and the summary counts them. Expected errors show no traceback; with -d it prints after Live stops. Ctrl-C: the running row becomes '- <label>  interrupted', the remaining rows 'skipped', summary 'pkgdx init interrupted', exit 130.",
+        "state_change_reporting": "The detail column shows Result.detail for every completed step, so created / updated / unchanged / reused is always visible.",
+        "non_tty_behaviour": "Live is disabled. As each step finishes, its final row is printed (ASCII glyphs: '+', '!', 'x', '-'), then the summary. No pending rows or spinner. Example: ' + prek update --check         hook revisions up to date' / ' - detect-secrets scan         skipped' / 'pkgdx init failed: 2 ok, 1 failed, 3 skipped'.",
+        "rich_primitives": [
+          "Live",
+          "Table.grid",
+          "Spinner",
+          "Text",
+          "Group"
+        ],
+        "custom_classes_estimate": 1,
+        "complexity": "medium",
+        "guidance_refs": [
+          "standard-cli §4",
+          "standard-cli §5",
+          "standard-cli §9",
+          "standard-cli §11",
+          "toolchain-logging §3",
+          "standard-yagni"
+        ],
+        "addresses_observations": [
+          1,
+          2,
+          3,
+          4,
+          6,
+          7,
+          8,
+          10,
+          11
+        ],
+        "risks": [
+          "'✓' (U+2713) is in Cascadia Code/Mono (Windows Terminal default) but not in Consolas or other legacy console fonts. Keep an ASCII glyph map ('+') and use it for non-TTY output.",
+          "The full step list must be known up front. That's fine for init, but subcommands that work out their steps at runtime need to append rows.",
+          "Rich Live redraws can interleave badly with log records emitted mid-run; any logger output during Live must go through the same console (it does via RichHandler), but it will appear above the table.",
+          "Success output is 8 lines, longer than the minimal pattern. It still meets 'brief', but only just."
+        ]
+      },
+      {
+        "id": "bluf-error-card",
+        "name": "BLUF error card",
+        "summary": "Built around the failure. While running, a single transient status line shows '[n/6] step'. On success it prints a two-line result. On an expected failure it prints a bordered error card whose title is the bottom line (what failed), with step, cause, fix, done/not-run and a debug hint. Unexpected errors keep the traceback, but only with -d.",
+        "mockup": "SUCCESS (TTY, final frame)\npkgdx init: done in 2.9s\n  changed: prek.toml (updated, 2 hooks added), .secrets.baseline (created)\n\n(mid-run, transient)\n⠼ pkgdx init  [5/6] prek update --check  1.1s\n\nWARN (TTY, final frame)\npkgdx init: done in 2.9s with 2 warnings\n  ! identify Git top-level: not a Git repository, using project root\n      -> Run `git init` to enable pre-commit hooks\n  ! prek update --check: pkgdx v0.4.2 -> v0.5.0 available\n      -> Update remote hook revisions - `prek update`\n  changed: nothing\n\nFAIL (TTY, final frame)\n╭─ error: pkgdx init failed at 'configure pre-commit hooks' ───────────────────────╮\n│ Cause    prek.toml could not be parsed                                           │\n│          Invalid value (at line 12, column 9)                                    │\n│ Fix      Fix prek.toml, or regenerate it with `pkgdx init --reset`               │\n│ Done     identify project root, identify Git top-level                           │\n│ Not run  prek install, prek update --check, detect-secrets scan                  │\n╰───────────────────────────────────────── re-run with -d for the full traceback ─╯",
+        "step_states": "n/a per step. Only one transient line: spinner + '[n/N]' + current label + elapsed (shown after 0.5s). Completed steps don't persist; outcome appears only in the result block.",
+        "header": "None persistent. The transient status line carries 'pkgdx init [n/N] <step>'.",
+        "success_summary": "'pkgdx init: done in <elapsed>' plus one 'changed:' line listing the files created or updated (or 'changed: nothing').",
+        "warning_presentation": "Collected during the run and printed after the summary line as a compact list: '!' + step label + detail, with a '->' hint on the next line. The heading carries the count ('with 2 warnings'), so it is never colour-only.",
+        "failure_presentation": "Rich Panel (ROUNDED, red border, title bold) with BLUF title 'error: pkgdx init failed at <step>'. A two-column grid inside gives Cause (detail + message), Fix (hint), Done and Not run. The subtitle points to -d. No traceback for expected errors (a typed StepError / known exception map). Unexpected exceptions print a one-line 'unexpected error' card plus the Rich traceback and an issue-tracker link. Ctrl-C: 'pkgdx init: interrupted during prek update --check, no cleanup performed', exit 130.",
+        "state_change_reporting": "Only changes are reported: a 'changed:' line aggregates details that are created/updated. Unchanged and reused items stay silent unless -v. This needs a small change-kind field on Result, or classification by keyword.",
+        "non_tty_behaviour": "No panel, no spinner. GNU-style lines: success 'pkgdx init: done in 2.9s' + 'pkgdx init: changed prek.toml (updated, 2 hooks added)' per change. Warn 'pkgdx init: warning: identify Git top-level: not a Git repository, using project root' + '  hint: Run `git init` ...'. Fail 'pkgdx init: error: configure pre-commit hooks: prek.toml could not be parsed' + '  Invalid value (at line 12, column 9)' + '  hint: Fix prek.toml, or regenerate it with `pkgdx init --reset`' + '  not run: prek install, prek update --check, detect-secrets scan'.",
+        "rich_primitives": [
+          "Console.status",
+          "Panel",
+          "Table.grid",
+          "Text",
+          "box.ROUNDED"
+        ],
+        "custom_classes_estimate": 1,
+        "complexity": "medium",
+        "guidance_refs": [
+          "standard-cli §4",
+          "standard-cli §5",
+          "standard-cli §9",
+          "standard-cli §11",
+          "toolchain-logging §3",
+          "standard-yagni"
+        ],
+        "addresses_observations": [
+          1,
+          2,
+          3,
+          5,
+          6,
+          7,
+          8,
+          10,
+          11
+        ],
+        "risks": [
+          "No record of completed steps on success. Users who want to see that the steps ran must use -v (a deliberate trade-off for brevity).",
+          "Panel box-drawing characters render in Windows Terminal. Rich falls back to ASCII on legacy_windows, but some fonts misalign wide rows, so narrow terminals wrap the card.",
+          "It needs a clear split between expected and unexpected errors (an exception-to-card mapping). If that split is wrong, real bugs get rewritten into friendly cards and their tracebacks are lost without -d.",
+          "The error-card helper can be reused by `pkgdx config` and other commands. That only pays off if those commands adopt it; otherwise it is a single-use abstraction (YAGNI)."
+        ]
+      },
+      {
+        "id": "change-receipt",
+        "name": "Change receipt",
+        "summary": "Philosophy: a run's output is a receipt of effects, not a step log. A transient spinner covers the run. The persistent output is grouped by effect (Changed / Needs attention / Unchanged) with a terraform-style count line. The non-TTY form is one logfmt record per step, which is greppable and stable.",
+        "mockup": "SUCCESS (TTY, final frame)\npkgdx init  C:\\src\\acme\n  Changed\n    + prek.toml            updated, 2 hooks added\n    + .secrets.baseline    created\n  Unchanged  4  (root, Git top-level, Git shims, hook revisions)\nInit complete: 2 changed, 4 unchanged, 0 warnings (2.9s)\n\nWARN (TTY, final frame)\npkgdx init  C:\\src\\acme\n  Needs attention\n    ! Git top-level        not a Git repository, using project root\n                           -> Run `git init` to enable pre-commit hooks\n    ! hook revisions       pkgdx v0.4.2 -> v0.5.0 available\n                           -> Update remote hook revisions - `prek update`\n  Changed\n    + Git shims            installed at project root\n  Unchanged  3  (root, prek.toml, .secrets.baseline)\nInit complete: 1 changed, 3 unchanged, 2 warnings (2.9s)\n\nFAIL (TTY, final frame)\npkgdx init  C:\\src\\acme\n  Failed\n    x prek.toml            could not be parsed - Invalid value (at line 12, column 9)\n                           -> Fix prek.toml, or regenerate it with `pkgdx init --reset`\n  Not applied  3  (prek install, prek update --check, detect-secrets scan)\nInit failed: 0 changed, 2 unchanged, 1 failed, 3 not applied",
+        "step_states": "n/a in final frame (grouped by effect). During run: one transient 'dots' spinner line with the current step label. In the receipt: '+' changed, '=' / count unchanged, '!' warn (bold yellow), 'x' fail (bold red), with section headings in words.",
+        "header": "'pkgdx init  <project root>' once, printed when the receipt is rendered (the root is the run's context).",
+        "success_summary": "Terraform-style count line: 'Init complete: N changed, N unchanged, N warnings (elapsed)'.",
+        "warning_presentation": "A 'Needs attention' section listed first, with '!' + object + detail and a '->' hint aligned beneath. The count line repeats the warning total.",
+        "failure_presentation": "A 'Failed' section at the top with cause, parser message and '->' fix, then 'Not applied' with a count and names, then an 'Init failed:' count line. No traceback unless -d. Ctrl-C: 'Interrupted' section naming the in-flight step plus 'Not applied' list, 'Init interrupted: no cleanup performed', exit 130.",
+        "state_change_reporting": "This is the centre of the pattern. Each Result is classified as changed, unchanged or attention and grouped. The proper fix is an explicit `change: created|updated|unchanged` field on Result; the demo can classify by keywords (created/updated/added/installed vs unchanged/reused/already/up to date).",
+        "non_tty_behaviour": "logfmt, one record per step as it completes, then a summary record. E.g. 'init step=\"configure pre-commit hooks\" status=ok change=updated detail=\"prek.toml updated, 2 hooks added\"' ... 'init status=fail changed=0 unchanged=2 failed=1 not_applied=3'. Warnings and failures add hint=\"...\".",
+        "rich_primitives": [
+          "Console.status",
+          "Table.grid",
+          "Text",
+          "Group"
+        ],
+        "custom_classes_estimate": 1,
+        "complexity": "medium",
+        "guidance_refs": [
+          "standard-cli §4",
+          "standard-cli §5",
+          "standard-cli §9",
+          "standard-cli §11",
+          "toolchain-logging §3",
+          "standard-yagni"
+        ],
+        "addresses_observations": [
+          1,
+          2,
+          3,
+          5,
+          6,
+          7,
+          8,
+          10,
+          11
+        ],
+        "risks": [
+          "Classifying changes by keywords in the detail string is fragile. A real implementation needs _core functions to return a change kind, which touches _core's API.",
+          "Grouping by effect hides the order the steps ran in, so it is harder to tell which step produced which effect when debugging.",
+          "The logfmt non-TTY output looks machine-readable and could become a de-facto interface. §4/§10 say machine output belongs behind --json and must not change without notice, so it should be clearly documented as human/CI text, or be the --json shape.",
+          "Naming objects ('Git shims', 'hook revisions') instead of steps needs a per-step object name, which is another field to maintain."
+        ]
+      },
+      {
+        "id": "phase-tree",
+        "name": "Collapsing phase tree",
+        "summary": "A live Rich Tree groups the six steps into three phases (Locate, Configure, Verify). A phase that ends all-ok collapses to a single line with its count and the key change. A phase with a warning or failure stays expanded, with hints as child nodes. The hierarchy carries over to other subcommands (e.g. `pkgdx config` sources as phases).",
+        "mockup": "SUCCESS (TTY, final frame)\npkgdx init  C:\\src\\acme\n├── ✓ Locate      2/2  project root + Git top-level C:\\src\\acme\n├── ✓ Configure   2/2  prek.toml updated (2 hooks added); Git shims already installed\n└── ✓ Verify      2/2  hook revisions up to date; .secrets.baseline created\ndone in 2.9s\n\n(mid-run frame)\npkgdx init  C:\\src\\acme\n├── ✓ Locate      2/2  project root + Git top-level C:\\src\\acme\n├── ✓ Configure   2/2  prek.toml updated (2 hooks added); Git shims already installed\n└── ⠼ Verify      0/2\n    ├── ⠼ prek update --check   1.1s\n    └── · detect-secrets scan\n\nWARN (TTY, final frame)\npkgdx init  C:\\src\\acme\n├── ! Locate      2/2  1 warning\n│   ├── ✓ identify project root    C:\\src\\acme (pyproject.toml)\n│   └── ! identify Git top-level   WARN not a Git repository, using project root\n│       └── hint: Run `git init` to enable pre-commit hooks\n├── ✓ Configure   2/2  prek.toml unchanged; Git shims installed at project root\n└── ! Verify      2/2  1 warning\n    ├── ! prek update --check      WARN pkgdx v0.4.2 -> v0.5.0 available\n    │   └── hint: Update remote hook revisions - `prek update`\n    └── ✓ detect-secrets scan      .secrets.baseline exists, reused\ndone in 2.9s with 2 warnings\n\nFAIL (TTY, final frame)\npkgdx init  C:\\src\\acme\n├── ✓ Locate      2/2  project root + Git top-level C:\\src\\acme\n├── x Configure   FAILED at 1/2\n│   ├── x configure pre-commit hooks   FAILED prek.toml could not be parsed\n│   │   ├── Invalid value (at line 12, column 9)\n│   │   └── hint: Fix prek.toml, or regenerate it with `pkgdx init --reset`\n│   └── - prek install                 skipped\n└── - Verify      skipped\npkgdx init failed in Configure (1 failed, 3 skipped)",
+        "step_states": "pending: '·' dim | running: 'dots' spinner cyan + elapsed after 0.5s | ok: '✓' green (phase collapses when all ok) | warn: '!' bold yellow + 'WARN' word, phase stays expanded | fail: 'x' bold red + 'FAILED' word, phase expanded, later phases '- skipped' dim",
+        "header": "Tree root label 'pkgdx init  <project root>' (the only title).",
+        "success_summary": "Three collapsed phase lines + 'done in <elapsed>'.",
+        "warning_presentation": "The phase gets '!' and 'N warning(s)' and stays expanded. The step node shows WARN + detail, and a 'hint:' child node gives the next action.",
+        "failure_presentation": "The failing phase and step are marked 'x' FAILED and stay expanded, with the parser message and hint as child nodes. The phase's remaining steps and all later phases are marked '- skipped'. The summary names the phase and gives counts. Traceback only with -d. Ctrl-C: in-flight node becomes '- interrupted', summary 'pkgdx init interrupted in Verify, no cleanup performed', exit 130.",
+        "state_change_reporting": "Collapsed phase lines join the step details with ';' (so 'prek.toml updated (2 hooks added)' stays visible). Expanded phases show the details per step.",
+        "non_tty_behaviour": "Live is disabled. When each phase finishes, its final subtree is printed using ASCII guides (Tree guide chars swapped for '|--' / '`--'), then the summary. No pending nodes or spinners. Example: 'pkgdx init  C:\\src\\acme' / '|-- + Locate      2/2  project root + Git top-level C:\\src\\acme' / '`-- - Verify      skipped' / 'pkgdx init failed in Configure (1 failed, 3 skipped)'.",
+        "rich_primitives": [
+          "Live",
+          "Tree",
+          "Spinner",
+          "Text",
+          "Table.grid"
+        ],
+        "custom_classes_estimate": 2,
+        "complexity": "high",
+        "guidance_refs": [
+          "standard-cli §4",
+          "standard-cli §5",
+          "standard-cli §8",
+          "standard-cli §9",
+          "standard-cli §11",
+          "toolchain-logging §3",
+          "standard-yagni"
+        ],
+        "addresses_observations": [
+          1,
+          2,
+          3,
+          4,
+          6,
+          7,
+          8,
+          10,
+          11
+        ],
+        "risks": [
+          "The phase grouping is new information the scenarios don't carry. It has to be defined per command, which is extra structure that may break YAGNI for a 6-step run.",
+          "Collapsed lines that join details with ';' can exceed 100 columns and wrap, which spoils the tree's alignment.",
+          "Rich Tree guides use box-drawing characters ('├──'). They render in Windows Terminal, but non-TTY needs an explicit ASCII guide style. The '✓' glyph needs Cascadia (ASCII '+' fallback).",
+          "Most moving parts of the set: Live + Tree rebuilds + collapse logic. Collapsing nodes can make the display height jump during the run."
+        ]
+      }
+    ]
+  },
+  {
+    "lens": "conventions",
+    "patterns": [
+      {
+        "id": "verb-ledger",
+        "name": "Verb ledger (uv / cargo)",
+        "summary": "Borrows from uv and cargo: each step becomes one terse past-tense line with a right-aligned bold verb (Resolved, Updated, Created, Reused), printed only when the step finishes. A transient spinner status line shows only the in-flight step, and the title is the first and only header.",
+        "mockup": "SUCCESS (stderr, TTY, final frame)\n  pkgdx init  C:\\src\\acme\n      Found  project root C:\\src\\acme (pyproject.toml)\n      Found  Git top-level C:\\src\\acme\n    Updated  prek.toml, 2 hooks added\n  Unchanged  Git shims\n  Unchanged  hook revisions (up to date)\n    Created  .secrets.baseline\n   Finished  6 steps in 2.9s\n\nWARN\n  pkgdx init  C:\\src\\acme\n      Found  project root C:\\src\\acme (pyproject.toml)\n    warning  not a Git repository, using project root\n  Unchanged  prek.toml\n  Installed  Git shims at project root\n    warning  pkgdx v0.4.2 -> v0.5.0 available\n     Reused  .secrets.baseline\n   Finished  6 steps in 2.9s, 2 warnings\n       hint  Run `git init` to enable pre-commit hooks\n       hint  Update remote hook revisions - `prek update`\n\nFAIL\n  pkgdx init  C:\\src\\acme\n      Found  project root C:\\src\\acme (pyproject.toml)\n      Found  Git top-level C:\\src\\acme\n      error  prek.toml could not be parsed: Invalid value (at line 12, column 9)\n       hint  Fix prek.toml, or regenerate it with `pkgdx init --reset`\n     Failed  2 of 6 steps completed in 0.5s (re-run with -d for traceback)\n\n(live: while 'prek update --check' runs, a spinner line '  ⠋ Checking hook revisions' sits at the bottom and is erased on completion)",
+        "step_states": "pending: not shown (no list of future steps). running: single transient bottom line with Rich status spinner (dots, ASCII fallback '|/-\\\\') plus the step label, dim. ok: permanent line with bold green right-aligned verb in a 10-col field; unchanged uses dim verb 'Unchanged'. warn: bold yellow 'warning' verb. fail: bold red 'error' verb, then bold red 'Failed' summary verb. Verb word carries the state, so NO_COLOR still reads correctly.",
+        "header": "One line: bold 'pkgdx init' plus dim project root. No rule, no second title row.",
+        "success_summary": "'Finished  6 steps in 2.9s' with bold green verb; omit the step count when all unchanged and print 'Finished  nothing to change' instead.",
+        "warning_presentation": "Inline in sequence as a yellow 'warning' verb line carrying Result.detail; hints collected after the summary as git-style 'hint' lines (dim verb, normal text) so next actions land last, where the eye ends. Summary counts warnings.",
+        "failure_presentation": "Red 'error' line with detail and message, one 'hint' line, then red 'Failed' summary stating progress (2 of 6). No traceback for expected errors; a dim pointer to -d. Overall status is final, never a frozen spinner.",
+        "state_change_reporting": "Carried by the verb itself: Created / Updated / Reused / Unchanged / Installed, derived from Result.detail. Every state change is visible without -d.",
+        "non_tty_behaviour": "Identical lines without colour, without the spinner and without right-alignment padding changes (same 10-col field so it greps well). Lines flush as steps finish. Header line is kept. Example plain line: '    Updated  prek.toml, 2 hooks added'.",
+        "rich_primitives": [
+          "Console.print",
+          "Text/Text.assemble with right-justified verb field",
+          "Console.status (transient spinner, interactive only)",
+          "Style bold green/yellow/red/dim"
+        ],
+        "custom_classes_estimate": 0,
+        "complexity": "low",
+        "guidance_refs": [
+          "standard-cli §4 brief output on success and inform on state change",
+          "standard-cli §5 BLUF and rewrite errors",
+          "standard-cli §9 show progress",
+          "toolchain-logging §3 stderr via console, TTY check on the written stream",
+          "standard-yagni"
+        ],
+        "addresses_observations": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          10,
+          11
+        ],
+        "risks": [
+          "Verb vocabulary must be derived from Result.detail (or extend Result with a verb field), mild coupling",
+          "Hints appearing after the summary requires collecting them in a list",
+          "Right-aligned verbs need a fixed 10-col width; long verbs would overflow",
+          "Ctrl-C (obs 8) not handled by layout alone; needs a KeyboardInterrupt wrapper printing 'Interrupted' and exiting 130"
+        ]
+      },
+      {
+        "id": "status-badges",
+        "name": "Boot-log text badges (systemd)",
+        "summary": "Borrows from systemd boot output: every line starts with a fixed-width 6-char text badge [ OK ] / [WARN] / [FAIL] / [ .. ] followed by the step label and detail. The running line is redrawn in place and then committed with its final badge, so state is legible without colour or Unicode glyphs.",
+        "mockup": "SUCCESS\n[ OK ] identify project root ........ C:\\src\\acme (pyproject.toml)\n[ OK ] identify Git top-level ........ C:\\src\\acme\n[ OK ] configure pre-commit hooks .... prek.toml updated, 2 hooks added\n[ OK ] prek install .................. Git shims already installed\n[ OK ] prek update --check ........... hook revisions up to date\n[ OK ] detect-secrets scan ........... .secrets.baseline created\n\nWARN\n[ OK ] identify project root ........ C:\\src\\acme (pyproject.toml)\n[WARN] identify Git top-level ........ not a Git repository, using project root\n[ OK ] configure pre-commit hooks .... prek.toml unchanged\n[ OK ] prek install .................. Git shims installed at project root\n[WARN] prek update --check ........... pkgdx v0.4.2 -> v0.5.0 available\n[ OK ] detect-secrets scan ........... .secrets.baseline exists, reused\n       2 warnings: git init | prek update\n\nFAIL\n[ OK ] identify project root ........ C:\\src\\acme (pyproject.toml)\n[ OK ] identify Git top-level ........ C:\\src\\acme\n[FAIL] configure pre-commit hooks .... prek.toml could not be parsed\n       Invalid value (at line 12, column 9)\n       hint: Fix prek.toml, or regenerate it with `pkgdx init --reset`\n[SKIP] prek install\n[SKIP] prek update --check\n[SKIP] detect-secrets scan",
+        "step_states": "pending: not shown (or optionally dim '[    ]' if listing ahead). running: '[ .. ]' with a spinner-cycling cell (|/-\\\\) redrawn in place via Live. ok: '[ OK ]' bold green. warn: '[WARN]' bold yellow. fail: '[FAIL]' bold red. skipped (after a failure): dim '[SKIP]' so remaining steps are not mistaken for pending. Badge text, not colour, is the signal.",
+        "header": "None. The badges are self-explanatory and the command name is already on the user's prompt line. Optionally one dim 'pkgdx init' line.",
+        "success_summary": "No separate summary: the all-OK column is the summary. Optional dim last line '6 ok in 2.9s' only when interactive.",
+        "warning_presentation": "Badge [WARN] on the step line with the detail text; one dim indented line at the end lists warning hints compactly. Hints on warnings are kept to a single line each, indented under the badge column (7 spaces).",
+        "failure_presentation": "[FAIL] row, then indented message and 'hint:' lines directly beneath, remaining steps [SKIP]. No traceback; -d adds it. Exit code 1.",
+        "state_change_reporting": "Detail column carries created/updated/unchanged/reused wording verbatim from Result.detail; no extra work needed.",
+        "non_tty_behaviour": "Same text with no Live: each line printed once, on completion, with its final badge, no ANSI. Dot leaders keep columns aligned so it is grep-friendly ('grep ^\\[FAIL\\]').",
+        "rich_primitives": [
+          "Live (interactive only)",
+          "Table.grid with fixed-width badge column",
+          "Text styles",
+          "Console.print"
+        ],
+        "custom_classes_estimate": 0,
+        "complexity": "low",
+        "guidance_refs": [
+          "standard-cli §4 human-readable and not colour-dependent",
+          "standard-cli §5 consider where the user looks first",
+          "standard-cli §9 responsive",
+          "toolchain-logging §3"
+        ],
+        "addresses_observations": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          10,
+          11
+        ],
+        "risks": [
+          "Dot leaders and detail column truncate/wrap on narrow terminals (<80 cols); must compute width from console.width",
+          "Looks dated or noisy to some users; no emphasis on what actually changed",
+          "Showing [SKIP] rows needs the pattern to iterate the remaining steps after a FAIL",
+          "Ctrl-C handling still to be added (print '[ !! ] interrupted', exit 130)"
+        ]
+      },
+      {
+        "id": "arrow-sections",
+        "name": "Arrow sections with indented detail (Homebrew)",
+        "summary": "Borrows from Homebrew: each step is a bold '==> label' arrow heading and its result is an indented detail line beneath, with git-style 'hint:' lines for next actions. A narrative top-to-bottom transcript, not a dashboard.",
+        "mockup": "SUCCESS\n==> Identifying project root\n    C:\\src\\acme (pyproject.toml)\n==> Identifying Git top-level\n    C:\\src\\acme\n==> Configuring pre-commit hooks\n    prek.toml updated, 2 hooks added\n==> Running prek install\n    Git shims already installed\n==> Checking hook revisions\n    up to date\n==> Scanning for secrets\n    .secrets.baseline created\n==> Done in 2.9s\n\nWARN\n==> Identifying Git top-level\n    Warning: not a Git repository, using project root\n    hint: Run `git init` to enable pre-commit hooks\n...\n==> Checking hook revisions\n    Warning: pkgdx v0.4.2 -> v0.5.0 available\n    hint: Update remote hook revisions - `prek update`\n==> Done with 2 warnings in 2.9s\n\nFAIL\n==> Identifying project root\n    C:\\src\\acme (pyproject.toml)\n==> Configuring pre-commit hooks\n    Error: prek.toml could not be parsed\n    Invalid value (at line 12, column 9)\n    hint: Fix prek.toml, or regenerate it with `pkgdx init --reset`\n==> Failed after 2 steps",
+        "step_states": "pending: not shown. running: the arrow heading is printed immediately in bold blue and a transient spinner sits on the line below it, replaced by the detail line. ok: detail line plain (heading turns bold green only in colour; no glyph needed). warn: detail line prefixed literal 'Warning:' in bold yellow. fail: prefixed literal 'Error:' in bold red. Prefix words, not colour, differentiate.",
+        "header": "None; the first '==>' is the header. Optional '==> pkgdx init' root heading with steps as '  ->' children was rejected for noise.",
+        "success_summary": "Final '==> Done in 2.9s' arrow line in bold green.",
+        "warning_presentation": "Inline 'Warning:' line under the offending step and a 'hint:' line immediately after it (context stays adjacent). Closing arrow reports the warning count.",
+        "failure_presentation": "Inline 'Error:' prefix, message on following indented line, 'hint:' line, then '==> Failed after 2 steps' in bold red. Output ends on the failure so BLUF holds for the reader at the bottom.",
+        "state_change_reporting": "The indented detail line is the state report ('prek.toml updated', '.secrets.baseline created'); optionally make the changed noun bold.",
+        "non_tty_behaviour": "Identical text with colour stripped; headings are only printed when the step starts, so a hung step is visible in a CI log. No spinner. Headings and details are one write each.",
+        "rich_primitives": [
+          "Console.print",
+          "Text.assemble",
+          "Console.status (transient, interactive only)",
+          "Padding/indent via string prefix"
+        ],
+        "custom_classes_estimate": 0,
+        "complexity": "low",
+        "guidance_refs": [
+          "standard-cli §4 brief and inform on change",
+          "standard-cli §5 rewrite errors for humans",
+          "standard-cli §9 show progress",
+          "toolchain-logging §3"
+        ],
+        "addresses_observations": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          10,
+          11
+        ],
+        "risks": [
+          "Roughly doubles the line count (12+ lines vs 6) which conflicts with 'keep it brief' in §4",
+          "Needs progressive-form labels ('Identifying...') instead of the existing imperative labels in _cli.py",
+          "Heading printed before the result means a warning appears after its heading, spreads one step across two lines",
+          "Ctrl-C needs a wrapper (print '==> Interrupted', exit 130)"
+        ]
+      },
+      {
+        "id": "glyph-checklist",
+        "name": "Live checklist (gh / pnpm / npm)",
+        "summary": "Borrows from gh, pnpm and npm: a compact live checklist with one-char glyph per step (check, bang, cross) and a single summary footer. Unlike the baseline there is no progress bar, no M/N, no elapsed column and no second title row; the glyph column plus a trailing text tag carries the state.",
+        "mockup": "SUCCESS\npkgdx init\n  ✓ identify project root     C:\\src\\acme (pyproject.toml)\n  ✓ identify Git top-level    C:\\src\\acme\n  ✓ configure pre-commit hooks  prek.toml updated, 2 hooks added\n  ✓ prek install              Git shims already installed\n  ✓ prek update --check       hook revisions up to date\n  ✓ detect-secrets scan       .secrets.baseline created\n\nWARN\n  ✓ identify project root     C:\\src\\acme (pyproject.toml)\n  ! identify Git top-level    warning: not a Git repository, using project root\n  ✓ configure pre-commit hooks  prek.toml unchanged\n  ...\n  ! prek update --check       warning: pkgdx v0.4.2 -> v0.5.0 available\n  ✓ detect-secrets scan       .secrets.baseline exists, reused\n\n  2 warnings\n    Run `git init` to enable pre-commit hooks\n    Update remote hook revisions - `prek update`\n\nFAIL\n  ✓ identify project root     C:\\src\\acme (pyproject.toml)\n  ✓ identify Git top-level    C:\\src\\acme\n  ✗ configure pre-commit hooks  error: prek.toml could not be parsed\n  - prek install              skipped\n  - prek update --check       skipped\n  - detect-secrets scan       skipped\n\n  Invalid value (at line 12, column 9)\n  Fix prek.toml, or regenerate it with `pkgdx init --reset`\n\nLIVE: pending '○ label' dim, running '⠋ label' cyan spinner, then replaced in place",
+        "step_states": "pending: dim '-' ... or dim hollow circle; running: cyan spinner glyph, label normal weight; ok: green check, label normal; warn: bold yellow '!' with the word 'warning:' in the detail; fail: bold red cross with the word 'error:' in the detail; skipped: dim '-' with 'skipped'. All of the pending list is shown at the start so the user sees the full plan. Glyph risk: check/cross are in Segoe UI Symbol and render in Windows Terminal but not legacy conhost with raster fonts; fall back to 'v' '!' 'x' when console.encoding is not utf-8 (one conditional).",
+        "header": "Bold 'pkgdx init' single line, no rule.",
+        "success_summary": "None beyond the all-check list; optionally dim 'done in 2.9s' footer.",
+        "warning_presentation": "Warning state is in the row (bang glyph plus 'warning:' text) and the hints are gathered under a '2 warnings' footer block, because hints are usually actions and benefit from being grouped.",
+        "failure_presentation": "Cross row with 'error:' text, remaining rows dimmed with 'skipped', and a footer block with message plus hint, no traceback. The list is final, nothing frozen.",
+        "state_change_reporting": "Detail column to the right of the label shows the created/updated/unchanged wording from Result.detail; changed rows are normal weight, 'unchanged' rows dim so changes pop.",
+        "non_tty_behaviour": "No Live: print the row once per step on completion with ASCII-safe glyphs ('[x]' style would also be fine) and no ANSI: '  ok    prek.toml updated, 2 hooks added' / 'warn' / 'FAIL'. Footer identical.",
+        "rich_primitives": [
+          "Live",
+          "Table.grid (glyph, label, detail columns)",
+          "Spinner",
+          "Group",
+          "Text"
+        ],
+        "custom_classes_estimate": 1,
+        "complexity": "medium",
+        "guidance_refs": [
+          "standard-cli §4 output on success, brief",
+          "standard-cli §5 BLUF",
+          "standard-cli §9 show progress, responsive",
+          "standard-cli §7 non-interactive fallback",
+          "toolchain-logging §3"
+        ],
+        "addresses_observations": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          10,
+          11
+        ],
+        "risks": [
+          "Glyph rendering on legacy Windows consoles; needs the encoding fallback",
+          "Live redraw flicker if the table is taller than the terminal",
+          "Needs a row-state holder (one small class or dict) to render pending/running/done",
+          "Showing all pending rows up front means a failed run leaves rows that never ran; skipped marking requires handling",
+          "Ctrl-C needs Live stop plus 'interrupted' row, exit 130"
+        ]
+      },
+      {
+        "id": "changes-only",
+        "name": "Quiet until it matters (git / cargo)",
+        "summary": "Borrows from git and cargo: show a single transient status line while working, then print only what changed or needs attention, followed by one terse summary. Unchanged and routine steps are collapsed into the summary count, matching the common idempotent re-run of init.",
+        "mockup": "SUCCESS (first run)\n  updated  prek.toml (2 hooks added)\n  created  .secrets.baseline\ninit finished in 2.9s: 2 changed, 4 unchanged\n\nSUCCESS (re-run, nothing changed)\ninit finished in 2.1s: nothing to change\n\nWARN\nwarning: not a Git repository, using project root\n  hint: Run `git init` to enable pre-commit hooks\nwarning: pkgdx v0.4.2 -> v0.5.0 available\n  hint: Update remote hook revisions - `prek update`\ninit finished in 2.9s with 2 warnings: 0 changed, 6 unchanged\n\nFAIL\nerror: prek.toml could not be parsed\n  Invalid value (at line 12, column 9)\n  hint: Fix prek.toml, or regenerate it with `pkgdx init --reset`\ninit failed at step 3 of 6 (configure pre-commit hooks)\n\nLIVE: bottom line only '⠋ [4/6] prek update --check' erased on finish",
+        "step_states": "pending: not shown. running: one transient spinner line with step index and label (the single place M/N survives, because it is useful only while waiting). ok: no row unless the step changed state. warn: 'warning:' prefix in bold yellow. fail: 'error:' prefix in bold red. changed: dim-free bold verb (created/updated). Text prefixes carry state.",
+        "header": "None.",
+        "success_summary": "One line: 'init finished in 2.9s: N changed, M unchanged' (or 'nothing to change'), summary verb bold green.",
+        "warning_presentation": "Warnings are printed as they occur, 'warning:' prefix plus 'hint:' line beneath, and counted in the summary. This is the closest to today's log-line behaviour but with consistent wording.",
+        "failure_presentation": "BLUF: 'error:' line, detail, 'hint:' line, and a one-line summary naming the failed step and index. No traceback for expected failures; unexpected exceptions still go through the logger with traceback.",
+        "state_change_reporting": "This pattern's focus: only created/updated steps get a line, derived from Result.detail; 'unchanged'/'reused' counted in the summary. Satisfies 'when changing state, inform the user' with minimal noise.",
+        "non_tty_behaviour": "Same lines minus the spinner. Because success is already short, piped output is naturally brief: just the changed lines and the summary. With --plain the prefixes stay.",
+        "rich_primitives": [
+          "Console.status (transient)",
+          "Console.print",
+          "Text.assemble"
+        ],
+        "custom_classes_estimate": 0,
+        "complexity": "low",
+        "guidance_refs": [
+          "standard-cli §4 keep it brief, inform on state change",
+          "standard-cli §5 signal-to-noise and BLUF",
+          "standard-yagni",
+          "toolchain-logging §3"
+        ],
+        "addresses_observations": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          10,
+          11
+        ],
+        "risks": [
+          "Users cannot see that each step ran, so trust relies on the summary; hide-by-default may feel too sparse for first-time users (mitigate with -v listing all steps)",
+          "Requires classifying a step as changed or unchanged, which means parsing Result.detail or adding a flag to the result",
+          "Classifying 'unchanged' wrongly would hide real changes",
+          "Ctrl-C needs a wrapper (print 'init interrupted', exit 130)"
+        ]
+      },
+      {
+        "id": "diagnostic-report",
+        "name": "Compact tally with diagnostic blocks (rustc / ruff)",
+        "summary": "Borrows from rustc/cargo and ruff diagnostics: steps appear as a dense, dim one-line-per-step tally, and anything that is not OK is promoted to a separate 'warning[...]'/'error[...]' block with an arrow location, the message and a '= help:' line. Good for failure ergonomics and scanning.",
+        "mockup": "SUCCESS\n  ok  identify project root      C:\\src\\acme (pyproject.toml)\n  ok  identify Git top-level     C:\\src\\acme\n  ok  configure pre-commit hooks prek.toml updated, 2 hooks added\n  ok  prek install               Git shims already installed\n  ok  prek update --check        hook revisions up to date\n  ok  detect-secrets scan        .secrets.baseline created\n\npkgdx init: ok in 2.9s\n\nWARN\n  ok    identify project root    C:\\src\\acme\n  warn  identify Git top-level   not a Git repository, using project root\n  ...\n\nwarning: not a Git repository, using project root\n  --> step 2/6: identify Git top-level\n   = note: Failed `git rev-parse --show-toplevel`\n   = help: Run `git init` to enable pre-commit hooks\n\nwarning: pkgdx v0.4.2 -> v0.5.0 available\n  --> step 5/6: prek update --check\n   = help: Update remote hook revisions - `prek update`\n\npkgdx init: ok with 2 warnings in 2.9s\n\nFAIL\n  ok    identify project root    C:\\src\\acme (pyproject.toml)\n  ok    identify Git top-level   C:\\src\\acme\n  FAIL  configure pre-commit hooks  prek.toml could not be parsed\n  skip  prek install\n  skip  prek update --check\n  skip  detect-secrets scan\n\nerror: prek.toml could not be parsed\n  --> step 3/6: configure pre-commit hooks\n   = note: Invalid value (at line 12, column 9)\n   = help: Fix prek.toml, or regenerate it with `pkgdx init --reset`\n\npkgdx init: failed in 0.5s",
+        "step_states": "pending: not shown (the tally is built progressively). running: transient spinner row below the tally. ok: dim 'ok' 4-char tag; warn: bold yellow 'warn'; fail: bold red 'FAIL'; skipped: dim 'skip'. Each diagnostic block begins with a bold coloured 'warning:'/'error:' word, so NO_COLOR is fine. Dimming ok rows makes non-ok rows pop.",
+        "header": "None; a closing 'pkgdx init: <status> in <t>' line plays the role of cargo's Finished/error summary.",
+        "success_summary": "'pkgdx init: ok in 2.9s' bold green, preceded by a blank line.",
+        "warning_presentation": "Warnings are not printed inline; they appear as rustc-style blocks after the tally with a location ('--> step 2/6'), optional '= note:' (Result.message) and '= help:' (Result.hint). Count appears in the final line.",
+        "failure_presentation": "Same block form with 'error:' ahead of the final 'failed' line; the message and the hint are visible directly above the exit line (bottom of the screen). Tracebacks only for unexpected exceptions or -d.",
+        "state_change_reporting": "Detail column on the tally rows (created/updated/unchanged), dim for unchanged, normal for changed.",
+        "non_tty_behaviour": "Rows and blocks printed after the run completes (not streamed), with no ANSI or spinner; stable format, easy to parse with grep for '^error' or '^warning'. Order: tally, blocks, summary.",
+        "rich_primitives": [
+          "Table.grid",
+          "Console.print",
+          "Text.assemble",
+          "Console.status (transient)",
+          "optional Padding"
+        ],
+        "custom_classes_estimate": 0,
+        "complexity": "medium",
+        "guidance_refs": [
+          "standard-cli §5 catch errors and rewrite for humans, BLUF, signal-to-noise",
+          "standard-cli §4 human-readable output",
+          "standard-cli §9 show progress",
+          "toolchain-logging §3"
+        ],
+        "addresses_observations": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          10,
+          11
+        ],
+        "risks": [
+          "Most verbose on warn and fail (tally plus blocks duplicate the same detail), conflicts with 'keep it brief'",
+          "Diagnostic blocks are only useful when messages carry location-like info; 'step 2/6' is a weak pseudo-location",
+          "rustc idiom may feel heavy for a setup command",
+          "Collected blocks mean a warning is only visible after the run ends, which delays awareness on long steps unless streamed",
+          "Ctrl-C needs a wrapper printing 'pkgdx init: interrupted'"
+        ]
+      }
+    ]
+  }
+]

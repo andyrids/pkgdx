@@ -1,0 +1,4 @@
+pkgdx init: error: configure pre-commit hooks: prek.toml could not be parsed
+  Invalid value (at line 12, column 9)
+  hint: Fix prek.toml, or regenerate it with `pkgdx init --reset`
+  not run: prek install, prek update --check, detect-secrets scan

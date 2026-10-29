@@ -1,0 +1,15 @@
+==> Identify project root
+    C:\src\acme (pyproject.toml)
+==> Identify Git top-level
+    Warning: not a Git repository, using project root
+    hint: Run `git init` to enable pre-commit hooks
+==> Configure pre-commit hooks
+    prek.toml unchanged
+==> Prek install
+    Git shims installed at project root
+==> Prek update --check
+    Warning: pkgdx v0.4.2 -> v0.5.0 available
+    hint: Update remote hook revisions - `prek update`
+==> Detect-secrets scan
+    .secrets.baseline exists, reused
+==> Done with 2 warnings in 0.0s

@@ -1,0 +1,434 @@
+{
+  "p00_baseline": {
+    "loc": 81,
+    "classes": 3,
+    "runs": {
+      "success/styled": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 8
+      },
+      "success/plain": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 1
+      },
+      "warn/styled": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 12
+      },
+      "warn/plain": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 5
+      },
+      "fail/styled": {
+        "exit": 1,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 21
+      },
+      "fail/plain": {
+        "exit": 1,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 17
+      }
+    }
+  },
+  "p01_ledger_lines": {
+    "loc": 58,
+    "classes": 0,
+    "runs": {
+      "success/styled": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 7
+      },
+      "success/plain": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 7
+      },
+      "warn/styled": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 9
+      },
+      "warn/plain": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 9
+      },
+      "fail/styled": {
+        "exit": 1,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 6
+      },
+      "fail/plain": {
+        "exit": 1,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 6
+      }
+    }
+  },
+  "p02_live_checklist": {
+    "loc": 146,
+    "classes": 0,
+    "runs": {
+      "success/styled": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 8
+      },
+      "success/plain": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 8
+      },
+      "warn/styled": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 10
+      },
+      "warn/plain": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 10
+      },
+      "fail/styled": {
+        "exit": 1,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 10
+      },
+      "fail/plain": {
+        "exit": 1,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 10
+      }
+    }
+  },
+  "p03_bluf_error_card": {
+    "loc": 109,
+    "classes": 0,
+    "runs": {
+      "success/styled": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 2
+      },
+      "success/plain": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 2
+      },
+      "warn/styled": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 6
+      },
+      "warn/plain": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 6
+      },
+      "fail/styled": {
+        "exit": 1,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 7
+      },
+      "fail/plain": {
+        "exit": 1,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 4
+      }
+    }
+  },
+  "p04_changes_only": {
+    "loc": 119,
+    "classes": 0,
+    "runs": {
+      "success/styled": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 3
+      },
+      "success/plain": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 7
+      },
+      "warn/styled": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 6
+      },
+      "warn/plain": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 7
+      },
+      "fail/styled": {
+        "exit": 1,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 4
+      },
+      "fail/plain": {
+        "exit": 1,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 4
+      }
+    }
+  },
+  "p05_verb_ledger": {
+    "loc": 104,
+    "classes": 0,
+    "runs": {
+      "success/styled": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 8
+      },
+      "success/plain": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 8
+      },
+      "warn/styled": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 10
+      },
+      "warn/plain": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 10
+      },
+      "fail/styled": {
+        "exit": 1,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 6
+      },
+      "fail/plain": {
+        "exit": 1,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 6
+      }
+    }
+  },
+  "p06_arrow_sections": {
+    "loc": 57,
+    "classes": 0,
+    "runs": {
+      "success/styled": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 13
+      },
+      "success/plain": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 13
+      },
+      "warn/styled": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 15
+      },
+      "warn/plain": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 15
+      },
+      "fail/styled": {
+        "exit": 1,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 9
+      },
+      "fail/plain": {
+        "exit": 1,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 9
+      }
+    }
+  },
+  "p07_ledger_lines_v2": {
+    "loc": 78,
+    "classes": 0,
+    "runs": {
+      "success/styled": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 7
+      },
+      "success/plain": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 7
+      },
+      "warn/styled": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 9
+      },
+      "warn/plain": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 9
+      },
+      "fail/styled": {
+        "exit": 1,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 7
+      },
+      "fail/plain": {
+        "exit": 1,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 7
+      }
+    }
+  },
+  "p08_ledger_lines_v2_1": {
+    "loc": 80,
+    "classes": 0,
+    "runs": {
+      "success/styled": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 7
+      },
+      "success/plain": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 7
+      },
+      "warn/styled": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 9
+      },
+      "warn/plain": {
+        "exit": 0,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 9
+      },
+      "fail/styled": {
+        "exit": 1,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 7
+      },
+      "fail/plain": {
+        "exit": 1,
+        "exit_ok": true,
+        "stdout_empty": true,
+        "no_stray_stderr": true,
+        "lines": 7
+      }
+    }
+  }
+}

@@ -1,0 +1,3 @@
+  updated  prek.toml, 2 hooks added
+  created  .secrets.baseline
+init finished in 0.0s: 2 changed, 4 unchanged

@@ -1,0 +1,8 @@
+[92m──────────────────────────────────────────── [0m[36mpkgdx init[0m[92m ────────────────────────────────────────────[0m
+[32m■[0m [2;3midentify project root[0m                                                                             
+[32m■[0m [2;3midentify Git top-level[0m                                                                            
+[32m■[0m [2;3mconfigure pre-commit hooks[0m                                                                        
+[32m■[0m [2;3mprek install[0m                                                                                      
+[32m■[0m [2;3mprek update --check[0m                                                                               
+[32m■[0m [2;3mdetect-secrets scan[0m                                                                               
+[32m■[0m [1;7;32mpkgdx init[0m                   [38;2;114;156;31m---------------------------------------------------------[0m [32m6/6[0m [33m0:00:00[0m

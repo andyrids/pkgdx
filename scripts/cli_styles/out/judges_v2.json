@@ -1,0 +1,414 @@
+{
+  "A": {
+    "judge": "A",
+    "patterns": [
+      {
+        "stem": "p01_ledger_lines",
+        "gates_pass": true,
+        "scores": [
+          {
+            "criterion": 1,
+            "score": 5,
+            "evidence": "In fail.txt/warn.txt every row starts with a fixed-width word: `ok`, `warn`, `FAIL` (`stop` on Ctrl-C). The state reads with styles stripped, and no glyph depends on the font. Nothing else in p00-p07 does better."
+          },
+          {
+            "criterion": 2,
+            "score": 4,
+            "evidence": "The cause sits under the step it belongs to: `FAIL configure pre-commit hooks prek.toml could not be parsed`, then `Invalid value (at line 12, column 9)`, then `-> Fix prek.toml, or regenerate it with pkgdx init --reset`. The closing line is `failed at step 3/6 (3 steps not run)`. It never mentions -d and does not name the steps that did not run. p03 has both."
+          },
+          {
+            "criterion": 3,
+            "score": 5,
+            "evidence": "In warn.txt a `warn` badge sits on the step's own row with an indented `->` hint under it, and the closing line reads `done in 0.0s with 2 warnings`. You can tell it apart from ok without colour."
+          },
+          {
+            "criterion": 4,
+            "score": 4,
+            "evidence": "The success output is 7 lines: 6 rows plus `pkgdx init: done in 0.0s`. There is no title, rule or bar. The two read-only rows (project root, Git top-level) only confirm paths. p03 and p04 are terser at 2-3 lines."
+          },
+          {
+            "criterion": 5,
+            "score": 4,
+            "evidence": "State changes are written as prose in the detail column: `prek.toml updated, 2 hooks added`, `.secrets.baseline created`, `Git shims already installed`, `.secrets.baseline exists, reused`. The verb's position and wording vary from row to row, so changes are hard to scan and there is no total. An idempotent re-run reads as 6 prose rows, not as 'nothing changed'."
+          },
+          {
+            "criterion": 6,
+            "score": 4,
+            "evidence": "pipe80.txt is the same as the TTY frame: ASCII, under 80 columns, one line per step as it finishes, and the last line is always the `pkgdx init:` status. The columns are aligned by whitespace, though, and labels contain spaces, so a script has to split on fixed widths. That is not as clean as p04's logfmt."
+          },
+          {
+            "criterion": 7,
+            "score": 3,
+            "evidence": "Each step runs inside a transient `console.status(f\"{step.label} ...\", spinner=\"dots\")` and finished rows build up above it. There is no n/N counter (p03, p04) and no elapsed time (p02), so a 1.5s network wait shows a bare spinner. The braille `dots` glyphs are a risk in Consolas."
+          },
+          {
+            "criterion": 8,
+            "score": 4,
+            "evidence": "`_row`, `_note` and `_BADGES` have nothing init-specific in them. Only the `pkgdx init:` literals would need a parameter. `pkgdx config --export` could emit one row per file, but the free-text detail gives it no shared vocabulary to replace `Wrote <path>` / `Skipped existing <path>`."
+          },
+          {
+            "criterion": 9,
+            "score": 5,
+            "evidence": "58 LOC, 0 classes, built on Table.grid and console.status. The only _core change is that it returns outcome/detail/message/hint instead of calling `logger.warning` (_core.py:163-164). Nit: `_note`'s `style` parameter is never passed."
+          }
+        ],
+        "weaknesses": [
+          "No `pkgdx -d init` pointer on failure",
+          "Steps that did not run are only counted, not named",
+          "State changes are prose at varying positions with no fixed vocabulary and no totals",
+          "An idempotent re-run is not summarised as 'nothing to change'",
+          "No n/N or elapsed time on the slow step",
+          "_note has an unused `style` parameter",
+          "`pkgdx init:` is hardcoded in the closing strings"
+        ]
+      },
+      {
+        "stem": "p07_ledger_lines_v2",
+        "gates_pass": true,
+        "scores": [
+          {
+            "criterion": 1,
+            "score": 5,
+            "evidence": "The badges are the same as p01 (`ok`, `warn`, `FAIL`, `stop`). The change words `updated` / `created` / `unchanged` add a second state signal that needs no colour. The bold/dim styling on them is decoration only."
+          },
+          {
+            "criterion": 2,
+            "score": 5,
+            "evidence": "fail.pipe80.txt shows the FAIL row, the cause line and the `->` fix hint, then `failed at step 3/6; re-run with \\`pkgdx -d init\\` for details` (correct: -d is on the top-level parser in __main__.py), then `not run: prek install, prek update --check, detect-secrets scan`. It has the same elements as p03's card. Caveats: there are now two next actions, and the closing status line is no longer the last line."
+          },
+          {
+            "criterion": 3,
+            "score": 5,
+            "evidence": "Same as p01: a `warn` badge and a `->` hint on each warned row, closing with `with 2 warnings`. The closing line also says `1 changed, 5 unchanged`, but the 5 includes the two warned steps."
+          },
+          {
+            "criterion": 4,
+            "score": 4,
+            "evidence": "The success output is still 7 lines. The closing line now carries the totals at no extra line cost, and an idempotent re-run collapses to `done in 0.0s, nothing to change`. But `4 unchanged` in success counts 3 read-only rows, while only one row actually says `unchanged`, so the footer adds a count that disagrees with the rows above it."
+          },
+          {
+            "criterion": 5,
+            "score": 5,
+            "evidence": "Each state-changing row leads with a fixed word padded to 11 chars: `updated    prek.toml (2 hooks added)`, `unchanged  Git shims`, `created    .secrets.baseline`. The closing line totals them, and the idempotent re-run says `nothing to change`. Nothing in the set does better. The count definition is flawed (see 4)."
+          },
+          {
+            "criterion": 6,
+            "score": 4,
+            "evidence": "pipe80.txt is ASCII and fits 80 columns (the widest row is about 78). `created|updated` is now greppable. However, fail output now ends with an unprefixed `not run:` line after the `pkgdx init:` status, so `tail -1` and greps for `pkgdx init:` miss part of the result. Column 3 also mixes the change vocabulary with free text: read-only rows show `hook revisions up to date`."
+          },
+          {
+            "criterion": 7,
+            "score": 3,
+            "evidence": "Identical to p01: `console.status(f\"{step.label} ...\", spinner=\"dots\")`, with no n/N and no elapsed time."
+          },
+          {
+            "criterion": 8,
+            "score": 4,
+            "evidence": "Result(change, subject) is a contract `config --export` could adopt directly (Wrote -> created, Skipped existing -> unchanged), which would make the two commands consistent. Until config migrates, though, created/updated/unchanged is a third vocabulary next to config's strings, and the `pkgdx init:` literals plus the `pkgdx -d init` hint are init-specific."
+          },
+          {
+            "criterion": 9,
+            "score": 4,
+            "evidence": "78 LOC (+20, +34%), 0 classes. It adds the Change enum, two Result fields, `_CHANGED`, a one-call-site `_detail` helper (standard-yagni: no helper for a one-time operation), bool-arithmetic counting and an `f\"{change:<11}\"` magic width. Adoption also needs setup_prek_config, install_prek_hooks and create_secrets_baseline to return (Change, subject); those branches already exist as logger.debug calls at _core.py:127-350. The -d hint needs the expected TOMLKitError traceback moved to debug level in _cli.py."
+          }
+        ],
+        "weaknesses": [
+          "The closing counts use `len(steps) - changed`, so read-only and warned steps are counted as 'unchanged' (success: `4 unchanged` vs one `unchanged` row; warn: `5 unchanged` includes 2 warnings). Count only `result.change is Change.UNCHANGED`.",
+          "On failure, `not run:` is printed after the `pkgdx init:` status line and has no prefix, so the status is no longer the last line",
+          "Two competing next actions on failure (`-> Fix prek.toml...` and `re-run with pkgdx -d init`), and the -d pointer is shown even for an expected error whose cause is already fully stated",
+          "Column 3 is heterogeneous: vocabulary plus subject for state-changing steps, free text for read-only ones",
+          "The rewording loses nuance: `exists, reused` becomes `unchanged`, and an installed hook becomes `created Git shims (project root)`",
+          "Result carries both `detail` and `subject` for state-changing steps, which is redundant data in a src/ port",
+          "`_detail` is a one-call-site helper and `{change:<11}` is a magic width",
+          "Still no n/N or elapsed time on the slow step"
+        ]
+      }
+    ],
+    "grafts": [
+      {
+        "graft": 1,
+        "effects": [
+          {
+            "criterion": 2,
+            "direction": "up",
+            "reason": "Names the steps that did not run and gives the correct `pkgdx -d init` pointer, which matches p03's failure content without its card."
+          },
+          {
+            "criterion": 6,
+            "direction": "down",
+            "reason": "The unprefixed `not run:` line comes after the `pkgdx init:` status, so the last line is no longer the status, and the `(3 steps not run)` count is gone from the summary line."
+          },
+          {
+            "criterion": 9,
+            "direction": "down",
+            "reason": "For the hint to be true, _cli.py has to log the expected error's traceback at debug level (exc_info=True) instead of using logger.exception. That is extra plumbing."
+          }
+        ],
+        "worth_it": true,
+        "cost_note": "About 4 LOC in the renderer and one extra fail line. In src/, the expected-error handlers in command_init (_cli.py:221/238/255) must move their tracebacks to debug level. Worth it if `not run:` moves above the closing line, or folds into it, so the status stays last."
+      },
+      {
+        "graft": 2,
+        "effects": [
+          {
+            "criterion": 5,
+            "direction": "up",
+            "reason": "Totals the changes, and an idempotent re-run says `nothing to change` in one line."
+          },
+          {
+            "criterion": 4,
+            "direction": "up",
+            "reason": "The re-run case gets a one-glance verdict without adding lines."
+          },
+          {
+            "criterion": 3,
+            "direction": "down",
+            "reason": "The `unchanged` count includes warned steps (`with 2 warnings: 1 changed, 5 unchanged`), which blurs the warning state in the summary."
+          }
+        ],
+        "worth_it": false,
+        "cost_note": "About 6 LOC and no src/ cost beyond graft 3. As written, the counts are wrong (`len(steps) - changed` counts read-only and warned steps as unchanged), and for a 6-row ledger they repeat what the change words above already show (YAGNI). Keep only the `nothing to change` branch, or fix the count to steps where change is not None."
+      },
+      {
+        "graft": 3,
+        "effects": [
+          {
+            "criterion": 5,
+            "direction": "up",
+            "reason": "A fixed created/updated/unchanged word sits at a fixed position on every state-changing row, so changes stand out from no-ops without colour."
+          },
+          {
+            "criterion": 8,
+            "direction": "up",
+            "reason": "A typed Result(change, subject) contract maps directly onto `config --export` (Wrote -> created, Skipped existing -> unchanged), giving the subcommands one vocabulary."
+          },
+          {
+            "criterion": 9,
+            "direction": "down",
+            "reason": "Adds the Change enum, two Result fields and the `_detail` helper. Three _core functions must return (Change, subject)."
+          }
+        ],
+        "worth_it": true,
+        "cost_note": "About 10 LOC in the renderer plus the Change enum. In src/, setup_prek_config, install_prek_hooks and create_secrets_baseline return (Change, subject) from branches that already exist as logger.debug calls. p01 already needs those functions to return a detail string, so the extra _core cost is small. config's `Wrote` / `Skipped existing` should migrate to the same vocabulary, or it becomes a third one."
+      }
+    ],
+    "regressions": [
+      "The fail output no longer ends on the `pkgdx init:` status line: an unprefixed `not run:` line follows it, which breaks `tail -1` and greps for `pkgdx init:`",
+      "The fail summary drops p01's `(3 steps not run)` count from the status line",
+      "The closing counts disagree with the row vocabulary: success says `4 unchanged` but only one row says `unchanged` (3 are read-only); warn's `5 unchanged` includes the 2 warned steps",
+      "Failure now offers two competing next actions (`-> Fix prek.toml...` and `re-run with pkgdx -d init`), and the -d pointer appears even for an expected error whose cause is already fully stated",
+      "Information is lost in the rewording: `.secrets.baseline exists, reused` becomes `unchanged .secrets.baseline`, `Git shims already installed` becomes `unchanged Git shims`, and `installed at project root` becomes `created Git shims (project root)` (created is a less accurate verb for an install)",
+      "The detail column is no longer uniform: vocabulary plus subject on state-changing rows, free text on read-only rows",
+      "The closing line is longer and reads awkwardly: `done in 0.0s with 2 warnings: 1 changed, 5 unchanged`",
+      "Until `pkgdx config` migrates, its `Wrote` / `Skipped existing` strings sit next to a third vocabulary",
+      "+20 LOC (58 -> 78, +34%): Change enum, two Result fields (with `detail` redundant for state-changing steps), a one-call-site `_detail` helper, bool-arithmetic counting and a magic `{change:<11}` width",
+      "Larger adoption cost: _core must return (Change, subject) from three functions, and _cli.py must move the expected-error tracebacks to debug level for the -d hint to hold",
+      "Dim styling on `unchanged` can be low-contrast on some terminal themes (styled output only)"
+    ],
+    "verdict": "p07, with two fixes. Graft 3 is the only change the standard asks for (\"When changing state, inform the user\"). It costs little because p01 already needs _core to report which branch ran, and it gives `pkgdx config` a vocabulary to migrate Wrote/Skipped onto. Graft 1 is right on content, but `not run:` must print before the closing `pkgdx init:` line. Graft 2 should shrink to `nothing to change`, or count only steps that have a change kind: as written, the totals misreport read-only and warned steps as unchanged. Without those fixes, p01 is the safer, simpler choice."
+  },
+  "B": {
+    "judge": "B",
+    "patterns": [
+      {
+        "stem": "p01_ledger_lines",
+        "gates_pass": true,
+        "scores": [
+          {
+            "criterion": 1,
+            "score": 4,
+            "evidence": "Fixed-width word badge column (ok / warn / FAIL) survives NO_COLOR in success.txt/warn.txt/fail.txt; a first-timer reads it in Windows Terminal without colour. Not a 5: lower-case 'ok' and 'warn' look alike when unstyled, so warn rows stand out mainly through the indented '->' line under them."
+          },
+          {
+            "criterion": 2,
+            "score": 3,
+            "evidence": "fail.txt puts the cause next to the failed step ('FAIL configure pre-commit hooks  prek.toml could not be parsed'), then 'Invalid value (at line 12, column 9)' and a '-> Fix prek.toml...' hint. The last line is the verdict: 'failed at step 3/6 (3 steps not run)'. It gives no -d hint, and the 3 steps that did not run are counted but not named, so a CI reader cannot tell that the hooks were never installed. p03 does better."
+          },
+          {
+            "criterion": 3,
+            "score": 4,
+            "evidence": "Each warn row has the 'warn' word plus its own '-> hint' line, and the closing line says 'with 2 warnings' (warn.pipe80.txt). Easy to see, but p02's '!' glyph plus 'WARN' word sets the same bar, so not a 5."
+          },
+          {
+            "criterion": 4,
+            "score": 3,
+            "evidence": "A success prints 7 lines, including three read-only rows (project root, Git top-level, revision check) that are pure confirmation. p03 needs 2 lines and p04 needs 3. A developer re-running init gets the same 7 lines and no 'nothing changed' verdict."
+          },
+          {
+            "criterion": 5,
+            "score": 3,
+            "evidence": "Changes appear only as free prose in the detail column: 'prek.toml updated, 2 hooks added', '.secrets.baseline created', 'Git shims already installed'. The words are in a different position on each row, so they cannot be scanned, and nothing totals them. p05 and p04 lead with a verb word."
+          },
+          {
+            "criterion": 6,
+            "score": 4,
+            "evidence": "pipe80.txt matches the TTY frame byte for byte, is ASCII-only, streams one line per step, and starts each row with a greppable badge token and the summary with a greppable 'pkgdx init:' prefix. It is not key=value like p04's logfmt plain output, and labels contain spaces, so splitting into columns depends on fixed widths."
+          },
+          {
+            "criterion": 7,
+            "score": 3,
+            "evidence": "A transient console.status 'dots' spinner shows '<label> ...' during the 1.5s 'prek update --check' (source line 91). It shows no elapsed counter, unlike p02 (elapsed after 0.5s) and p00 (TimeElapsedColumn)."
+          },
+          {
+            "criterion": 8,
+            "score": 4,
+            "evidence": "badge / label / detail is generic. `pkgdx config` could reuse _row/_note with its own step list unchanged."
+          },
+          {
+            "criterion": 9,
+            "score": 4,
+            "evidence": "58 LOC, 0 classes, two small helpers. The only _core change is returning step results (warnings) instead of calling logger.warning."
+          }
+        ],
+        "weaknesses": [
+          "The steps that did not run are counted, not named. A CI reader cannot tell from the log whether hooks or the secrets baseline exist.",
+          "No -d / debug pointer on failure.",
+          "No scannable change vocabulary and no totals. A re-run on an already-configured repo prints the same 7 lines with no 'nothing to change' verdict.",
+          "Read-only confirmation rows take up half of the success output.",
+          "The spinner shows no elapsed time during the 1.5s network check."
+        ]
+      },
+      {
+        "stem": "p07_ledger_lines_v2",
+        "gates_pass": true,
+        "scores": [
+          {
+            "criterion": 1,
+            "score": 4,
+            "evidence": "Same word-badge column as p01, plus a second fixed vocabulary (updated / unchanged / created) that does not need colour (bold/dim only add emphasis, per the ansi capture). Not a 5: the closing totals ('2 changed, 4 unchanged') do not match the rows, where only one row says 'unchanged', so the summary is harder to trust in two seconds."
+          },
+          {
+            "criterion": 2,
+            "score": 4,
+            "evidence": "fail.pipe80.txt keeps p01's cause and hint beside the step, adds 're-run with `pkgdx -d init` for details' (the flag in the right place), and names the steps that did not run ('not run: prek install, prek update --check, detect-secrets scan'). Not a 5: the log now ends on 'not run:' rather than the verdict, and two next actions compete ('-> Fix prek.toml...' versus '-d'); for an expected TOML parse error, -d mostly adds a traceback the line/column already covers."
+          },
+          {
+            "criterion": 3,
+            "score": 4,
+            "evidence": "Same as p01: a 'warn' badge, a '->' hint line, and 'with 2 warnings' in the closing line. The warned steps are also counted in '5 unchanged', which blurs warned and ok steps a little in the totals."
+          },
+          {
+            "criterion": 4,
+            "score": 3,
+            "evidence": "Same 7 success lines as p01; the closing line is longer but says more. The idempotent re-run ends 'done in 0.0s, nothing to change', a clear verdict for the re-runner, but all 6 rows still print, so the success output is no shorter."
+          },
+          {
+            "criterion": 5,
+            "score": 4,
+            "evidence": "State-changing rows lead with a fixed word in one column: 'updated    prek.toml (2 hooks added)', 'unchanged  Git shims', 'created    .secrets.baseline'. The closing line totals them, and a re-run says 'nothing to change'. Not a 5: '4 unchanged' counts read-only and warned steps, so it does not match the one 'unchanged' row in success.txt, and p05's verb-led column is cleaner."
+          },
+          {
+            "criterion": 6,
+            "score": 4,
+            "evidence": "pipe80.txt matches the TTY frame and is ASCII-only. The change words give a greppable token (' created ', ' updated '), and the totals can be parsed from the closing line. The 'not run:' line lacks the 'pkgdx init:' prefix, so a grep for summary lines misses it. Still not key=value like p04."
+          },
+          {
+            "criterion": 7,
+            "score": 3,
+            "evidence": "Same spinner code as p01 (console.status with the 'dots' spinner); no elapsed counter."
+          },
+          {
+            "criterion": 8,
+            "score": 4,
+            "evidence": "The created / updated / unchanged vocabulary suits any state-changing subcommand (config), but each subcommand's _core must then return a change kind and subject to get it."
+          },
+          {
+            "criterion": 9,
+            "score": 3,
+            "evidence": "78 LOC (+34% on p01), 0 classes, a _detail helper and counter logic. It adds two Result fields, needs every state-changing _core function to return a change kind and subject (on top of p01's returned results), and needs the expected error's traceback logged at debug level so the -d hint holds."
+          }
+        ],
+        "weaknesses": [
+          "The closing totals count read-only and warned steps as 'unchanged'. Success says '4 unchanged' while one row reads 'unchanged'. Warn says 'with 2 warnings: 1 changed, 5 unchanged', which adds up to 8 against 6 steps.",
+          "On failure the last line is 'not run: ...', not the verdict, so a CI log tail or collapsed step shows the wrong line, and that line lacks the 'pkgdx init:' prefix.",
+          "Two competing next actions on failure. The -d hint is generic and adds little for an expected parse error.",
+          "The fixed vocabulary removes nuance: 'already installed' and 'exists, reused' both become 'unchanged'.",
+          "The detail column mixes vocabulary words (state-changing rows) and free text (read-only rows) starting in the same column.",
+          "Spinner has no elapsed time."
+        ]
+      }
+    ],
+    "grafts": [
+      {
+        "graft": 1,
+        "effects": [
+          {
+            "criterion": 2,
+            "direction": "up",
+            "reason": "Names the steps that did not run (a CI reader knows the hooks and baseline were never set up) and gives the correctly placed `pkgdx -d init`."
+          },
+          {
+            "criterion": 6,
+            "direction": "down",
+            "reason": "The 'not run:' line comes after the verdict and lacks the 'pkgdx init:' prefix, so the verdict is no longer the last line and the line is missed by a grep for the prefix."
+          },
+          {
+            "criterion": 9,
+            "direction": "down",
+            "reason": "The -d hint is only true if _core logs the expected error's traceback at debug level (exc_info=True), which is extra plumbing."
+          }
+        ],
+        "worth_it": true,
+        "cost_note": "About 4 LOC in the script. In src/: debug-level traceback on the expected-error path. Worth it for the named 'not run' list. Put that line before the verdict (or fold it into the verdict) so the log still ends on 'pkgdx init: failed ...'. The -d hint is the weaker half."
+      },
+      {
+        "graft": 2,
+        "effects": [
+          {
+            "criterion": 5,
+            "direction": "up",
+            "reason": "Totals changes on the closing line, and 'nothing to change' gives a developer re-running init an answer in one line."
+          },
+          {
+            "criterion": 4,
+            "direction": "up",
+            "reason": "Higher signal on an idempotent re-run (no extra lines), though not enough to move the score."
+          },
+          {
+            "criterion": 3,
+            "direction": "down",
+            "reason": "Warned steps are counted as 'unchanged', so 'with 2 warnings: 1 changed, 5 unchanged' blurs warned steps into the unchanged total and adds up to more than the step count."
+          }
+        ],
+        "worth_it": true,
+        "cost_note": "About 6 LOC and one counter, no src/ change beyond graft 3's change kind. Count only steps that have a change kind; today '4 unchanged' contradicts the single 'unchanged' row."
+      },
+      {
+        "graft": 3,
+        "effects": [
+          {
+            "criterion": 5,
+            "direction": "up",
+            "reason": "One fixed word (created / updated / unchanged) at a fixed position on every state-changing row can be scanned without colour."
+          },
+          {
+            "criterion": 6,
+            "direction": "up",
+            "reason": "The fixed vocabulary is a stable greppable token in CI logs (small effect)."
+          },
+          {
+            "criterion": 9,
+            "direction": "down",
+            "reason": "Adds Result.change and Result.subject, and every state-changing _core function must return them (the branches exist as logger.debug calls today)."
+          }
+        ],
+        "worth_it": true,
+        "cost_note": "About 10 LOC (the _detail helper and _CHANGED set), two harness fields, and a src/_core return-type change for each state-changing function. Costs some prose nuance ('already installed', 'exists, reused')."
+      }
+    ],
+    "regressions": [
+      "Failure output ends on 'not run: ...' instead of the 'pkgdx init: failed ...' verdict, so a CI log tail or collapsed job step shows the wrong line.",
+      "The 'not run:' line has no 'pkgdx init:' prefix, unlike every other summary line, so a grep for summary lines misses it.",
+      "Two competing next actions on failure: '-> Fix prek.toml, or ... --reset' and 're-run with `pkgdx -d init`'. For an expected parse error, -d adds little beyond the line/column already shown.",
+      "The verdict line no longer gives the count of steps that did not run; '(3 steps not run)' is replaced by the separate list.",
+      "The closing totals count read-only and warned steps as 'unchanged': success shows '4 unchanged' against one 'unchanged' row, and warn shows 'with 2 warnings: 1 changed, 5 unchanged', which adds up to 8 for 6 steps.",
+      "Closing line grammar has two colons: 'done in 0.0s with 2 warnings: 1 changed, 5 unchanged'.",
+      "Prose nuance is lost: 'Git shims already installed' becomes 'unchanged  Git shims', '.secrets.baseline exists, reused' becomes 'unchanged  .secrets.baseline', and 'installed at project root' becomes 'created  Git shims (project root)'.",
+      "The detail column mixes the fixed change word (state-changing rows) and free text (read-only rows) starting in the same column.",
+      "State-changing details are up to 4 characters wider (11-character padded word plus subject), so long paths/subjects wrap sooner at 80 columns.",
+      "The failure verdict line grows to 72 characters, close to the 80-column pipe width.",
+      "+20 LOC (58 to 78), two new Result fields, change kind and subject returns in each state-changing _core function, and debug-level traceback plumbing for the -d hint."
+    ],
+    "verdict": "p07, narrowly (weighted 67 vs 64). A developer re-running init gets a one-line 'nothing to change' answer, the fixed created/updated/unchanged words are readable without colour, and a CI reader learns which steps never ran. Two fixes before adopting it: count only state-changing steps in the totals (today '4 unchanged' contradicts the rows) and keep the 'pkgdx init: failed ...' line as the last line, with 'not run' above it or folded in. The -d hint is the weakest graft: it is optional for an expected error and costs _core plumbing. p01 stays simpler and is still a sound fallback."
+  }
+}

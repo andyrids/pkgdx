@@ -1,27 +1,34 @@
-"""Core logic and file-system operations for the `pkgdx init` command."""
+"""Core logic and file-system operations for `pkgdx init` and `config`."""
 
 import argparse
 import dataclasses
 import logging
 import os
 import re
+import shutil
 import subprocess
 import sys
 from collections.abc import Iterable
-from enum import IntEnum
-from itertools import chain
+from enum import IntEnum, StrEnum
+from itertools import chain, pairwise
 from pathlib import Path
 from typing import Any
 
 import tomlkit
 from rich.console import Console
 from tomlkit import TOMLDocument
-from tomlkit.items import Table
+from tomlkit.exceptions import TOMLKitError
+from tomlkit.items import AoT, Table
 
 from pkgdx import exceptions, standards
 from pkgdx._types import HookBuiltin, HookLocal, HookRemote
 
 logger = logging.getLogger(__package__)
+
+_PREK_FIX_HINT = "Fix prek.toml, or regenerate it with `pkgdx init --reset`"
+_WOULD_UPDATE = re.compile(
+    r"would update rev `(?P<old>[^`]+)` -> `(?P<new>[^`]+)`"
+)
 
 
 class ExitCode(IntEnum):
@@ -35,6 +42,44 @@ class ExitCode(IntEnum):
     EX_FAILURE = 1
     EX_SYNTAX = 2
     EX_USAGE = 64
+    EX_INTERRUPT = 130
+
+
+class Outcome(StrEnum):
+    """The state of a finished ledger step (`pkgdx init` or `config`)."""
+
+    OK = "ok"
+    WARN = "warn"
+    FAIL = "fail"
+
+
+class Change(StrEnum):
+    """The change a state-changing ledger step made on disk."""
+
+    CREATED = "created"
+    UPDATED = "updated"
+    UNCHANGED = "unchanged"
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class StepResult:
+    """The result of one ledger step, for the CLI to render.
+
+    Attributes:
+        outcome: Whether the step succeeded, warned or failed.
+        detail: The step summary, shown when `change` is None.
+        message: The cause, shown under a WARN or FAIL row when non-empty.
+        hint: The suggested fix, shown under a WARN or FAIL row.
+        change: What a state-changing step did, else None.
+        subject: What was changed, plus any qualifier that adds information.
+    """
+
+    outcome: Outcome
+    detail: str = ""
+    message: str = ""
+    hint: str = ""
+    change: Change | None = None
+    subject: str = ""
 
 
 @dataclasses.dataclass(frozen=True, slots=True)
@@ -82,6 +127,10 @@ def get_git_toplevel() -> Path:
 
     Returns:
         The Git top-level directory path.
+
+    Raises:
+        exceptions.GitTopLevelError: If the working directory is not inside
+            a Git repository.
     """
     try:
         result = subprocess.run(
@@ -91,6 +140,7 @@ def get_git_toplevel() -> Path:
             capture_output=True,
         )
     except subprocess.CalledProcessError as e:
+        logger.debug("git rev-parse failed: %s", e.stderr)
         msg = "Failed `git rev-parse --show-toplevel`"
         raise exceptions.GitTopLevelError(msg) from e
     else:
@@ -102,6 +152,10 @@ def get_project_root() -> Path:
 
     Returns:
         The root path of the consuming repo.
+
+    Raises:
+        exceptions.ProjectRootNotFoundError: If no `pyproject.toml` is found
+            in the working directory, its parents or the venv parent.
     """
     cwd = Path.cwd().resolve()
     for directory in chain([cwd], cwd.parents):
@@ -112,64 +166,143 @@ def get_project_root() -> Path:
     if (venv_parent / "pyproject.toml").exists():
         return venv_parent
 
-    msg = f"Cannot identify project root:- `{sys.prefix=}` | `{cwd=}`."
+    msg = f"No pyproject.toml in {cwd}, its parents or {venv_parent}"
     raise exceptions.ProjectRootNotFoundError(msg)
 
 
-def install_prek_hooks(root: Path) -> None:
-    """Install pre-commit hooks if not installed.
+def _last_line(text: str) -> str:
+    """Get the last non-blank line of captured subprocess output.
+
+    Args:
+        text: The captured output.
+
+    Returns:
+        The last non-blank line, stripped, or an empty string.
+    """
+    lines = text.strip().splitlines()
+    return lines[-1].strip() if lines else ""
+
+
+def install_prek_hooks(root: Path, git_toplevel: Path | None) -> StepResult:
+    """Install the pre-commit Git shims if not installed.
 
     Args:
         root: The root path of the consuming repo.
+        git_toplevel: The Git top-level directory, or None to install at
+            the project root.
+
+    Returns:
+        An OK result (created or unchanged), or WARN if `prek install`
+        fails.
     """
-    precommit_config = root / ".git" / "hooks" / "pre-commit"
-    if precommit_config.exists():
+    target = git_toplevel or root
+    subject = "Git shims" if git_toplevel else "Git shims (at project root)"
+    if (target / ".git" / "hooks" / "pre-commit").exists():
         logger.debug("Git shims already installed at `.git/hooks/pre-commit`")
-        return
+        return StepResult(Outcome.OK, change=Change.UNCHANGED, subject=subject)
+
     try:
-        subprocess.run(
+        proc = subprocess.run(
             [sys.executable, "-m", "prek", "install"],
-            cwd=root,
+            cwd=target,
             capture_output=True,
-            check=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
         )
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        logger.exception("Failed to install Git shims")
+    except FileNotFoundError as e:
+        reason = str(e)
     else:
-        logger.debug("Git shims installed at `.git/hooks/pre-commit`")
+        logger.debug(
+            "prek install exited %d: %s", proc.returncode, proc.stderr
+        )
+        if proc.returncode == 0:
+            return StepResult(
+                Outcome.OK, change=Change.CREATED, subject=subject
+            )
+        reason = (
+            _last_line(proc.stderr)
+            or f"prek exited with code {proc.returncode}"
+        )
+    return StepResult(
+        Outcome.WARN,
+        "Git shims not installed",
+        reason,
+        "Fix the error, then run `prek install`",
+    )
 
 
-def update_prek_hooks(root: Path) -> None:
-    """Check for pre-commit hook updates.
+def update_prek_hooks(root: Path) -> StepResult:
+    """Check for remote pre-commit hook revision updates.
 
-    NOTE: Updates the pre-commit hooks based on available tagged versions in
-    the remote `pkgdx` repo.
+    NOTE: Runs `prek update --check`, which compares each remote repo `rev`
+    with its latest tag (e.g. the remote `pkgdx` repo) without updating.
 
     Args:
         root: The root path of the consuming repo.
+
+    Returns:
+        An OK result if revisions are up to date, else a WARN result naming
+        the available updates or why the check failed.
     """
     try:
-        subprocess.run(
-            [sys.executable, "-m", "prek", "update", "--check", "-v"],
+        proc = subprocess.run(
+            [sys.executable, "-m", "prek", "update", "--check"],
             cwd=root,
             capture_output=True,
-            check=True,
-            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
         )
-    except subprocess.CalledProcessError as e:
-        msg = re.sub(r"\n\s|\n", "", e.stdout or e.stderr or "Unknown error")
-        match e.returncode:
-            case 1:
-                logger.warning(msg)
-                logger.warning("Update remote hook revisions - `prek update`")
-            case 2:
-                logger.error(msg)
-            case _:
-                logger.exception(msg)
-    except FileNotFoundError:
-        logger.exception("Check `prek.toml` config exists")
+    except FileNotFoundError as e:
+        reason = str(e)
     else:
-        logger.debug("Remote hook revisions are up-to-date")
+        logger.debug(
+            "prek update --check exited %d:\n%s%s",
+            proc.returncode,
+            proc.stdout,
+            proc.stderr,
+        )
+        if proc.returncode == 0:
+            return StepResult(Outcome.OK, "hook revisions up to date")
+
+        # STDOUT lists a repo URL, then `would update rev `a` -> `b`` lines
+        repo, updates = "", []
+        for line in proc.stdout.splitlines():
+            if match := _WOULD_UPDATE.search(line):
+                update = f"{repo} {match['old']} -> {match['new']}"
+                updates.append(update.lstrip())
+            elif line.strip() and "`" not in line:
+                name = line.strip().rstrip("/").rsplit("/", 1)[-1]
+                repo = name.removesuffix(".git")
+
+        # A failed fetch prints the repo URL, then an `update failed:` line
+        unfetched = [
+            url.strip()
+            for url, line in pairwise(proc.stderr.splitlines())
+            if "update failed:" in line
+        ]
+        failed = f"fetch failed: {', '.join(unfetched)}" if unfetched else ""
+
+        if proc.returncode == 1 and (updates or not proc.stderr.strip()):
+            available = ", ".join(updates) or "hook revision updates"
+            return StepResult(
+                Outcome.WARN,
+                f"{available} available",
+                failed,
+                "Update remote hook revisions - `prek update`",
+            )
+        reason = (
+            failed
+            or _last_line(proc.stderr)
+            or f"prek exited with code {proc.returncode}"
+        )
+    return StepResult(
+        Outcome.WARN,
+        "could not check hook revisions",
+        reason,
+        "Run `prek update --check` to see the full output",
+    )
 
 
 def _create_repo_table(
@@ -221,36 +354,72 @@ def _get_repo_table(
 def _inject_missing_hooks(
     table: dict[str, Any],
     expected_hooks: list[HookBuiltin | HookLocal | HookRemote],
-) -> bool:
+) -> int:
     """Inject missing hooks into the repository table.
+
+    NOTE: An inline `hooks = [...]` array cannot hold tables, so it is
+    converted to `[[repos.hooks]]` tables, keeping its hooks, before any
+    missing hook is added.
 
     Args:
         table: The repository table.
         expected_hooks: The expected hooks to be present in the table.
 
     Returns:
-        A boolean indicating if the table was modified.
+        The number of hooks added to the table.
     """
-    changed = False
     existing_id_set = {hook.get("id") for hook in table.get("hooks", [])}
+    missing = [h for h in expected_hooks if h["id"] not in existing_id_set]
 
-    for expected in expected_hooks:
-        if expected["id"] not in existing_id_set:
-            logger.debug("Detected missing hook `%s`", expected["id"])
-            hook_table = tomlkit.table()
-            for key, value in expected.items():
-                if isinstance(value, list):
-                    array = tomlkit.array()
-                    for item in value:
-                        array.append(item)
-                    hook_table[key] = array
-                else:
-                    hook_table[key] = value
+    if missing and not isinstance(table["hooks"], AoT):
+        hooks = tomlkit.aot()
+        for hook in table.pop("hooks"):
+            hooks.append(hook.unwrap())
+        table["hooks"] = hooks
 
-            hook_table.add(tomlkit.nl())
-            table["hooks"].append(hook_table)
-            changed = True
-    return changed
+    for expected in missing:
+        logger.debug("Detected missing hook `%s`", expected["id"])
+        hook_table = tomlkit.table()
+        for key, value in expected.items():
+            if isinstance(value, list):
+                array = tomlkit.array()
+                for item in value:
+                    array.append(item)
+                hook_table[key] = array
+            else:
+                hook_table[key] = value
+
+        hook_table.add(tomlkit.nl())
+        table["hooks"].append(hook_table)
+    return len(missing)
+
+
+def _merge_template(
+    doc: TOMLDocument, template: TOMLDocument
+) -> tuple[bool, int]:
+    """Merge the template repos & hooks missing from a consumer document.
+
+    Args:
+        doc: The parsed consumer `prek.toml` document, modified in place.
+        template: The parsed template (`hooks.toml`) document.
+
+    Returns:
+        A tuple containing a boolean indicating any changes and the number
+        of hooks added.
+    """
+    changed, added = False, 0
+    if "repos" not in doc or not doc.get("repos", []):
+        logger.debug("Existing `prek.toml` missing or has empty `[repos]`")
+        doc["repos"] = tomlkit.aot()
+        changed = True
+
+    for table in template.get("repos", []):
+        name, rev = table.get("repo"), table.get("rev")
+        table_consumer, tchanged = _get_repo_table(doc, name, rev)
+        added += _inject_missing_hooks(table_consumer, table.get("hooks", []))
+        changed = changed or tchanged
+
+    return changed or added > 0, added
 
 
 def _validate_prek_repos(doc: TOMLDocument) -> None:
@@ -293,78 +462,188 @@ def _validate_prek_repos(doc: TOMLDocument) -> None:
                 raise exceptions.PrekConfigError(msg)
 
 
-def setup_prek_config(root: Path, reset: bool = False) -> None:
+def config_dir_failure(error: exceptions.ConfigDirError) -> StepResult:
+    """Build the FAIL result for an invalid `PKGDX_CONFIG_DIR`.
+
+    NOTE: Shared by `pkgdx init` and `pkgdx config`, so both report the same
+    cause and hint.
+
+    Args:
+        error: The error raised by `standards.user_config_dir`.
+
+    Returns:
+        A FAIL result naming the directory, with a hint to fix it.
+    """
+    return StepResult(
+        Outcome.FAIL,
+        "user config directory not found",
+        str(error),
+        f"Create it, or unset `{standards.CONFIG_DIR_ENV}`",
+    )
+
+
+def setup_prek_config(root: Path, reset: bool = False) -> StepResult:
     """Configure pre-commit hooks in the consuming repo.
+
+    NOTE: Expected errors (an invalid `PKGDX_CONFIG_DIR`, `prek.toml` or
+    `hooks.toml`) are returned as FAIL results, not raised.
 
     Args:
         root: The root path of the consuming repo.
         reset: Clean installation flag. Defaults to False.
+
+    Returns:
+        An OK result (created, updated or unchanged `prek.toml`), or FAIL.
     """
-    changed = False
     config_existing = root / "prek.toml"
-    config_template = standards.resolve_config(standards.PREK_CONFIG)
+    try:
+        config_template = standards.resolve_config(standards.PREK_CONFIG)
+    except exceptions.ConfigDirError as e:
+        return config_dir_failure(e)
+    template_text = config_template.read_text()
 
     if reset or not config_existing.exists():
-        logger.debug("Creating `prek.toml` from template")
-        config_existing.write_text(config_template.read_text())
-        return
+        existed = config_existing.exists()
+        if existed and config_existing.read_text() == template_text:
+            logger.debug("Existing `prek.toml` matches the template")
+            change = Change.UNCHANGED
+        else:
+            logger.debug("Creating `prek.toml` from template")
+            config_existing.write_text(template_text)
+            change = Change.UPDATED if existed else Change.CREATED
+        return StepResult(Outcome.OK, change=change, subject="prek.toml")
 
     # Consuming project `prek.toml`
-    doc_consumer: TOMLDocument = tomlkit.parse(config_existing.read_text())
-    _validate_prek_repos(doc_consumer)
-
-    if "repos" not in doc_consumer or not doc_consumer.get("repos", []):
-        logger.debug("Existing `prek.toml` missing or has empty `[repos]`")
-        doc_consumer["repos"] = tomlkit.aot()
-        changed = True
+    try:
+        doc_consumer = tomlkit.parse(config_existing.read_text())
+        _validate_prek_repos(doc_consumer)
+    except TOMLKitError as e:
+        return StepResult(
+            Outcome.FAIL,
+            "prek.toml could not be parsed",
+            str(e),
+            _PREK_FIX_HINT,
+        )
+    except exceptions.PrekConfigError as e:
+        return StepResult(
+            Outcome.FAIL, "prek.toml is invalid", str(e), _PREK_FIX_HINT
+        )
 
     # `pkgdx` template `prek.toml`
-    doc_pkgdx: TOMLDocument = tomlkit.parse(config_template.read_text())
-    for table in doc_pkgdx.get("repos", []):
-        name, rev = table.get("repo"), table.get("rev")
-        table_consumer, tchanged = _get_repo_table(doc_consumer, name, rev)
+    try:
+        doc_pkgdx = tomlkit.parse(template_text)
+    except TOMLKitError as e:
+        return StepResult(
+            Outcome.FAIL,
+            f"{config_template.name} could not be parsed",
+            str(e),
+            f"Fix {config_template}, or remove it to use the bundled template",
+        )
 
-        table_pkgdx = table.get("hooks", [])
-        hchanged = _inject_missing_hooks(table_consumer, table_pkgdx)
-
-        changed = changed or tchanged or hchanged
-
-    if changed:
-        config_text = tomlkit.dumps(doc_consumer)
-        # Normalise spacing between tables
-        config_text = re.sub(r"\n+\[\[repos", "\n\n[[repos", config_text)
-
-        config_existing.write_text(config_text)
-        logger.debug("Added missing pre-commit hooks to `prek.toml`")
-    else:
+    changed, added = _merge_template(doc_consumer, doc_pkgdx)
+    if not changed:
         logger.debug("Existing `prek.toml` is correct & unchanged")
+        return StepResult(
+            Outcome.OK, change=Change.UNCHANGED, subject="prek.toml"
+        )
+
+    config_text = tomlkit.dumps(doc_consumer)
+    # Normalise spacing between tables
+    config_text = re.sub(r"\n+\[\[repos", "\n\n[[repos", config_text)
+
+    config_existing.write_text(config_text)
+    logger.debug("Added missing pre-commit hooks to `prek.toml`")
+    hooks = f"{added} hook{'s' * (added != 1)}"
+    subject = f"prek.toml ({hooks} added)" if added else "prek.toml"
+    return StepResult(Outcome.OK, change=Change.UPDATED, subject=subject)
 
 
-def create_secrets_baseline(root: Path) -> None:
-    """Run detect-secrets to create a `.secrets.baseline` file."""
+def create_secrets_baseline(root: Path) -> StepResult:
+    """Run detect-secrets to create a `.secrets.baseline` file.
+
+    NOTE: The scan output is written only on success, so a failed or
+    interrupted scan leaves no partial baseline.
+
+    Args:
+        root: The root path of the consuming repo.
+
+    Returns:
+        An OK result (created or unchanged), or FAIL if the scan fails.
+    """
     secrets_baseline = root / ".secrets.baseline"
     if secrets_baseline.exists():
         logger.debug("Using existing `.secrets.baseline`")
-        return
+        return StepResult(
+            Outcome.OK, change=Change.UNCHANGED, subject=".secrets.baseline"
+        )
 
     logger.debug("Creating `.secrets.baseline` at %s", root)
     try:
-        with open(secrets_baseline, "w") as f:
-            subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
-                    "detect_secrets",
-                    "scan",
-                    "--exclude-files",
-                    r"(.*\.lock)",
-                ],
-                cwd=root,
-                env=os.environ | {"PYTHONUTF8": "1"},
-                stdout=f,
-                check=True,
+        proc = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "detect_secrets",
+                "scan",
+                "--exclude-files",
+                r"(.*\.lock)",
+            ],
+            cwd=root,
+            env=os.environ | {"PYTHONUTF8": "1"},
+            capture_output=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        stderr = e.stderr.decode(errors="replace")
+        logger.debug("detect-secrets scan failed: %s", stderr)
+        reason = _last_line(stderr) or str(e)
+    except FileNotFoundError as e:
+        reason = str(e)
+    else:
+        secrets_baseline.write_bytes(proc.stdout)
+        return StepResult(
+            Outcome.OK, change=Change.CREATED, subject=".secrets.baseline"
+        )
+    return StepResult(
+        Outcome.FAIL,
+        ".secrets.baseline not created",
+        reason,
+        "Run `detect-secrets scan` to see the full error",
+    )
+
+
+def export_config(bundled: Path, user_dir: Path) -> StepResult:
+    """Copy a bundled config file into the user config directory.
+
+    NOTE: An existing file is never overwritten. A failed copy (an `OSError`)
+    is returned as a FAIL result, not raised.
+
+    Args:
+        bundled: A bundled config path (for example `RUFF_CONFIG`).
+        user_dir: The user config directory, created if missing.
+
+    Returns:
+        An OK result (created or unchanged), or FAIL if the copy fails.
+    """
+    target = user_dir / bundled.name
+    try:
+        # `is_file`, as `standards.resolve_config` ignores a directory
+        if target.is_file():
+            logger.debug("Keeping existing %s", target)
+            return StepResult(
+                Outcome.OK, change=Change.UNCHANGED, subject=str(target)
             )
-    except (subprocess.CalledProcessError, FileNotFoundError) as e:
-        secrets_baseline.unlink(missing_ok=True)
-        msg = "Error creating `.secrets.baseline`"
-        raise exceptions.Error(msg) from e
+        user_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(bundled, target)
+    except OSError as e:
+        reason = str(e)
+        if e.strerror and e.filename:
+            # `str(e)` shows the path as a repr, doubling Windows backslashes
+            reason = f"{e.strerror}: {e.filename}"
+        return StepResult(
+            Outcome.FAIL,
+            "could not be copied",
+            reason,
+            "Fix the cause, then re-run `pkgdx config --export`",
+        )
+    return StepResult(Outcome.OK, change=Change.CREATED, subject=str(target))

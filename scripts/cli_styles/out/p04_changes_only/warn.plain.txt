@@ -1,0 +1,7 @@
+step="identify project root" n=1/6 status=ok change=none detail="C:\\src\\acme (pyproject.toml)"
+step="identify Git top-level" n=2/6 status=warn change=none detail="not a Git repository, using project root" message="Failed `git rev-parse --show-toplevel`" hint="Run `git init` to enable pre-commit hooks"
+step="configure pre-commit hooks" n=3/6 status=ok change=none detail="prek.toml unchanged"
+step="prek install" n=4/6 status=ok change=changed detail="Git shims installed at project root"
+step="prek update --check" n=5/6 status=warn change=none detail="pkgdx v0.4.2 -> v0.5.0 available" message="Update available: pkgdx v0.4.2 -> v0.5.0" hint="Update remote hook revisions - `prek update`"
+step="detect-secrets scan" n=6/6 status=ok change=none detail=".secrets.baseline exists, reused"
+summary=finished pkgdx=init took=0.0s changed=1 unchanged=5 warnings=2

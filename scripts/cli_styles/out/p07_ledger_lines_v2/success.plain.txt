@@ -1,0 +1,7 @@
+  ok      identify project root       C:\src\acme (pyproject.toml)
+  ok      identify Git top-level      C:\src\acme
+  ok      configure pre-commit hooks  updated    prek.toml (2 hooks added)
+  ok      prek install                unchanged  Git shims
+  ok      prek update --check         hook revisions up to date
+  ok      detect-secrets scan         created    .secrets.baseline
+pkgdx init: done in 0.0s: 2 changed, 4 unchanged

@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > - `Fixed` for any bug fixes.
 > - `Security` in case of vulnerabilities.
 
-## [Unreleased]
+## [0.5.0] - 2026-10-29
 
 ### Added
 
@@ -25,15 +25,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `%APPDATA%\pkgdx` on Windows, or `$XDG_CONFIG_HOME/pkgdx` (else `~/.config/pkgdx`) elsewhere.
   Each file falls back to the bundled one. `PKGDX_CONFIG_DIR` overrides the directory and fails
   with exit code 1 when it is not an existing directory.
-- `pkgdx config` shows the user config directory and the source (user or bundled) of each file.
-  `pkgdx config --export` copies the bundled files into the user config directory without
-  overwriting existing files.
+- `pkgdx config` lists each file with its source (user or bundled) and resolved path on standard
+  output, and names the user config directory and whether `PKGDX_CONFIG_DIR` set it on standard
+  error. `pkgdx config --export` copies the bundled files into the user config directory without
+  overwriting existing files, and reports each file as created or unchanged, like `pkgdx init`.
 
 ### Changed
 
 - Release tag pipelines run lint and tests before the package is built and published.
 - pkgdx's own `secrets` hook in `prek.toml` runs `pkgdx-secrets-hook` instead of
   `detect-secrets-hook` directly.
+- `pkgdx init` prints one ok / warn / FAIL line per step, saying what it created or updated, then a
+  one-line summary.
+- `pkgdx init` reports a missing Git repository, `prek install` failures and `prek update --check`
+  results as inline warnings (exit code 0), not log lines.
+- Ctrl-C during `pkgdx init` names the interrupted step and exits with code 130.
 
 ### Fixed
 
@@ -41,6 +47,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`PYTHONUTF8=1`), matching Linux CI. On Windows, UTF-8 files with characters that cp1252 cannot
   decode (e.g. Rich's heavy box-drawing `━`) were silently skipped. Windows users may see new
   findings and should audit or refresh their `.secrets.baseline`.
+- `pkgdx init` reports an invalid `prek.toml` or `PKGDX_CONFIG_DIR`, or a user `hooks.toml` it
+  cannot merge, on its step, with exit code 1 and no traceback.
+- An interrupted `detect-secrets` scan no longer leaves a partial `.secrets.baseline`.
+- `pkgdx init` no longer writes an invalid `prek.toml` when a repo lists its hooks inline
+  (`hooks = [...]`). The inline hooks are kept and converted to `[[repos.hooks]]` tables.
 
 ## [0.4.1] - 2026-10-16
 

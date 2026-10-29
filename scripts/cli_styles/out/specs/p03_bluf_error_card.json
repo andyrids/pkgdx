@@ -1,0 +1,52 @@
+{
+  "id": "bluf-error-card",
+  "name": "BLUF error card",
+  "summary": "Built around the failure. While running, a single transient status line shows '[n/6] step'. On success it prints a two-line result. On an expected failure it prints a bordered error card whose title is the bottom line (what failed), with step, cause, fix, done/not-run and a debug hint. Unexpected errors keep the traceback, but only with -d.",
+  "mockup": "SUCCESS (TTY, final frame)\npkgdx init: done in 2.9s\n  changed: prek.toml (updated, 2 hooks added), .secrets.baseline (created)\n\n(mid-run, transient)\n⠼ pkgdx init  [5/6] prek update --check  1.1s\n\nWARN (TTY, final frame)\npkgdx init: done in 2.9s with 2 warnings\n  ! identify Git top-level: not a Git repository, using project root\n      -> Run `git init` to enable pre-commit hooks\n  ! prek update --check: pkgdx v0.4.2 -> v0.5.0 available\n      -> Update remote hook revisions - `prek update`\n  changed: nothing\n\nFAIL (TTY, final frame)\n╭─ error: pkgdx init failed at 'configure pre-commit hooks' ───────────────────────╮\n│ Cause    prek.toml could not be parsed                                           │\n│          Invalid value (at line 12, column 9)                                    │\n│ Fix      Fix prek.toml, or regenerate it with `pkgdx init --reset`               │\n│ Done     identify project root, identify Git top-level                           │\n│ Not run  prek install, prek update --check, detect-secrets scan                  │\n╰───────────────────────────────────────── re-run with -d for the full traceback ─╯",
+  "step_states": "n/a per step. Only one transient line: spinner + '[n/N]' + current label + elapsed (shown after 0.5s). Completed steps don't persist; outcome appears only in the result block.",
+  "header": "None persistent. The transient status line carries 'pkgdx init [n/N] <step>'.",
+  "success_summary": "'pkgdx init: done in <elapsed>' plus one 'changed:' line listing the files created or updated (or 'changed: nothing').",
+  "warning_presentation": "Collected during the run and printed after the summary line as a compact list: '!' + step label + detail, with a '->' hint on the next line. The heading carries the count ('with 2 warnings'), so it is never colour-only.",
+  "failure_presentation": "Rich Panel (ROUNDED, red border, title bold) with BLUF title 'error: pkgdx init failed at <step>'. A two-column grid inside gives Cause (detail + message), Fix (hint), Done and Not run. The subtitle points to -d. No traceback for expected errors (a typed StepError / known exception map). Unexpected exceptions print a one-line 'unexpected error' card plus the Rich traceback and an issue-tracker link. Ctrl-C: 'pkgdx init: interrupted during prek update --check, no cleanup performed', exit 130.",
+  "state_change_reporting": "Only changes are reported: a 'changed:' line aggregates details that are created/updated. Unchanged and reused items stay silent unless -v. This needs a small change-kind field on Result, or classification by keyword.",
+  "non_tty_behaviour": "No panel, no spinner. GNU-style lines: success 'pkgdx init: done in 2.9s' + 'pkgdx init: changed prek.toml (updated, 2 hooks added)' per change. Warn 'pkgdx init: warning: identify Git top-level: not a Git repository, using project root' + '  hint: Run `git init` ...'. Fail 'pkgdx init: error: configure pre-commit hooks: prek.toml could not be parsed' + '  Invalid value (at line 12, column 9)' + '  hint: Fix prek.toml, or regenerate it with `pkgdx init --reset`' + '  not run: prek install, prek update --check, detect-secrets scan'.",
+  "rich_primitives": [
+    "Console.status",
+    "Panel",
+    "Table.grid",
+    "Text",
+    "box.ROUNDED"
+  ],
+  "custom_classes_estimate": 1,
+  "complexity": "medium",
+  "guidance_refs": [
+    "standard-cli §4",
+    "standard-cli §5",
+    "standard-cli §9",
+    "standard-cli §11",
+    "toolchain-logging §3",
+    "standard-yagni"
+  ],
+  "addresses_observations": [
+    1,
+    2,
+    3,
+    5,
+    6,
+    7,
+    8,
+    10,
+    11
+  ],
+  "risks": [
+    "No record of completed steps on success. Users who want to see that the steps ran must use -v (a deliberate trade-off for brevity).",
+    "Panel box-drawing characters render in Windows Terminal. Rich falls back to ASCII on legacy_windows, but some fonts misalign wide rows, so narrow terminals wrap the card.",
+    "It needs a clear split between expected and unexpected errors (an exception-to-card mapping). If that split is wrong, real bugs get rewritten into friendly cards and their tracebacks are lost without -d.",
+    "The error-card helper can be reused by `pkgdx config` and other commands. That only pays off if those commands adopt it; otherwise it is a single-use abstraction (YAGNI)."
+  ],
+  "file": "scripts/cli_styles/p03_bluf_error_card.py",
+  "merged_from": [
+    "diagnostic-report"
+  ],
+  "curation_note": "Graft from diagnostic-report (rustc/ruff): inside the error card, use a '= help:' style line for the fix so the card scans like a compiler diagnostic. Warnings on success use the same diagnostic shape, but unboxed."
+}

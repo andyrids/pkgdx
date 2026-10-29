@@ -1,0 +1,8 @@
+──────────────────────────────────────────── pkgdx init ────────────────────────────────────────────
+■ identify project root                                                                             
+■ identify Git top-level                                                                            
+■ configure pre-commit hooks                                                                        
+■ prek install                                                                                      
+■ prek update --check                                                                               
+■ detect-secrets scan                                                                               
+■ pkgdx init                   --------------------------------------------------------- 6/6 0:00:00
