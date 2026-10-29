@@ -6,14 +6,13 @@ standards and pre-commit hooks.
 """
 
 import dataclasses
-import shutil
-import sys
+import os
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
-from rich.padding import Padding
 from rich.text import Text
 
 from pkgdx import _core, exceptions, standards
@@ -42,7 +41,7 @@ _INDENT = 8
 
 
 def _row(badge: tuple[str, str], label: str, detail: Text, width: int) -> None:
-    """Print one aligned ledger line for an init step.
+    """Print one aligned ledger line for a step.
 
     NOTE: The line is never wrapped, so a long path stays whole (a terminal
     may still soft-wrap it on screen) and a piped log has one line per step.
@@ -68,13 +67,13 @@ def _note(text: str) -> None:
     """Print an indented continuation line under a ledger line.
 
     NOTE: Printed as `Text`, so markup, backticks and Windows paths are
-    shown as written. Wrapped lines keep the indent.
+    shown as written. Like `_row`, the line is never wrapped, so a long path
+    stays whole (a terminal may still soft-wrap it on screen).
 
     Args:
         text: The line text.
     """
-    note = Padding(Text(text), (0, 0, 0, _INDENT), expand=False)
-    GLOBAL_CONSOLE.print(note)
+    GLOBAL_CONSOLE.print(Text(" " * _INDENT + text), soft_wrap=True)
 
 
 def _detail(result: StepResult) -> Text:
@@ -90,6 +89,21 @@ def _detail(result: StepResult) -> Text:
         return Text(result.detail)
     style = "bold" if result.change in _CHANGED else "dim"
     return Text.assemble((f"{result.change:<{_KIND}}", style), result.subject)
+
+
+def _report(label: str, result: StepResult, width: int) -> None:
+    """Print a ledger line, plus the cause & hint for a WARN or FAIL result.
+
+    Args:
+        label: The step label.
+        result: The step result.
+        width: The label column width.
+    """
+    _row(_BADGES[result.outcome], label, _detail(result), width)
+    if result.outcome is not Outcome.OK:
+        if result.message:
+            _note(result.message)
+        _note(f"-> {result.hint}")
 
 
 @dataclasses.dataclass(slots=True)
@@ -168,18 +182,18 @@ _STEPS: tuple[tuple[str, Callable[[_InitState], StepResult]], ...] = (
 )
 
 
-def command_init(ctx: CLIContext) -> int:
-    """Configure a consuming repo with `pkgdx` standards.
+def _run_steps(
+    command: str, steps: Sequence[tuple[str, Callable[[], StepResult]]]
+) -> int:
+    """Run ledger steps in order, printing one line per step & a summary.
 
-    Attempts to identify the root of the consuming repo and ensures that
-    `Prek` is configured with the expected `pkgdx` hooks.
-
-    NOTE: Prints one ledger line per step to STDERR (`GLOBAL_CONSOLE`), with
-    a transient spinner only when STDERR is a TTY. Debug log lines (`-d`)
-    appear above the line of the step that emitted them.
+    NOTE: Prints to STDERR (`GLOBAL_CONSOLE`), with a transient spinner only
+    when STDERR is a TTY. Debug log lines (`-d`) appear above the line of
+    the step that emitted them. Stops at the first FAIL.
 
     Args:
-        ctx: The CLI context.
+        command: The `pkgdx` subcommand, named in the closing line.
+        steps: The step labels & callables, in run order.
 
     Returns:
         The integer process exit code. 0 on success (with or without
@@ -187,31 +201,27 @@ def command_init(ctx: CLIContext) -> int:
         `_core.ExitCode`.
     """
     interactive = GLOBAL_CONSOLE.is_terminal
-    state = _InitState(reset=ctx.args.reset)
-    width = max(len(label) for label, _ in _STEPS)
+    width = max(len(label) for label, _ in steps)
     start = time.monotonic()
     warnings = changed = unchanged = 0
     label = ""
     try:
-        for number, (label, run) in enumerate(_STEPS, 1):
+        for number, (label, run) in enumerate(steps, 1):
             if interactive:
                 with GLOBAL_CONSOLE.status(f"{label} ...", spinner="dots"):
-                    result = run(state)
+                    result = run()
             else:
-                result = run(state)
+                result = run()
 
-            _row(_BADGES[result.outcome], label, _detail(result), width)
-            if result.outcome is not Outcome.OK:
-                if result.message:
-                    _note(result.message)
-                _note(f"-> {result.hint}")
-
+            _report(label, result, width)
             if result.outcome is Outcome.FAIL:
-                closing = f"pkgdx init: failed at step {number}/{len(_STEPS)}"
-                if unrun := [name for name, _ in _STEPS[number:]]:
+                closing = (
+                    f"pkgdx {command}: failed at step {number}/{len(steps)}"
+                )
+                if unrun := [name for name, _ in steps[number:]]:
                     _note(f"not run: {', '.join(unrun)}")
-                    steps = f"{len(unrun)} step{'s' * (len(unrun) != 1)}"
-                    closing += f" ({steps} not run)"
+                    count = f"{len(unrun)} step{'s' * (len(unrun) != 1)}"
+                    closing += f" ({count} not run)"
                 GLOBAL_CONSOLE.print(Text(closing))
                 return ExitCode.EX_FAILURE
 
@@ -221,7 +231,7 @@ def command_init(ctx: CLIContext) -> int:
     except KeyboardInterrupt:
         _row(_STOP, label, Text("interrupted"), width)
         GLOBAL_CONSOLE.print(
-            Text("pkgdx init: interrupted, no cleanup performed")
+            Text(f"pkgdx {command}: interrupted, no cleanup performed")
         )
         return ExitCode.EX_INTERRUPT
 
@@ -235,46 +245,86 @@ def command_init(ctx: CLIContext) -> int:
     )
     elapsed = time.monotonic() - start
     GLOBAL_CONSOLE.print(
-        Text(f"pkgdx init: done in {elapsed:.1f}s{tail} ({counts})")
+        Text(f"pkgdx {command}: done in {elapsed:.1f}s{tail} ({counts})")
     )
     return ExitCode.EX_OK
 
 
-def command_config(ctx: CLIContext) -> int:
-    """Show resolved config sources, or export bundled configs.
+def command_init(ctx: CLIContext) -> int:
+    """Configure a consuming repo with `pkgdx` standards.
 
-    Data rows go to STDOUT; messages go to STDERR.
+    Attempts to identify the root of the consuming repo and ensures that
+    `Prek` is configured with the expected `pkgdx` hooks.
+
+    NOTE: Prints one ledger line per step to STDERR (`_run_steps`).
 
     Args:
         ctx: The CLI context.
 
     Returns:
-        The integer process exit code. Uses `_core.ExitCode`.
-
-    Raises:
-        ConfigDirError: If `PKGDX_CONFIG_DIR` is set but not a directory.
+        The integer process exit code. 0 on success (with or without
+        warnings), 1 on a failed step and 130 on Ctrl-C. Uses
+        `_core.ExitCode`.
     """
-    user_dir = standards.user_config_dir()
+    state = _InitState(reset=ctx.args.reset)
+    return _run_steps(
+        "init", [(label, partial(run, state)) for label, run in _STEPS]
+    )
+
+
+def command_config(ctx: CLIContext) -> int:
+    """Show resolved config sources, or export bundled configs.
+
+    NOTE: Source rows go to STDOUT (`ctx.console`). The closing line, the
+    `--export` ledger and errors go to STDERR (`GLOBAL_CONSOLE`).
+
+    Args:
+        ctx: The CLI context.
+
+    Returns:
+        The integer process exit code. 0 on success, 1 on an invalid
+        `PKGDX_CONFIG_DIR` or a failed copy and 130 on Ctrl-C during
+        `--export`. Uses `_core.ExitCode`.
+    """
+    env = standards.CONFIG_DIR_ENV
+    try:
+        user_dir = standards.user_config_dir()
+    except exceptions.ConfigDirError as e:
+        _report(env, _core.config_dir_failure(e), len(env))
+        GLOBAL_CONSOLE.print(Text("pkgdx config: failed"))
+        return ExitCode.EX_FAILURE
 
     if ctx.args.export:
-        user_dir.mkdir(parents=True, exist_ok=True)
-        for bundled in standards.BUNDLED_CONFIGS:
-            target = user_dir / bundled.name
-            if target.exists():
-                GLOBAL_CONSOLE.print(
-                    f"Skipped existing {target}", soft_wrap=True
-                )
-                continue
-            shutil.copyfile(bundled, target)
-            GLOBAL_CONSOLE.print(f"Wrote {target}", soft_wrap=True)
+        return _run_steps(
+            "config",
+            [
+                (bundled.name, partial(_core.export_config, bundled, user_dir))
+                for bundled in standards.BUNDLED_CONFIGS
+            ],
+        )
 
-    sys.stdout.write(
-        f"user dir: {user_dir} (env: {standards.CONFIG_DIR_ENV})\n"
-    )
+    width = max(len(bundled.name) for bundled in standards.BUNDLED_CONFIGS)
+    users = 0
     for bundled in standards.BUNDLED_CONFIGS:
         resolved = standards.resolve_config(bundled)
-        source = "bundled" if resolved == bundled else "user"
-        sys.stdout.write(f"{bundled.name}\t{source}\t{resolved}\n")
+        is_user = resolved != bundled
+        users += is_user
+        source, style = ("user", "bold") if is_user else ("bundled", "dim")
+        row = Text.assemble(
+            "  ",
+            bundled.name.ljust(width),
+            "  ",
+            (f"{source:<{_KIND}}", style),
+            str(resolved),
+        )
+        ctx.console.print(row, soft_wrap=True)
+
+    via = f"from {env}" if os.environ.get(env) else f"{env} not set"
+    sources = f"{users} user, {len(standards.BUNDLED_CONFIGS) - users} bundled"
+    GLOBAL_CONSOLE.print(
+        Text(f"pkgdx config: user config dir {user_dir}, {via} ({sources})"),
+        soft_wrap=True,
+    )
     return ExitCode.EX_OK
 
 
@@ -282,7 +332,7 @@ def add_subparser(
     subparsers: "argparse._SubParsersAction[Any]",
     parent: Optional["argparse.ArgumentParser"] = None,
 ) -> None:
-    """Add the `init` subcommand with the shared `pkgdx` CLI parser.
+    """Add the `init` & `config` subcommands to the shared `pkgdx` parser.
 
     Args:
         subparsers: The main CLI parser's subparsers action.

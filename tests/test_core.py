@@ -1,4 +1,4 @@
-"""Unit tests for the `pkgdx init` core logic (`pkgdx._core`)."""
+"""Unit tests for the `pkgdx init` & `config` core logic (`pkgdx._core`)."""
 
 import logging
 import subprocess
@@ -17,6 +17,7 @@ from pkgdx._core import (
     _inject_missing_hooks,
     _validate_prek_repos,
     create_secrets_baseline,
+    export_config,
     get_git_toplevel,
     get_project_root,
     install_prek_hooks,
@@ -615,3 +616,75 @@ def test_create_secrets_baseline_forces_utf8_mode(
     env = mock_subprocess_run.call_args.kwargs["env"]
     assert env["PYTHONUTF8"] == "1"
     assert env["PKGDX_SENTINEL"] == "kept"
+
+
+def test_export_config_copies_bundled_file(tmp_path: Path) -> None:
+    """A missing user file is created as a copy of the bundled file."""
+    user_dir = tmp_path / "pkgdx"
+
+    result = export_config(standards.RUFF_CONFIG, user_dir)
+
+    target = user_dir / "ruff.toml"
+    assert result == StepResult(
+        Outcome.OK, change=Change.CREATED, subject=str(target)
+    )
+    assert target.read_bytes() == standards.RUFF_CONFIG.read_bytes()
+
+
+def test_export_config_keeps_existing_file(tmp_path: Path) -> None:
+    """An existing user file is reported unchanged & never overwritten."""
+    target = tmp_path / "ruff.toml"
+    target.write_text("# mine")
+
+    result = export_config(standards.RUFF_CONFIG, tmp_path)
+
+    assert result == StepResult(
+        Outcome.OK, change=Change.UNCHANGED, subject=str(target)
+    )
+    assert target.read_text() == "# mine"
+
+
+def test_export_config_fails_when_dir_is_a_file(tmp_path: Path) -> None:
+    """A file in place of the user dir gives FAIL, naming the path plainly."""
+    user_dir = tmp_path / "pkgdx"
+    user_dir.write_text("")
+
+    result = export_config(standards.RUFF_CONFIG, user_dir)
+
+    assert result.outcome is Outcome.FAIL
+    assert result.detail == "could not be copied"
+    assert result.message.endswith(f": {user_dir}")
+    assert result.hint == "Fix the cause, then re-run `pkgdx config --export`"
+
+
+def test_export_config_fails_on_directory_named_like_config(
+    tmp_path: Path,
+) -> None:
+    """A directory named like the config is not kept as the user file."""
+    (tmp_path / "ruff.toml").mkdir()
+
+    result = export_config(standards.RUFF_CONFIG, tmp_path)
+
+    assert result.outcome is Outcome.FAIL
+    assert result.message.endswith(str(tmp_path / "ruff.toml"))
+
+
+def test_export_config_fails_on_unreadable_dir(tmp_path: Path) -> None:
+    """An `OSError` from the existence check gives FAIL, not a traceback."""
+    denied = PermissionError(13, "Permission denied", str(tmp_path))
+    with mock.patch.object(Path, "is_file", side_effect=denied):
+        result = export_config(standards.RUFF_CONFIG, tmp_path)
+
+    assert result.outcome is Outcome.FAIL
+    assert result.message == f"Permission denied: {tmp_path}"
+
+
+def test_export_config_falls_back_to_error_text(tmp_path: Path) -> None:
+    """An `OSError` without a reason & path is shown as its own text."""
+    with mock.patch(
+        "pkgdx._core.shutil.copyfile", side_effect=OSError("boom")
+    ):
+        result = export_config(standards.RUFF_CONFIG, tmp_path)
+
+    assert result.outcome is Outcome.FAIL
+    assert result.message == "boom"

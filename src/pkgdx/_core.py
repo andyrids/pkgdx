@@ -1,10 +1,11 @@
-"""Core logic and file-system operations for the `pkgdx init` command."""
+"""Core logic and file-system operations for `pkgdx init` and `config`."""
 
 import argparse
 import dataclasses
 import logging
 import os
 import re
+import shutil
 import subprocess
 import sys
 from collections.abc import Iterable
@@ -45,7 +46,7 @@ class ExitCode(IntEnum):
 
 
 class Outcome(StrEnum):
-    """The state of a finished `pkgdx init` step."""
+    """The state of a finished ledger step (`pkgdx init` or `config`)."""
 
     OK = "ok"
     WARN = "warn"
@@ -53,7 +54,7 @@ class Outcome(StrEnum):
 
 
 class Change(StrEnum):
-    """The change a state-changing `pkgdx init` step made on disk."""
+    """The change a state-changing ledger step made on disk."""
 
     CREATED = "created"
     UPDATED = "updated"
@@ -62,7 +63,7 @@ class Change(StrEnum):
 
 @dataclasses.dataclass(frozen=True, slots=True)
 class StepResult:
-    """The result of one `pkgdx init` step, for the CLI to render.
+    """The result of one ledger step, for the CLI to render.
 
     Attributes:
         outcome: Whether the step succeeded, warned or failed.
@@ -461,6 +462,26 @@ def _validate_prek_repos(doc: TOMLDocument) -> None:
                 raise exceptions.PrekConfigError(msg)
 
 
+def config_dir_failure(error: exceptions.ConfigDirError) -> StepResult:
+    """Build the FAIL result for an invalid `PKGDX_CONFIG_DIR`.
+
+    NOTE: Shared by `pkgdx init` and `pkgdx config`, so both report the same
+    cause and hint.
+
+    Args:
+        error: The error raised by `standards.user_config_dir`.
+
+    Returns:
+        A FAIL result naming the directory, with a hint to fix it.
+    """
+    return StepResult(
+        Outcome.FAIL,
+        "user config directory not found",
+        str(error),
+        f"Create it, or unset `{standards.CONFIG_DIR_ENV}`",
+    )
+
+
 def setup_prek_config(root: Path, reset: bool = False) -> StepResult:
     """Configure pre-commit hooks in the consuming repo.
 
@@ -478,12 +499,7 @@ def setup_prek_config(root: Path, reset: bool = False) -> StepResult:
     try:
         config_template = standards.resolve_config(standards.PREK_CONFIG)
     except exceptions.ConfigDirError as e:
-        return StepResult(
-            Outcome.FAIL,
-            "user config directory not found",
-            str(e),
-            f"Create it, or unset `{standards.CONFIG_DIR_ENV}`",
-        )
+        return config_dir_failure(e)
     template_text = config_template.read_text()
 
     if reset or not config_existing.exists():
@@ -594,3 +610,40 @@ def create_secrets_baseline(root: Path) -> StepResult:
         reason,
         "Run `detect-secrets scan` to see the full error",
     )
+
+
+def export_config(bundled: Path, user_dir: Path) -> StepResult:
+    """Copy a bundled config file into the user config directory.
+
+    NOTE: An existing file is never overwritten. A failed copy (an `OSError`)
+    is returned as a FAIL result, not raised.
+
+    Args:
+        bundled: A bundled config path (for example `RUFF_CONFIG`).
+        user_dir: The user config directory, created if missing.
+
+    Returns:
+        An OK result (created or unchanged), or FAIL if the copy fails.
+    """
+    target = user_dir / bundled.name
+    try:
+        # `is_file`, as `standards.resolve_config` ignores a directory
+        if target.is_file():
+            logger.debug("Keeping existing %s", target)
+            return StepResult(
+                Outcome.OK, change=Change.UNCHANGED, subject=str(target)
+            )
+        user_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(bundled, target)
+    except OSError as e:
+        reason = str(e)
+        if e.strerror and e.filename:
+            # `str(e)` shows the path as a repr, doubling Windows backslashes
+            reason = f"{e.strerror}: {e.filename}"
+        return StepResult(
+            Outcome.FAIL,
+            "could not be copied",
+            reason,
+            "Fix the cause, then re-run `pkgdx config --export`",
+        )
+    return StepResult(Outcome.OK, change=Change.CREATED, subject=str(target))

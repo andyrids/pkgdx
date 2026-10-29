@@ -1,4 +1,4 @@
-"""Unit tests for the `pkgdx init` command (`pkgdx.standards._cli`)."""
+"""Unit tests for the `pkgdx init` & `config` commands (`standards._cli`)."""
 
 import argparse
 from collections.abc import Callable, Iterator
@@ -12,7 +12,7 @@ from rich.color import ColorSystem
 
 from pkgdx import __main__, exceptions, standards
 from pkgdx._core import Change, CLIContext, ExitCode, Outcome, StepResult
-from pkgdx.logging import GLOBAL_CONSOLE
+from pkgdx.logging import CLI_CONSOLE, GLOBAL_CONSOLE
 from pkgdx.standards._cli import command_init
 
 STANDARDS_CLI = "pkgdx.standards._cli"
@@ -117,7 +117,7 @@ def _run_init(
     exit_code = command_init(ctx)
     out, err = capsys.readouterr()
     assert out == ""
-    return exit_code, [line.rstrip() for line in err.splitlines()]
+    return exit_code, err.splitlines()
 
 
 def test_init_success_ledger_matches_target(
@@ -301,9 +301,8 @@ def test_init_fails_on_missing_project_root(
         "        -> Run `pkgdx init` from inside a Python project",
         (
             "        not run: identify Git top-level, configure pre-commit"
-            " hooks, prek"
+            " hooks, prek install, prek update --check, detect-secrets scan"
         ),
-        "        install, prek update --check, detect-secrets scan",
         "pkgdx init: failed at step 1/6 (5 steps not run)",
     ]
     for name, step in steps.items():
@@ -358,7 +357,10 @@ def test_init_bad_config_dir_fails_without_traceback(
     assert lines[2] == (
         "  FAIL    configure pre-commit hooks  user config directory not found"
     )
-    assert lines[3].startswith("        `PKGDX_CONFIG_DIR` is not")
+    assert lines[3] == (
+        "        `PKGDX_CONFIG_DIR` is not an existing directory: "
+        f"{tmp_path / 'nope'}"
+    )
     assert lines[-1] == "pkgdx init: failed at step 3/6 (3 steps not run)"
     assert not any("Traceback" in line for line in lines)
 
@@ -521,47 +523,216 @@ def test_main_verbose_flag_reaches_init_context() -> None:
     assert recorded["ctx"].is_debug is True
 
 
-CONFIG_NAMES = ["mypy.ini", "hooks.toml", "pymarkdown.toml", "ruff.toml"]
+@pytest.fixture
+def plain_stdout() -> Iterator[None]:
+    """Render `CLI_CONSOLE` (STDOUT) without colour, even under `pytest -s`."""
+    with mock.patch.object(CLI_CONSOLE, "_color_system", None):
+        yield
 
 
-def test_config_reports_bundled(capsys: pytest.CaptureFixture[str]) -> None:
-    """With an empty user dir every file resolves to bundled."""
-    assert _run_main(["config"]) == ExitCode.EX_OK
-    rows = capsys.readouterr().out.splitlines()
-    for name in CONFIG_NAMES:
-        assert any(r.startswith(f"{name}\tbundled\t") for r in rows)
+@pytest.fixture
+def export_clock(plain_stderr: mock.MagicMock) -> Iterator[None]:
+    """Render the `--export` ledger as a pipe, taking 2.9s."""
+    with mock.patch(f"{STANDARDS_CLI}.time") as mtime:
+        mtime.monotonic.side_effect = [0.0, 2.9]
+        yield
 
 
-def test_config_reports_user_override(
-    isolated_user_config: Path, capsys: pytest.CaptureFixture[str]
+@pytest.fixture
+def platform_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Unset `PKGDX_CONFIG_DIR` & point the platform dir under `tmp_path`."""
+    monkeypatch.delenv("PKGDX_CONFIG_DIR")
+    monkeypatch.setenv("APPDATA", str(tmp_path))
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+    return tmp_path / "pkgdx"
+
+
+def _run_config(
+    argv: list[str], capsys: pytest.CaptureFixture[str]
+) -> tuple[int, list[str], list[str]]:
+    """Run `pkgdx config` & return the exit code, STDOUT & STDERR lines."""
+    exit_code = _run_main(["config", *argv])
+    out, err = capsys.readouterr()
+    return exit_code, out.splitlines(), err.splitlines()
+
+
+def _source_row(bundled: Path, source: str, resolved: Path) -> str:
+    """Build the expected plain-run row for a config file."""
+    return f"  {bundled.name:<15}  {source:<11}{resolved}"
+
+
+def _export_row(user_dir: Path, name: str, change: str) -> str:
+    """Build the expected `--export` ledger line for a config file."""
+    return f"  ok      {name:<15}  {change:<11}{user_dir / name}"
+
+
+def test_config_lists_bundled_sources(
+    isolated_user_config: Path,
+    plain_stderr: mock.MagicMock,
+    plain_stdout: None,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """A user file is reported with source `user`."""
-    (isolated_user_config / "ruff.toml").write_text("")
-    assert _run_main(["config"]) == ExitCode.EX_OK
-    out = capsys.readouterr().out
-    assert "ruff.toml\tuser\t" in out
-    assert "mypy.ini\tbundled\t" in out
+    """With an empty user dir every row is bundled & STDOUT holds only rows."""
+    exit_code, out, err = _run_config([], capsys)
+
+    assert exit_code == ExitCode.EX_OK
+    assert out == [
+        _source_row(bundled, "bundled", bundled)
+        for bundled in standards.BUNDLED_CONFIGS
+    ]
+    assert err == [
+        (
+            f"pkgdx config: user config dir {isolated_user_config}, "
+            "from PKGDX_CONFIG_DIR (0 user, 4 bundled)"
+        )
+    ]
 
 
-def test_config_export_writes_files(isolated_user_config: Path) -> None:
-    """`--export` copies all bundled files into the user dir."""
-    assert _run_main(["config", "--export"]) == ExitCode.EX_OK
-    written = sorted(p.name for p in isolated_user_config.iterdir())
-    assert written == sorted(CONFIG_NAMES)
+def test_config_lists_user_override(
+    isolated_user_config: Path,
+    plain_stderr: mock.MagicMock,
+    plain_stdout: None,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A user file is listed as `user`, with its own path."""
+    user_ruff = isolated_user_config / "ruff.toml"
+    user_ruff.write_text("")
+
+    exit_code, out, err = _run_config([], capsys)
+
+    assert exit_code == ExitCode.EX_OK
+    assert out == [
+        _source_row(standards.MYPY_CONFIG, "bundled", standards.MYPY_CONFIG),
+        _source_row(standards.PREK_CONFIG, "bundled", standards.PREK_CONFIG),
+        _source_row(
+            standards.PYMARKDOWN_CONFIG,
+            "bundled",
+            standards.PYMARKDOWN_CONFIG,
+        ),
+        _source_row(standards.RUFF_CONFIG, "user", user_ruff),
+    ]
+    assert err[-1].endswith("from PKGDX_CONFIG_DIR (1 user, 3 bundled)")
 
 
-def test_config_export_never_overwrites(isolated_user_config: Path) -> None:
-    """`--export` leaves existing user files untouched."""
+def test_config_names_platform_dir_when_env_unset(
+    platform_dir: Path,
+    plain_stderr: mock.MagicMock,
+    plain_stdout: None,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The closing line says when `PKGDX_CONFIG_DIR` is not set."""
+    exit_code, _, err = _run_config([], capsys)
+
+    assert exit_code == ExitCode.EX_OK
+    assert err == [
+        (
+            f"pkgdx config: user config dir {platform_dir}, "
+            "PKGDX_CONFIG_DIR not set (0 user, 4 bundled)"
+        )
+    ]
+
+
+def test_config_export_creates_files(
+    isolated_user_config: Path,
+    export_clock: None,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """`--export` prints a ledger line per file on STDERR & no rows."""
+    exit_code, out, err = _run_config(["--export"], capsys)
+
+    assert exit_code == ExitCode.EX_OK
+    assert out == []
+    assert err == [
+        *(
+            _export_row(isolated_user_config, bundled.name, "created")
+            for bundled in standards.BUNDLED_CONFIGS
+        ),
+        "pkgdx config: done in 2.9s (4 changed, 0 unchanged)",
+    ]
+    for bundled in standards.BUNDLED_CONFIGS:
+        target = isolated_user_config / bundled.name
+        assert target.read_bytes() == bundled.read_bytes()
+
+
+def test_config_export_never_overwrites(
+    isolated_user_config: Path,
+    export_clock: None,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """`--export` reports an existing user file unchanged & leaves it."""
     existing = isolated_user_config / "ruff.toml"
     existing.write_text("# mine")
-    assert _run_main(["config", "--export"]) == ExitCode.EX_OK
+
+    exit_code, _, err = _run_config(["--export"], capsys)
+
+    assert exit_code == ExitCode.EX_OK
+    assert err[-2:] == [
+        _export_row(isolated_user_config, "ruff.toml", "unchanged"),
+        "pkgdx config: done in 2.9s (3 changed, 1 unchanged)",
+    ]
     assert existing.read_text() == "# mine"
-    assert (isolated_user_config / "mypy.ini").is_file()
 
 
-def test_config_bad_env_dir_exits_1(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def test_config_export_creates_platform_dir(
+    platform_dir: Path,
+    export_clock: None,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """An invalid `PKGDX_CONFIG_DIR` exits 1."""
-    monkeypatch.setenv("PKGDX_CONFIG_DIR", str(tmp_path / "nope"))
-    assert _run_main(["config"]) == ExitCode.EX_FAILURE
+    """`--export` creates a missing platform config dir."""
+    exit_code, _, err = _run_config(["--export"], capsys)
+
+    assert exit_code == ExitCode.EX_OK
+    assert err[0] == _export_row(platform_dir, "mypy.ini", "created")
+    assert sorted(p.name for p in platform_dir.iterdir()) == sorted(
+        bundled.name for bundled in standards.BUNDLED_CONFIGS
+    )
+
+
+def test_config_export_stops_at_copy_error(
+    isolated_user_config: Path,
+    export_clock: None,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A failed copy is a FAIL line naming the files not run, with exit 1."""
+    denied = PermissionError(13, "Permission denied", "x")
+    with mock.patch("pkgdx._core.shutil.copyfile", side_effect=[None, denied]):
+        exit_code, out, err = _run_config(["--export"], capsys)
+
+    assert exit_code == ExitCode.EX_FAILURE
+    assert out == []
+    assert err == [
+        _export_row(isolated_user_config, "mypy.ini", "created"),
+        "  FAIL    hooks.toml       could not be copied",
+        "        Permission denied: x",
+        "        -> Fix the cause, then re-run `pkgdx config --export`",
+        "        not run: pymarkdown.toml, ruff.toml",
+        "pkgdx config: failed at step 2/4 (2 steps not run)",
+    ]
+
+
+@pytest.mark.parametrize("argv", [[], ["--export"]], ids=["plain", "export"])
+def test_config_bad_env_dir_fails_without_traceback(
+    argv: list[str],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    plain_stderr: mock.MagicMock,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """An invalid `PKGDX_CONFIG_DIR` is a FAIL line, exit 1 & no rows."""
+    missing = tmp_path / "nope"
+    monkeypatch.setenv("PKGDX_CONFIG_DIR", str(missing))
+
+    exit_code, out, err = _run_config(argv, capsys)
+
+    assert exit_code == ExitCode.EX_FAILURE
+    assert out == []
+    assert err == [
+        "  FAIL    PKGDX_CONFIG_DIR  user config directory not found",
+        (
+            "        `PKGDX_CONFIG_DIR` is not an existing directory: "
+            f"{missing}"
+        ),
+        "        -> Create it, or unset `PKGDX_CONFIG_DIR`",
+        "pkgdx config: failed",
+    ]
+    assert not missing.exists()

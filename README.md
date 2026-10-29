@@ -28,19 +28,19 @@ The config files; `hooks.toml`, `mypy.ini`, `pymarkdown.toml` and `ruff.toml` ar
 2. Delete a file to revert to the repsective, bundled config
 3. Run `uv run pkgdx config` to check config detection and location
 
-To quickly demo `pkgdx`, clone this repository and run the commands below:
+To quickly demo `pkgdx`, clone this repository, cd into `./pkgdx/` and run the command below:
 
 ```sh
-uv run --directory consumers/testing uv add pkgdx
-uv run --directory consumers/testing pkgdx init --reset
-uv run --directory consumers/testing pkgdx config --export
-uv run --directory consumers/testing pkgdx config
+just consumer-demo
 ```
 
-> [!TIP]
-> Further installation and setup guidance is available below.
+> [!INFO]
+> Use `uvx rust-just consumer-demo` if [Just](https://just.systems/man/en/) command runner
+> is not installed.
 
-![Demo Preview](https://gitlab.com/andyrids/pkgdx/-/raw/main/docs/consumer-demo.gif)
+Further installation and setup guidance is available below.
+
+![Demo Preview](https://gitlab.com/andyrids/pkgdx/-/raw/main/docs/pkgdx-demo.webp)
 
 ## Why?
 
@@ -184,8 +184,9 @@ detect-secrets has no configuration file, so it always uses its bundled settings
 uv run pkgdx config
 ```
 
-This prints the user config directory, the environment variable that can override it, and for
-each file, its source (`user` or `bundled`) and resolved path. Output goes to standard output.
+This prints one row per file on standard output: its name, its source (`user` or `bundled`) and
+its resolved path. A summary line on standard error names the user config directory and whether
+`PKGDX_CONFIG_DIR` set it.
 
 To start from the bundled files, export them into the user config directory:
 
@@ -194,7 +195,8 @@ uv run pkgdx config --export
 ```
 
 `--export` creates the platform directory if needed, copies each bundled file that is missing and
-never overwrites an existing file. It reports which files were written and which were skipped.
+never overwrites an existing file. It prints one line per file, `created` or `unchanged`, in the
+same format as `pkgdx init`.
 
 ### (4) CI & team parity
 

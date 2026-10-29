@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > - `Fixed` for any bug fixes.
 > - `Security` in case of vulnerabilities.
 
-## [0.5.0] - 2026-10-28
+## [0.5.0] - 2026-10-29
 
 ### Added
 
@@ -25,9 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `%APPDATA%\pkgdx` on Windows, or `$XDG_CONFIG_HOME/pkgdx` (else `~/.config/pkgdx`) elsewhere.
   Each file falls back to the bundled one. `PKGDX_CONFIG_DIR` overrides the directory and fails
   with exit code 1 when it is not an existing directory.
-- `pkgdx config` shows the user config directory and the source (user or bundled) of each file.
-  `pkgdx config --export` copies the bundled files into the user config directory without
-  overwriting existing files.
+- `pkgdx config` lists each file with its source (user or bundled) and resolved path on standard
+  output, and names the user config directory and whether `PKGDX_CONFIG_DIR` set it on standard
+  error. `pkgdx config --export` copies the bundled files into the user config directory without
+  overwriting existing files, and reports each file as created or unchanged, like `pkgdx init`.
 
 ### Changed
 
