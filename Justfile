@@ -50,4 +50,4 @@ consumer-init *FLAGS:
 [doc("Test `pkgdx config` command in workspace member `consumers/testing`")]
 [group("TEST")]
 consumer-config *FLAGS:
-    uv run --directory consumers/testing pkdx config {{FLAGS}}
+    uv run --directory consumers/testing pkgdx config {{FLAGS}}

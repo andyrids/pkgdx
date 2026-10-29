@@ -1,0 +1,5 @@
+──────────────────────────────────────────── pkgdx init ────────────────────────────────────────────
+[10/28/26 22:34:44] WARNING  [run] Failed `git rev-parse --show-toplevel`        p00_baseline.py:136
+[10/28/26 22:34:44] WARNING  [run] Run `git init` to enable pre-commit hooks     p00_baseline.py:137
+[10/28/26 22:34:44] WARNING  [run] Update available: pkgdx v0.4.2 -> v0.5.0      p00_baseline.py:136
+[10/28/26 22:34:44] WARNING  [run] Update remote hook revisions - `prek update`  p00_baseline.py:137

@@ -1,0 +1,8 @@
+  pkgdx init  C:\src\acme
+      Found  C:\src\acme (pyproject.toml)
+      Found  C:\src\acme
+    Updated  prek.toml, 2 hooks added
+  Unchanged  Git shims
+  Unchanged  hook revisions
+    Created  .secrets.baseline
+   Finished  6 steps in 0.0s

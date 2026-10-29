@@ -1,0 +1,7 @@
+[32m  ok    [0m  identify project root       C:\src\acme (pyproject.toml)
+[32m  ok    [0m  identify Git top-level      C:\src\acme
+[32m  ok    [0m  configure pre-commit hooks  prek.toml updated, 2 hooks added
+[32m  ok    [0m  prek install                Git shims already installed
+[32m  ok    [0m  prek update --check         hook revisions up to date
+[32m  ok    [0m  detect-secrets scan         .secrets.baseline created
+pkgdx init: done in [1;36m0.[0m0s

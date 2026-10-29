@@ -1,0 +1,8 @@
+  [1;36mpkgdx init[0m  [2mC:\src\acme[0m
+[1;32m      Found[0m  C:\src\acme (pyproject.toml)
+[1;32m      Found[0m  C:\src\acme
+[1;32m    Updated[0m  prek.toml, 2 hooks added
+[2m  Unchanged[0m  Git shims
+[2m  Unchanged[0m  hook revisions
+[1;32m    Created[0m  .secrets.baseline
+[1;32m   Finished[0m  6 steps in 0.0s

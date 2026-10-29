@@ -1,7 +1,7 @@
 # Package Developer Experience (DX) Toolkit [`Pkgdx`]
 
 I created `pkgdx` as a way to improve DX for my Python projects. The package is installed as
-as a development dependency, providing a main command-line interface (CLI) for canonical standards
+as a development dependency, providing a command-line interface (CLI) for canonical standards
 configuration.
 
 ## Overview
@@ -15,18 +15,30 @@ single source of truth for toolchain configuration:
 4. detect-secrets (secret detection)
 5. Prek (hook framework)
 
-To quickly demo `pkgdx`, clone this repository and run the `consumer-init` and `consumer-config`
-Justfile recipes:
+## Quick start
+
+1. Run `uv add --dev pkgdx` for a consuming project
+2. Run `uv run pkgdx init` to configure hooks and install Git shims
+3. Run `uv run pkgdx config --export` to export toolchain config files
+
+The config files; `hooks.toml`, `mypy.ini`, `pymarkdown.toml` and `ruff.toml` are exported to
+`$PKGDX_CONFIG_DIR` | `%APPDATA%/pkgdx` | `$XDG_CONFIG_HOME/pkgdx` | `~/.config/pkgdx`.
+
+1. Modify these files to maintain a new global canonical standards config
+2. Delete a file to revert to the repsective, bundled config
+3. Run `uv run pkgdx config` to check config detection and location
+
+To quickly demo `pkgdx`, clone this repository and run the commands below:
 
 ```sh
-just consumer-init --reset
+uv run --directory consumers/testing uv add pkgdx
+uv run --directory consumers/testing pkgdx init --reset
+uv run --directory consumers/testing pkgdx config --export
+uv run --directory consumers/testing pkgdx config
 ```
 
 > [!TIP]
-> To quickly demo `pkgdx`, clone this repository and run the `test-consumer` Justfile recipe via
-> `just test-consumer`. If [Just](https://github.com/casey/just) command runner is unavailable,
-> run `uv run --directory consumers/testing pkgdx --debug init --reset` to use `pkgdx` against
-> the `consumers/testing` workspace package.
+> Further installation and setup guidance is available below.
 
 ![Demo Preview](https://gitlab.com/andyrids/pkgdx/-/raw/main/docs/consumer-demo.gif)
 
@@ -114,7 +126,7 @@ uv add --dev git+https://gitlab.com/andyrids/pkgdx.git
 ```
 
 ```bash
-uv add --dev git+https://gitlab.com/andyrids/pkgdx.git@v0.4.1
+uv add --dev git+https://gitlab.com/andyrids/pkgdx.git@v0.5.0
 ```
 
 ## CI/CD integration
@@ -172,7 +184,7 @@ detect-secrets has no configuration file, so it always uses its bundled settings
 uv run pkgdx config
 ```
 
-This prints the user config directory, the environment variable that can override it, and, for
+This prints the user config directory, the environment variable that can override it, and for
 each file, its source (`user` or `bundled`) and resolved path. Output goes to standard output.
 
 To start from the bundled files, export them into the user config directory:
@@ -181,7 +193,7 @@ To start from the bundled files, export them into the user config directory:
 uv run pkgdx config --export
 ```
 
-`--export` creates the platform directory if needed, copies each bundled file that is missing, and
+`--export` creates the platform directory if needed, copies each bundled file that is missing and
 never overwrites an existing file. It reports which files were written and which were skipped.
 
 ### (4) CI & team parity

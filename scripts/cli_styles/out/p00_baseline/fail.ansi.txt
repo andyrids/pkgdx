@@ -1,0 +1,19 @@
+[92m──────────────────────────────────────────── [0m[36mpkgdx init[0m[92m ────────────────────────────────────────────[0m
+[2;36m[10/28/26 22:34:44][0m[2;36m [0m[1;31mERROR   [0m [1m[[0mrun[1m][0m Failed to configure pre-commit hooks          ]8;id=757515;file://D:\Projects\gitlab\pkgdx\scripts\cli_styles\p00_baseline.py\[2mp00_baseline.py[0m]8;;\[2m:[0m]8;id=757516;file://D:\Projects\gitlab\pkgdx\scripts\cli_styles\p00_baseline.py#133\[2m133[0m]8;;\
+[2;36m                    [0m         [31m┌─[0m[31m──────[0m[31m [0m[1;31mTraceback [0m[1;2;31m(most recent call last)[0m[31m [0m[31m──────[0m[31m─┐[0m [2m                   [0m
+[2;36m                    [0m         [31m│[0m D:\Projects\gitlab\pkgdx\scripts\cli_styles\p00 [31m│[0m [2m                   [0m
+[2;36m                    [0m         [31m│[0m _baseline.py:131 in run                         [31m│[0m [2m                   [0m
+[2;36m                    [0m         [31m│[0m                                                 [31m│[0m [2m                   [0m
+[2;36m                    [0m         [31m│[0m   [2m128 [0m[2m│   │   │   │   │   [0mfailed=[94mTrue[0m,          [31m│[0m [2m                   [0m
+[2;36m                    [0m         [31m│[0m   [2m129 [0m[2m│   │   │   │   [0m)                         [31m│[0m [2m                   [0m
+[2;36m                    [0m         [31m│[0m   [2m130 [0m[2m│   │   │   │   [0m[94mtry[0m:                      [31m│[0m [2m                   [0m
+[2;36m                    [0m         [31m│[0m [31m> [0m131 [2m│   │   │   │   │   [0m[94mraise[0m [96mRuntimeError[0m(re [31m│[0m [2m                   [0m
+[2;36m                    [0m         [31m│[0m   [2m132 [0m[2m│   │   │   │   [0m[94mexcept[0m [96mRuntimeError[0m:      [31m│[0m [2m                   [0m
+[2;36m                    [0m         [31m│[0m   [2m133 [0m[2m│   │   │   │   │   [0m[1;4mlogger.exception([0m[1;4;33m"[0m[1;4;33mFai[0m [31m│[0m [2m                   [0m
+[2;36m                    [0m         [31m│[0m   [2m134 [0m[2m│   │   │   │   [0m[94mreturn[0m [94m1[0m                  [31m│[0m [2m                   [0m
+[2;36m                    [0m         [31m└─────────────────────────────────────────────────┘[0m [2m                   [0m
+[2;36m                    [0m         [1;91mRuntimeError: [0mInvalid value [1m([0mat line [1;36m12[0m, column [1;36m9[0m[1m)[0m  [2m                   [0m
+[32m■[0m [2;3midentify project root[0m                                                                             
+[32m■[0m [2;3midentify Git top-level[0m                                                                            
+[31m□[0m [9;31mconfigure pre-commit hooks[0m                                                                        
+[36m⠋[0m [1;7;36mpkgdx init[0m                   [38;2;249;38;114m-------------------[0m[38;5;237m [0m[38;5;237m-------------------------------------[0m [32m2/6[0m [33m0:00:00[0m

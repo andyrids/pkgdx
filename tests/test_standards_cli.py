@@ -1,323 +1,484 @@
 """Unit tests for the `pkgdx init` command (`pkgdx.standards._cli`)."""
 
 import argparse
-import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import ExitStack
 from pathlib import Path
 from unittest import mock
 
 import pytest
 import tomlkit
-import tomlkit.exceptions
-from rich.console import Console
-from rich.logging import RichHandler
-from rich.progress import Progress
+from rich.color import ColorSystem
 
-from pkgdx import __main__, exceptions
-from pkgdx._core import (
-    CLIContext,
-    ExitCode,
-    _validate_prek_repos,
-    create_secrets_baseline,
-    setup_prek_config,
-)
-from pkgdx.standards._cli import _setup_progress, command_init
+from pkgdx import __main__, exceptions, standards
+from pkgdx._core import Change, CLIContext, ExitCode, Outcome, StepResult
+from pkgdx.logging import GLOBAL_CONSOLE
+from pkgdx.standards._cli import command_init
 
 STANDARDS_CLI = "pkgdx.standards._cli"
 
 ContextFactory = Callable[..., CLIContext]
 
+ROOT = Path(r"C:\src\acme")
 
-def test_setup_progress_disabled_in_non_tty(
-    tty_stderr_disable: None,
-    configured_logging: None,
-) -> None:
-    """Progress is disabled when STDERR is non-TTY."""
-    with _setup_progress() as progress:
-        assert progress.disable is True
+SUCCESS_LEDGER = [
+    r"  ok      identify project root       C:\src\acme (pyproject.toml)",
+    "  ok      identify Git top-level      same as project root",
+    (
+        "  ok      configure pre-commit hooks  updated    "
+        "prek.toml (2 hooks added)"
+    ),
+    "  ok      prek install                unchanged  Git shims",
+    "  ok      prek update --check         hook revisions up to date",
+    "  ok      detect-secrets scan         created    .secrets.baseline",
+    "pkgdx init: done in 2.9s (2 changed, 1 unchanged)",
+]
 
+WARN_LEDGER = [
+    r"  ok      identify project root       C:\src\acme (pyproject.toml)",
+    (
+        "  warn    identify Git top-level      "
+        "not a Git repository, using project root"
+    ),
+    "        -> Run `git init` to enable pre-commit hooks",
+    (
+        "  ok      configure pre-commit hooks  updated    "
+        "prek.toml (2 hooks added)"
+    ),
+    (
+        "  ok      prek install                created    "
+        "Git shims (at project root)"
+    ),
+    "  warn    prek update --check         pkgdx v0.4.2 -> v0.5.0 available",
+    "        -> Update remote hook revisions - `prek update`",
+    "  ok      detect-secrets scan         unchanged  .secrets.baseline",
+    "pkgdx init: done in 2.9s with 2 warnings (2 changed, 1 unchanged)",
+]
 
-def test_setup_progress_enabled_in_tty(
-    tty_stderr_enable: None,
-    configured_logging: None,
-) -> None:
-    """Progress is enabled when STDERR is a TTY."""
-    with _setup_progress() as progress:
-        assert progress.disable is False
-        assert progress.expand is True
-        assert progress.live.transient is False
-
-
-def test_setup_progress_shares_console_with_rich_handler(
-    tty_stderr_enable: None,
-    configured_logging: None,
-) -> None:
-    """The Progress instance shares a Console with RichHandler."""
-    cli_logger = logging.getLogger("pkgdx")
-    handler = next(
-        h for h in cli_logger.handlers if isinstance(h, RichHandler)
-    )
-    with _setup_progress() as progress:
-        assert progress.console is handler.console
-
-
-def test_setup_progress_restores_console_after_exit(
-    tty_stderr_enable: None,
-    configured_logging: None,
-) -> None:
-    """RichHandler console is restored after the Progress context exits."""
-    cli_logger = logging.getLogger("pkgdx")
-    handler = next(
-        h for h in cli_logger.handlers if isinstance(h, RichHandler)
-    )
-    original_console = handler.console
-    with _setup_progress():
-        pass
-    assert handler.console is original_console
+FAIL_LEDGER = [
+    r"  ok      identify project root       C:\src\acme (pyproject.toml)",
+    "  ok      identify Git top-level      same as project root",
+    "  FAIL    configure pre-commit hooks  prek.toml could not be parsed",
+    "        Invalid value (at line 12, column 9)",
+    "        -> Fix prek.toml, or regenerate it with `pkgdx init --reset`",
+    "        not run: prek install, prek update --check, detect-secrets scan",
+    "pkgdx init: failed at step 3/6 (3 steps not run)",
+]
 
 
-def test_command_init_complete(
-    mock_project: Path,
-    tty_stderr_enable: None,
-    mock_subprocess_run: mock.MagicMock,
-    make_cli_context: ContextFactory,
-) -> None:
-    """The init command tracks one overall task and six completed steps."""
-
-    ctx = make_cli_context(
-        args=argparse.Namespace(debug=False, reset=False),
-        console=Console(),
-    )
-
+@pytest.fixture
+def plain_stderr(tty_stderr_disable: None) -> Iterator[mock.MagicMock]:
+    """Render `GLOBAL_CONSOLE` as an 80-column pipe, with `status` mocked."""
     with (
-        mock.patch(
-            f"{STANDARDS_CLI}._core.get_project_root",
-            return_value=mock_project,
-        ),
-        mock.patch(
-            f"{STANDARDS_CLI}._core.get_git_toplevel",
-            return_value=mock_project,
-        ),
-        mock.patch(f"{STANDARDS_CLI}._setup_progress") as msetup_progress,
+        mock.patch.object(GLOBAL_CONSOLE, "_width", 80),
+        mock.patch.object(GLOBAL_CONSOLE, "status") as mstatus,
     ):
-        mprogress = mock.MagicMock(spec=Progress)
-        mprogress_enter = mock.MagicMock(return_value=mprogress)
-        mprogress_exit = mock.MagicMock(return_value=None)
+        yield mstatus
 
-        mtask_id = mock.MagicMock()
-        mprogress.add_task.return_value = mtask_id
 
-        msetup_progress.return_value.__enter__ = mprogress_enter
-        msetup_progress.return_value.__exit__ = mprogress_exit
+@pytest.fixture
+def steps() -> Iterator[dict[str, mock.MagicMock]]:
+    """Patch the `_core` init steps & `time`, defaulting to a success run."""
+    defaults = {
+        "get_project_root": ROOT,
+        "get_git_toplevel": ROOT,
+        "setup_prek_config": StepResult(
+            Outcome.OK,
+            change=Change.UPDATED,
+            subject="prek.toml (2 hooks added)",
+        ),
+        "install_prek_hooks": StepResult(
+            Outcome.OK, change=Change.UNCHANGED, subject="Git shims"
+        ),
+        "update_prek_hooks": StepResult(
+            Outcome.OK, "hook revisions up to date"
+        ),
+        "create_secrets_baseline": StepResult(
+            Outcome.OK, change=Change.CREATED, subject=".secrets.baseline"
+        ),
+    }
+    with ExitStack() as stack:
+        mocks = {
+            name: stack.enter_context(
+                mock.patch(f"{STANDARDS_CLI}._core.{name}", return_value=value)
+            )
+            for name, value in defaults.items()
+        }
+        mtime = stack.enter_context(mock.patch(f"{STANDARDS_CLI}.time"))
+        mtime.monotonic.side_effect = [0.0, 2.9]
+        yield mocks
 
-        exit_code = command_init(ctx)
+
+def _run_init(
+    make_cli_context: ContextFactory, capsys: pytest.CaptureFixture[str]
+) -> tuple[int, list[str]]:
+    """Run `command_init` & return the exit code and STDERR lines."""
+    ctx = make_cli_context(args=argparse.Namespace(debug=False, reset=False))
+    exit_code = command_init(ctx)
+    out, err = capsys.readouterr()
+    assert out == ""
+    return exit_code, [line.rstrip() for line in err.splitlines()]
+
+
+def test_init_success_ledger_matches_target(
+    plain_stderr: mock.MagicMock,
+    steps: dict[str, mock.MagicMock],
+    make_cli_context: ContextFactory,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A successful run prints one ledger line per step & a summary."""
+    exit_code, lines = _run_init(make_cli_context, capsys)
 
     assert exit_code == ExitCode.EX_OK
-    assert mprogress.add_task.call_count == 7
-    first_add = mprogress.add_task.call_args_list[0]
-    assert first_add.kwargs["total"] == 6
-    assert first_add.kwargs["role"] == "overall"
-    update_calls = mprogress.update.call_args_list
-    assert len(update_calls) == 13
+    assert lines == SUCCESS_LEDGER
 
 
-def test_command_init_exits_on_missing_project_root(
-    mock_project: Path,
-    tty_stderr_disable: None,
+def test_init_warn_ledger_matches_target(
+    plain_stderr: mock.MagicMock,
+    steps: dict[str, mock.MagicMock],
     make_cli_context: ContextFactory,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """The init command exits with code 1 when the project root is missing."""
-    ctx = make_cli_context(
-        args=argparse.Namespace(debug=False, reset=False),
-        console=Console(),
+    """Warnings print inline hints & are counted in the summary."""
+    steps["get_git_toplevel"].side_effect = exceptions.GitTopLevelError()
+    steps["install_prek_hooks"].return_value = StepResult(
+        Outcome.OK,
+        change=Change.CREATED,
+        subject="Git shims (at project root)",
+    )
+    steps["update_prek_hooks"].return_value = StepResult(
+        Outcome.WARN,
+        "pkgdx v0.4.2 -> v0.5.0 available",
+        hint="Update remote hook revisions - `prek update`",
+    )
+    steps["create_secrets_baseline"].return_value = StepResult(
+        Outcome.OK, change=Change.UNCHANGED, subject=".secrets.baseline"
     )
 
-    with (
-        mock.patch(
-            f"{STANDARDS_CLI}._core.get_project_root",
-            side_effect=exceptions.ProjectRootNotFoundError(),
-        ),
-        mock.patch(f"{STANDARDS_CLI}._setup_progress") as msetup_progress,
-    ):
-        mprogress = mock.MagicMock(spec=Progress)
-        mprogress_enter = mock.MagicMock(return_value=mprogress)
-        mprogress_exit = mock.MagicMock(return_value=None)
+    exit_code, lines = _run_init(make_cli_context, capsys)
 
-        msetup_progress.return_value.__enter__ = mprogress_enter
-        msetup_progress.return_value.__exit__ = mprogress_exit
+    assert exit_code == ExitCode.EX_OK
+    assert lines == WARN_LEDGER
+    steps["install_prek_hooks"].assert_called_once_with(ROOT, None)
 
-        exit_code = command_init(ctx)
+
+def test_init_fail_ledger_matches_target(
+    plain_stderr: mock.MagicMock,
+    steps: dict[str, mock.MagicMock],
+    make_cli_context: ContextFactory,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A failed step prints its cause, hint & the steps not run."""
+    steps["setup_prek_config"].return_value = StepResult(
+        Outcome.FAIL,
+        "prek.toml could not be parsed",
+        "Invalid value (at line 12, column 9)",
+        "Fix prek.toml, or regenerate it with `pkgdx init --reset`",
+    )
+
+    exit_code, lines = _run_init(make_cli_context, capsys)
 
     assert exit_code == ExitCode.EX_FAILURE
-    assert any(
-        call.kwargs.get("failed") is True
-        for call in mprogress.update.call_args_list
-    )
+    assert lines == FAIL_LEDGER
+    for name in [
+        "install_prek_hooks",
+        "update_prek_hooks",
+        "create_secrets_baseline",
+    ]:
+        steps[name].assert_not_called()
 
 
-def test_command_init_exits_on_prek_config_error(
-    mock_project: Path,
-    tty_stderr_enable: None,
+def test_init_names_git_toplevel_above_project_root(
+    plain_stderr: mock.MagicMock,
+    steps: dict[str, mock.MagicMock],
     make_cli_context: ContextFactory,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """The init command exits with code 1 when prek.toml config fails."""
+    """A Git top-level that differs from the project root is named."""
+    steps["get_git_toplevel"].return_value = Path(r"C:\src")
 
-    ctx = make_cli_context(
-        args=argparse.Namespace(debug=False, reset=False),
-        console=Console(),
+    _, lines = _run_init(make_cli_context, capsys)
+
+    assert lines[1] == r"  ok      identify Git top-level      C:\src"
+
+
+def test_init_keeps_long_paths_on_one_line(
+    plain_stderr: mock.MagicMock,
+    steps: dict[str, mock.MagicMock],
+    make_cli_context: ContextFactory,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A path wider than the console stays whole on its ledger line."""
+    root = Path("C:/projects", "a-very-long-directory-name" * 3, "acme")
+    steps["get_project_root"].return_value = root
+    steps["get_git_toplevel"].return_value = root
+
+    _, lines = _run_init(make_cli_context, capsys)
+
+    assert lines[0] == (
+        f"  ok      identify project root       {root} (pyproject.toml)"
+    )
+    assert len(lines) == len(SUCCESS_LEDGER)
+
+
+def test_init_reports_nothing_to_change_on_rerun(
+    plain_stderr: mock.MagicMock,
+    steps: dict[str, mock.MagicMock],
+    make_cli_context: ContextFactory,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A re-run with no changes ends `(nothing to change)`."""
+    unchanged = Change.UNCHANGED
+    steps["setup_prek_config"].return_value = StepResult(
+        Outcome.OK, change=unchanged, subject="prek.toml"
+    )
+    steps["create_secrets_baseline"].return_value = StepResult(
+        Outcome.OK, change=unchanged, subject=".secrets.baseline"
     )
 
-    with (
-        mock.patch(
-            f"{STANDARDS_CLI}._core.get_project_root",
-            return_value=mock_project,
-        ),
-        mock.patch(
-            f"{STANDARDS_CLI}._core.get_git_toplevel",
-            return_value=mock_project,
-        ),
-        mock.patch(
-            f"{STANDARDS_CLI}._core.setup_prek_config",
-            side_effect=tomlkit.exceptions.TOMLKitError("bad TOML"),
-        ),
-        mock.patch(f"{STANDARDS_CLI}._setup_progress") as msetup_progress,
-    ):
-        mprogress = mock.MagicMock(spec=Progress)
-        mprogress_enter = mock.MagicMock(return_value=mprogress)
-        mprogress_exit = mock.MagicMock(return_value=None)
+    exit_code, lines = _run_init(make_cli_context, capsys)
 
-        msetup_progress.return_value.__enter__ = mprogress_enter
-        msetup_progress.return_value.__exit__ = mprogress_exit
+    assert exit_code == ExitCode.EX_OK
+    assert lines[-1] == "pkgdx init: done in 2.9s (nothing to change)"
 
-        exit_code = command_init(ctx)
+
+def test_init_warning_count_singular(
+    plain_stderr: mock.MagicMock,
+    steps: dict[str, mock.MagicMock],
+    make_cli_context: ContextFactory,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A single warning is counted as `1 warning`."""
+    steps["get_git_toplevel"].side_effect = exceptions.GitTopLevelError()
+
+    _, lines = _run_init(make_cli_context, capsys)
+
+    assert lines[-1] == (
+        "pkgdx init: done in 2.9s with 1 warning (2 changed, 1 unchanged)"
+    )
+
+
+def test_init_warn_prints_message_above_hint(
+    plain_stderr: mock.MagicMock,
+    steps: dict[str, mock.MagicMock],
+    make_cli_context: ContextFactory,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A warning's message is printed between its row and its hint."""
+    steps["install_prek_hooks"].return_value = StepResult(
+        Outcome.WARN,
+        "Git shims not installed",
+        "caused by: y",
+        "Fix the error, then run `prek install`",
+    )
+
+    exit_code, lines = _run_init(make_cli_context, capsys)
+
+    assert exit_code == ExitCode.EX_OK
+    index = lines.index("        caused by: y")
+    assert lines[index - 1].startswith("  warn    prek install")
+    assert lines[index + 1] == (
+        "        -> Fix the error, then run `prek install`"
+    )
+
+
+def test_init_fails_on_missing_project_root(
+    plain_stderr: mock.MagicMock,
+    steps: dict[str, mock.MagicMock],
+    make_cli_context: ContextFactory,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A missing project root fails the first step & runs no other."""
+    error = exceptions.ProjectRootNotFoundError("No pyproject.toml in X")
+    steps["get_project_root"].side_effect = error
+
+    exit_code, lines = _run_init(make_cli_context, capsys)
 
     assert exit_code == ExitCode.EX_FAILURE
-    assert any(
-        call.kwargs.get("failed") is True
-        for call in mprogress.update.call_args_list
-    )
+    assert lines == [
+        "  FAIL    identify project root       project root not found",
+        "        No pyproject.toml in X",
+        "        -> Run `pkgdx init` from inside a Python project",
+        (
+            "        not run: identify Git top-level, configure pre-commit"
+            " hooks, prek"
+        ),
+        "        install, prek update --check, detect-secrets scan",
+        "pkgdx init: failed at step 1/6 (5 steps not run)",
+    ]
+    for name, step in steps.items():
+        if name != "get_project_root":
+            step.assert_not_called()
 
 
-def test_command_init_non_tty_runs_without_progress(
-    mock_project: Path,
-    tty_stderr_disable: None,
-    mock_subprocess_run: mock.MagicMock,
+def test_init_fail_on_last_step_omits_not_run(
+    plain_stderr: mock.MagicMock,
+    steps: dict[str, mock.MagicMock],
     make_cli_context: ContextFactory,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """The init command runs without progress rendering in non-TTY mode."""
-
-    ctx = make_cli_context(
-        args=argparse.Namespace(debug=False, reset=False),
-        console=Console(),
+    """A failed last step prints no `not run` line or count."""
+    steps["create_secrets_baseline"].return_value = StepResult(
+        Outcome.FAIL,
+        ".secrets.baseline not created",
+        "ValueError: boom",
+        "Run `detect-secrets scan` to see the full error",
     )
 
-    with (
-        mock.patch(
-            f"{STANDARDS_CLI}._core.get_project_root",
-            return_value=mock_project,
-        ),
-        mock.patch(
-            f"{STANDARDS_CLI}._core.get_git_toplevel",
-            return_value=mock_project,
-        ),
-        mock.patch(f"{STANDARDS_CLI}._setup_progress") as msetup_progress,
-    ):
-        mprogress = mock.MagicMock(spec=Progress)
+    exit_code, lines = _run_init(make_cli_context, capsys)
 
-        mprogress_enter = mock.MagicMock(return_value=mprogress)
-        mprogress_exit = mock.MagicMock(return_value=None)
-
-        msetup_progress.return_value.__enter__ = mprogress_enter
-        msetup_progress.return_value.__exit__ = mprogress_exit
-
-        mock_task_id = mock.MagicMock()
-        mprogress.add_task.return_value = mock_task_id
-
-        command_init(ctx)
-
-    msetup_progress.assert_called_once()
+    assert exit_code == ExitCode.EX_FAILURE
+    assert lines[-1] == "pkgdx init: failed at step 6/6"
+    assert not any("not run" in line for line in lines)
 
 
-def test_validate_prek_repos_accepts_valid_config() -> None:
-    """A well-formed `[[repos]]` config passes validation silently."""
-    doc = tomlkit.parse(
-        '[[repos]]\nrepo = "local"\n[[repos.hooks]]\nid = "ruff"'
-    )
-    _validate_prek_repos(doc)
-
-
-def test_validate_prek_repos_accepts_missing_repos() -> None:
-    """A document without a `repos` key stays valid."""
-    _validate_prek_repos(tomlkit.parse(""))
-
-
-def test_validate_prek_repos_rejects_non_array_repos() -> None:
-    """A non-array `repos` value raises `PrekConfigError`."""
-    doc = tomlkit.parse("repos = 5")
-    with pytest.raises(exceptions.PrekConfigError, match="array of tables"):
-        _validate_prek_repos(doc)
-
-
-def test_validate_prek_repos_rejects_missing_repo_key() -> None:
-    """A repo entry without a string `repo` key raises `PrekConfigError`."""
-    doc = tomlkit.parse('[[repos]]\nrev = "1.0.0"')
-    with pytest.raises(exceptions.PrekConfigError, match=r"repos\[0\].*repo"):
-        _validate_prek_repos(doc)
-
-
-def test_validate_prek_repos_rejects_non_array_hooks() -> None:
-    """A non-array `hooks` value raises `PrekConfigError`."""
-    doc = tomlkit.parse('[[repos]]\nrepo = "local"\nhooks = "nope"')
-    with pytest.raises(exceptions.PrekConfigError, match=r"repos\[0\]\.hooks"):
-        _validate_prek_repos(doc)
-
-
-def test_validate_prek_repos_rejects_hook_missing_id() -> None:
-    """A hook entry without a string `id` key raises `PrekConfigError`."""
-    doc = tomlkit.parse(
-        '[[repos]]\nrepo = "local"\n[[repos.hooks]]\nname = "x"'
-    )
-    with pytest.raises(exceptions.PrekConfigError, match=r"hooks\[0\].*id"):
-        _validate_prek_repos(doc)
-
-
-def test_setup_prek_config_rejects_malformed_consumer_file(
-    tmp_path: Path,
-) -> None:
-    """A malformed consumer `prek.toml` fails fast with a clear error."""
-    (tmp_path / "prek.toml").write_text('[[repos]]\nrev = "1.0.0"')
-    with pytest.raises(exceptions.PrekConfigError):
-        setup_prek_config(tmp_path)
-
-
-def test_setup_prek_config_uses_user_hooks_toml(
-    tmp_path: Path, isolated_user_config: Path
-) -> None:
-    """A user `hooks.toml` replaces the bundled template."""
-    user_hooks = isolated_user_config / "hooks.toml"
-    user_hooks.write_text('[[repos]]\nrepo = "local"\nhooks = []\n# user')
-    project = tmp_path / "proj"
-    project.mkdir()
-
-    setup_prek_config(project)
-
-    assert (project / "prek.toml").read_text() == user_hooks.read_text()
-
-
-def test_create_secrets_baseline_forces_utf8_mode(
-    tmp_path: Path,
-    mock_subprocess_run: mock.MagicMock,
+def test_init_bad_config_dir_fails_without_traceback(
+    mock_project: Path,
+    plain_stderr: mock.MagicMock,
+    make_cli_context: ContextFactory,
+    capsys: pytest.CaptureFixture[str],
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
-    """Baseline scans run in UTF-8 mode so non-cp1252 files are not skipped."""
-    monkeypatch.setenv("PYTHONUTF8", "0")
-    monkeypatch.setenv("PKGDX_SENTINEL", "kept")
+    """An invalid `PKGDX_CONFIG_DIR` fails step 3 with no traceback."""
+    monkeypatch.setenv("PKGDX_CONFIG_DIR", str(tmp_path / "nope"))
+    with (
+        mock.patch(
+            f"{STANDARDS_CLI}._core.get_project_root",
+            return_value=mock_project,
+        ),
+        mock.patch(
+            f"{STANDARDS_CLI}._core.get_git_toplevel",
+            return_value=mock_project,
+        ),
+    ):
+        exit_code, lines = _run_init(make_cli_context, capsys)
 
-    create_secrets_baseline(tmp_path)
+    assert exit_code == ExitCode.EX_FAILURE
+    assert lines[2] == (
+        "  FAIL    configure pre-commit hooks  user config directory not found"
+    )
+    assert lines[3].startswith("        `PKGDX_CONFIG_DIR` is not")
+    assert lines[-1] == "pkgdx init: failed at step 3/6 (3 steps not run)"
+    assert not any("Traceback" in line for line in lines)
 
-    env = mock_subprocess_run.call_args.kwargs["env"]
-    assert env["PYTHONUTF8"] == "1"
-    assert env["PKGDX_SENTINEL"] == "kept"
+
+def test_init_runs_real_steps_on_configured_project(
+    mock_project: Path,
+    plain_stderr: mock.MagicMock,
+    mock_subprocess_run: mock.MagicMock,
+    make_cli_context: ContextFactory,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The real steps report what they changed on a configured project.
+
+    NOTE: The fixture's `prek.toml` has an inline `hooks = []`, which must
+    be converted before hooks are added, or the written file is invalid.
+    """
+    prek_toml = mock_project / "prek.toml"
+    template = tomlkit.parse(standards.PREK_CONFIG.read_text())
+    hooks = sum(len(repo.get("hooks", [])) for repo in template["repos"])
+    with (
+        mock.patch(
+            f"{STANDARDS_CLI}._core.get_project_root",
+            return_value=mock_project,
+        ),
+        mock.patch(
+            f"{STANDARDS_CLI}._core.get_git_toplevel",
+            return_value=mock_project,
+        ),
+    ):
+        exit_code, lines = _run_init(make_cli_context, capsys)
+
+    assert exit_code == ExitCode.EX_OK
+    assert lines[1:-1] == [
+        "  ok      identify Git top-level      same as project root",
+        (
+            "  ok      configure pre-commit hooks  updated    "
+            f"prek.toml ({hooks} hooks added)"
+        ),
+        "  ok      prek install                unchanged  Git shims",
+        "  ok      prek update --check         hook revisions up to date",
+        "  ok      detect-secrets scan         unchanged  .secrets.baseline",
+    ]
+    assert lines[-1].endswith("(1 changed, 2 unchanged)")
+    tomlkit.parse(prek_toml.read_text())
+
+
+def test_init_keyboard_interrupt_prints_stop_row(
+    plain_stderr: mock.MagicMock,
+    steps: dict[str, mock.MagicMock],
+    make_cli_context: ContextFactory,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Ctrl-C names the interrupted step & exits with code 130."""
+    steps["install_prek_hooks"].side_effect = KeyboardInterrupt
+
+    exit_code, lines = _run_init(make_cli_context, capsys)
+
+    assert exit_code == ExitCode.EX_INTERRUPT == 130
+    assert lines[-2:] == [
+        "  stop    prek install                interrupted",
+        "pkgdx init: interrupted, no cleanup performed",
+    ]
+    steps["update_prek_hooks"].assert_not_called()
+    steps["create_secrets_baseline"].assert_not_called()
+
+
+def test_init_shows_spinner_per_step_in_tty(
+    tty_stderr_enable: None,
+    steps: dict[str, mock.MagicMock],
+    make_cli_context: ContextFactory,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Each step shows a transient spinner when STDERR is a TTY."""
+    with mock.patch.object(GLOBAL_CONSOLE, "status") as mstatus:
+        _run_init(make_cli_context, capsys)
+
+    assert mstatus.call_args_list == [
+        mock.call(f"{label} ...", spinner="dots")
+        for label in [
+            "identify project root",
+            "identify Git top-level",
+            "configure pre-commit hooks",
+            "prek install",
+            "prek update --check",
+            "detect-secrets scan",
+        ]
+    ]
+
+
+def test_init_no_spinner_in_non_tty(
+    plain_stderr: mock.MagicMock,
+    steps: dict[str, mock.MagicMock],
+    make_cli_context: ContextFactory,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A piped STDERR gets no spinner & no ANSI escape codes."""
+    _, lines = _run_init(make_cli_context, capsys)
+
+    plain_stderr.assert_not_called()
+    assert not any("\x1b" in line for line in lines)
+
+
+def test_init_closing_line_not_highlighted(
+    tty_stderr_enable: None,
+    steps: dict[str, mock.MagicMock],
+    make_cli_context: ContextFactory,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The closing line is plain text, even with colour enabled."""
+    with (
+        mock.patch.object(GLOBAL_CONSOLE, "status"),
+        mock.patch.object(GLOBAL_CONSOLE, "_width", 80),
+        mock.patch.object(
+            GLOBAL_CONSOLE, "_color_system", ColorSystem.TRUECOLOR
+        ),
+    ):
+        _, lines = _run_init(make_cli_context, capsys)
+
+    assert any("\x1b" in line for line in lines[:-1])
+    assert lines[-1] == "pkgdx init: done in 2.9s (2 changed, 1 unchanged)"
 
 
 def _run_main(argv: list[str]) -> int:

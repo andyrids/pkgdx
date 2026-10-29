@@ -1,0 +1,15 @@
+[1;34m==> Identify project root[0m
+    C:\src\acme (pyproject.toml)
+[1;34m==> Identify Git top-level[0m
+    [1;33mWarning: [0mnot a Git repository, using project root
+    hint: Run `git init` to enable pre-commit hooks
+[1;34m==> Configure pre-commit hooks[0m
+    prek.toml unchanged
+[1;34m==> Prek install[0m
+    Git shims installed at project root
+[1;34m==> Prek update --check[0m
+    [1;33mWarning: [0mpkgdx v0.4.2 -> v0.5.0 available
+    hint: Update remote hook revisions - `prek update`
+[1;34m==> Detect-secrets scan[0m
+    .secrets.baseline exists, reused
+[1;33m==> Done with 2 warnings in 0.0s[0m

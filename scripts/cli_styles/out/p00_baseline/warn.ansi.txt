@@ -1,0 +1,12 @@
+[92m──────────────────────────────────────────── [0m[36mpkgdx init[0m[92m ────────────────────────────────────────────[0m
+[2;36m[10/28/26 22:34:44][0m[2;36m [0m[33mWARNING [0m [1m[[0mrun[1m][0m Failed `git rev-parse --show-toplevel`        ]8;id=757465;file://D:\Projects\gitlab\pkgdx\scripts\cli_styles\p00_baseline.py\[2mp00_baseline.py[0m]8;;\[2m:[0m]8;id=757466;file://D:\Projects\gitlab\pkgdx\scripts\cli_styles\p00_baseline.py#136\[2m136[0m]8;;\
+[2;36m[10/28/26 22:34:44][0m[2;36m [0m[33mWARNING [0m [1m[[0mrun[1m][0m Run `git init` to enable pre-commit hooks     ]8;id=757472;file://D:\Projects\gitlab\pkgdx\scripts\cli_styles\p00_baseline.py\[2mp00_baseline.py[0m]8;;\[2m:[0m]8;id=757473;file://D:\Projects\gitlab\pkgdx\scripts\cli_styles\p00_baseline.py#137\[2m137[0m]8;;\
+[2;36m[10/28/26 22:34:44][0m[2;36m [0m[33mWARNING [0m [1m[[0mrun[1m][0m Update available: pkgdx v0.[1;36m4.2[0m -> v0.[1;36m5.0[0m      ]8;id=757478;file://D:\Projects\gitlab\pkgdx\scripts\cli_styles\p00_baseline.py\[2mp00_baseline.py[0m]8;;\[2m:[0m]8;id=757479;file://D:\Projects\gitlab\pkgdx\scripts\cli_styles\p00_baseline.py#136\[2m136[0m]8;;\
+[2;36m[10/28/26 22:34:44][0m[2;36m [0m[33mWARNING [0m [1m[[0mrun[1m][0m Update remote hook revisions - `prek update`  ]8;id=757484;file://D:\Projects\gitlab\pkgdx\scripts\cli_styles\p00_baseline.py\[2mp00_baseline.py[0m]8;;\[2m:[0m]8;id=757485;file://D:\Projects\gitlab\pkgdx\scripts\cli_styles\p00_baseline.py#137\[2m137[0m]8;;\
+[32m■[0m [2;3midentify project root[0m                                                                             
+[32m■[0m [2;3midentify Git top-level[0m                                                                            
+[32m■[0m [2;3mconfigure pre-commit hooks[0m                                                                        
+[32m■[0m [2;3mprek install[0m                                                                                      
+[32m■[0m [2;3mprek update --check[0m                                                                               
+[32m■[0m [2;3mdetect-secrets scan[0m                                                                               
+[32m■[0m [1;7;32mpkgdx init[0m                   [38;2;114;156;31m---------------------------------------------------------[0m [32m6/6[0m [33m0:00:00[0m

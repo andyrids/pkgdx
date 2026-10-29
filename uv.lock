@@ -1029,6 +1029,9 @@ dependencies = [
 [package.metadata]
 requires-dist = [{ name = "pkgdx", editable = "." }]
 
+[package.metadata.requires-dev]
+dev = []
+
 [[package]]
 name = "tomli"
 version = "2.5.0"

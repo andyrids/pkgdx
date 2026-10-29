@@ -1,0 +1,9 @@
+[1;34m==> Identify project root[0m
+    C:\src\acme (pyproject.toml)
+[1;34m==> Identify Git top-level[0m
+    C:\src\acme
+[1;34m==> Configure pre-commit hooks[0m
+    [1;31mError: [0mprek.toml could not be parsed
+    Invalid value (at line 12, column 9)
+    hint: Fix prek.toml, or regenerate it with `pkgdx init --reset`
+[1;31m==> Failed after 2 steps[0m

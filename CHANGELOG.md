@@ -34,6 +34,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Release tag pipelines run lint and tests before the package is built and published.
 - pkgdx's own `secrets` hook in `prek.toml` runs `pkgdx-secrets-hook` instead of
   `detect-secrets-hook` directly.
+- `pkgdx init` prints one ok / warn / FAIL line per step, saying what it created or updated, then a
+  one-line summary.
+- `pkgdx init` reports a missing Git repository, `prek install` failures and `prek update --check`
+  results as inline warnings (exit code 0), not log lines.
+- Ctrl-C during `pkgdx init` names the interrupted step and exits with code 130.
 
 ### Fixed
 
@@ -41,6 +46,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`PYTHONUTF8=1`), matching Linux CI. On Windows, UTF-8 files with characters that cp1252 cannot
   decode (e.g. Rich's heavy box-drawing `━`) were silently skipped. Windows users may see new
   findings and should audit or refresh their `.secrets.baseline`.
+- `pkgdx init` reports an invalid `prek.toml` or `PKGDX_CONFIG_DIR`, or a user `hooks.toml` it
+  cannot merge, on its step, with exit code 1 and no traceback.
+- An interrupted `detect-secrets` scan no longer leaves a partial `.secrets.baseline`.
+- `pkgdx init` no longer writes an invalid `prek.toml` when a repo lists its hooks inline
+  (`hooks = [...]`). The inline hooks are kept and converted to `[[repos.hooks]]` tables.
 
 ## [0.4.1] - 2026-10-16
 

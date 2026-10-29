@@ -1,0 +1,19 @@
+──────────────────────────────────────────── pkgdx init ────────────────────────────────────────────
+[10/28/26 22:34:44] ERROR    [run] Failed to configure pre-commit hooks          p00_baseline.py:133
+                             ┌─────── Traceback (most recent call last) ───────┐                    
+                             │ D:\Projects\gitlab\pkgdx\scripts\cli_styles\p00 │                    
+                             │ _baseline.py:131 in run                         │                    
+                             │                                                 │                    
+                             │   128 │   │   │   │   │   failed=True,          │                    
+                             │   129 │   │   │   │   )                         │                    
+                             │   130 │   │   │   │   try:                      │                    
+                             │ > 131 │   │   │   │   │   raise RuntimeError(re │                    
+                             │   132 │   │   │   │   except RuntimeError:      │                    
+                             │   133 │   │   │   │   │   logger.exception("Fai │                    
+                             │   134 │   │   │   │   return 1                  │                    
+                             └─────────────────────────────────────────────────┘                    
+                             RuntimeError: Invalid value (at line 12, column 9)                     
+■ identify project root                                                                             
+■ identify Git top-level                                                                            
+□ configure pre-commit hooks                                                                        
+⠋ pkgdx init                   ------------------- ------------------------------------- 2/6 0:00:00
