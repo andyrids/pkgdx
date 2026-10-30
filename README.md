@@ -179,7 +179,8 @@ detect-secrets has no configuration file, so it always uses its bundled settings
 > [!IMPORTANT]
 > `hooks.toml` affects only `pkgdx init`, which uses it to write the `prek.toml` template. A
 > `prek.toml` that was already copied keeps its old hooks. After upgrading `pkgdx` or changing
-> `hooks.toml`, refresh the copy with `uv run pkgdx init --reset`.
+> `hooks.toml`, refresh the copy with `uv run pkgdx init --reset` (backup first if using custom
+> hooks).
 
 ### (3) Check and seed with `pkgdx config`
 
