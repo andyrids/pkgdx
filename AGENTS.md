@@ -20,15 +20,12 @@ the `rev = "v0.5.0"`, which means on release or realease candidate:
 - `src/pkgdx/standards/hooks.toml` must reflect the new release version (repo tag).
 - The project must be tagged with this same version.
 
-## Markdown frontmatter
+## Context hierarchy
 
-Mardown files carry `context-hierarchy`, `context-hierarchy-role` and `immutable` keys, plus
-`recommended-context-tokens` where a target is given. Beyond those:
-
-- Budgets are a signal, not an enforced limit. A file that outgrows one is worth a look - it may have
-  started doing another layer's job.
-- Layer 3 carries tags: [keyword, ...]. immutable: true marks the factory configuration, amended
-  deliberately, not in passing.
+Markdown files declare their layer in frontmatter - read
+[standard-context-hierarchy.md](docs/guidance/standard-context-hierarchy.md) before creating or
+editing one. Files marked `immutable: true` are never edited in passing: propose the change and
+wait for approval.
 
 ## Reference
 

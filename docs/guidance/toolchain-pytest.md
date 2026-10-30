@@ -3,6 +3,8 @@ context-hierarchy: Layer 3
 context-hierarchy-role: Reference material
 immutable: true
 recommended-context-tokens: 2500
+version: 1.0.0
+updated: 2026-10-30
 tags: [pytest, unit-testing]
 ---
 
@@ -16,7 +18,7 @@ Pytest is used for unit testing, with tests colocated in `tests/`.
 - `uv run pytest tests/test_setup.py -v` - Run a single test module
 - `uv run pytest -m conformance -v` - Run only the `conformance` tier
 - `uv run coverage run -m pytest` then `uv run coverage report` - Run under coverage (see
-  `reference-toolchain-coverage.md`); excludes the `conformance` tier, same as a bare `pytest` run
+  `toolchain-coverage.md`); excludes the `conformance` tier, same as a bare `pytest` run
 
 ## Configuration
 

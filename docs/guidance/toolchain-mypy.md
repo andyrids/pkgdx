@@ -3,6 +3,8 @@ context-hierarchy: Layer 3
 context-hierarchy-role: Reference material
 immutable: true
 recommended-context-tokens: 2500
+version: 1.0.0
+updated: 2026-10-30
 tags: [mypy, typing]
 ---
 
@@ -20,6 +22,7 @@ Mypy is used to enforce standards for typing.
 
 The Mypy config ships inside the installed `pkgdx` package (`src/pkgdx/standards/mypy.ini`) and is
 applied by the `pkgdx-typing-hook` shim - prefer the hook over a hand-rolled `mypy` invocation.
+Overriding it is covered in `toolchain-pkgdx.md`.
 Enforce the usage of the type hints for all function/method args and return values.
 
 With no target, the bundled `files = .` and `exclude = (^|/)tests/` settings check the project
