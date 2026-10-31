@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Piped output on Windows is UTF-8, so `PKGDX_CONFIG_DIR` paths never fail to encode.
 - A hook whose tool is not on `PATH` exits 1 with `error:` & a hint, not a traceback (was `70`).
 - `pkgdx init` warns & uses the project root when `git` is not on `PATH`, instead of crashing.
+- `pkgdx init` reads & writes `prek.toml` & `hooks.toml` as UTF-8, not the locale's cp1252.
 
 ## [0.5.0] - 2026-10-29
 

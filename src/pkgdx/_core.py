@@ -80,7 +80,7 @@ def get_git_toplevel() -> Path:
         result = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],
             check=True,
-            text=True,
+            encoding="utf-8",
             capture_output=True,
         )
     except FileNotFoundError as e:
@@ -447,22 +447,27 @@ def setup_prek_config(root: Path, reset: bool = False) -> StepResult:
         config_template = standards.resolve_config(standards.PREK_CONFIG)
     except exceptions.ConfigDirError as e:
         return config_dir_failure(e)
-    template_text = config_template.read_text()
+    template_text = config_template.read_text(encoding="utf-8")
 
     if reset or not config_existing.exists():
         existed = config_existing.exists()
-        if existed and config_existing.read_text() == template_text:
+        if (
+            existed
+            and config_existing.read_text(encoding="utf-8") == template_text
+        ):
             logger.debug("Existing `prek.toml` matches the template")
             change = Change.UNCHANGED
         else:
             logger.debug("Creating `prek.toml` from template")
-            config_existing.write_text(template_text)
+            config_existing.write_text(template_text, encoding="utf-8")
             change = Change.UPDATED if existed else Change.CREATED
         return StepResult(Outcome.OK, change=change, subject="prek.toml")
 
     # Consuming project `prek.toml`
     try:
-        doc_consumer = tomlkit.parse(config_existing.read_text())
+        doc_consumer = tomlkit.parse(
+            config_existing.read_text(encoding="utf-8")
+        )
         _validate_prek_repos(doc_consumer)
     except TOMLKitError as e:
         return StepResult(
@@ -498,7 +503,7 @@ def setup_prek_config(root: Path, reset: bool = False) -> StepResult:
     # Normalise spacing between tables
     config_text = re.sub(r"\n+\[\[repos", "\n\n[[repos", config_text)
 
-    config_existing.write_text(config_text)
+    config_existing.write_text(config_text, encoding="utf-8")
     logger.debug("Added missing pre-commit hooks to `prek.toml`")
     hooks = f"{added} hook{'s' * (added != 1)}"
     subject = f"prek.toml ({hooks} added)" if added else "prek.toml"

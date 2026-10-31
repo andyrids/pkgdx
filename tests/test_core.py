@@ -44,6 +44,22 @@ PREK_FETCH_FAILED = (
     "exit code: 128\n"
 )
 
+# Run with `-X warn_default_encoding`: an `EncodingWarning` (text I/O without
+# `encoding`) is an error only after the imports, so theirs do not count
+_ENCODING_PROBE = """
+import sys, warnings
+from pathlib import Path
+from pkgdx import _core, exceptions
+warnings.simplefilter("error", EncodingWarning)
+root = Path(sys.argv[1])
+_core.setup_prek_config(root)
+_core.setup_prek_config(root, reset=True)
+try:
+    _core.get_git_toplevel()
+except exceptions.GitTopLevelError:
+    pass
+"""
+
 
 def _completed(
     returncode: int, stdout: str = "", stderr: str = ""
@@ -349,6 +365,38 @@ def test_setup_prek_config_uses_user_hooks_toml(
 
     assert result.change is Change.CREATED
     assert (project / "prek.toml").read_text() == user_hooks.read_text()
+
+
+def test_prek_toml_and_git_io_set_encoding_on_non_ascii_config(
+    tmp_path: Path,
+) -> None:
+    """`prek.toml` & `git` text I/O name UTF-8, not the locale encoding.
+
+    NOTE: The probe merges into a non-ASCII `prek.toml` (read & write), then
+    resets it (read & overwrite), then asks `git` for the top-level.
+    """
+    (tmp_path / "prek.toml").write_text(
+        '# café ✓ ━\n[[repos]]\nrepo = "local"\nhooks = []\n',
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "warn_default_encoding",
+            "-c",
+            _ENCODING_PROBE,
+            str(tmp_path),
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 def test_install_prek_hooks_skips_existing_shims(
