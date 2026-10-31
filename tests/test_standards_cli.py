@@ -504,6 +504,25 @@ def test_usage_error_only_on_stderr(
     assert lines[-1] == f"Try '{path} --help' for more information."
 
 
+@pytest.mark.parametrize(
+    ("command", "examples"),
+    [
+        ("init", ["  pkgdx init", "  pkgdx init --reset"]),
+        ("config", ["  pkgdx config", "  pkgdx config --export"]),
+    ],
+)
+def test_command_help_lists_examples(
+    command: str, examples: list[str]
+) -> None:
+    """`--help` lists the command's examples under `EXAMPLES:`, last."""
+    result = _run([command, "--help"])
+    assert result.exit_code == ExitCode.OK
+    lines = result.stdout.splitlines()
+    assert lines.index("EXAMPLES:") > lines.index("OPTIONS:")
+    start = lines.index("EXAMPLES:") + 1
+    assert lines[start:] == examples
+
+
 def test_config_interrupt_exits_130() -> None:
     """Ctrl-C outside the step runner prints one line & exits 130 (#10)."""
     with mock.patch.object(
