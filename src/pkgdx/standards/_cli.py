@@ -259,7 +259,11 @@ def _run_steps(
     return pyclig.ExitCode.OK
 
 
-@click.command("init", cls=pyclig.Command)
+@click.command(
+    "init",
+    cls=pyclig.Command,
+    examples=["pkgdx init", "pkgdx init --reset"],
+)
 @click.option("--reset", is_flag=True, help="Reset existing pre-commit hooks")
 @pyclig.pass_context
 def command_init(ctx: pyclig.Context, reset: bool) -> int:
@@ -287,7 +291,11 @@ def command_init(ctx: pyclig.Context, reset: bool) -> int:
     )
 
 
-@click.command("config", cls=pyclig.Command)
+@click.command(
+    "config",
+    cls=pyclig.Command,
+    examples=["pkgdx config", "pkgdx config --export"],
+)
 @click.option(
     "--export",
     is_flag=True,

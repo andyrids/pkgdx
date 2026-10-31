@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Shell completion (`_PKGDX_COMPLETE`), from click.
 - `EXAMPLES:` in the help, as `docs/guidance/standard-cli.md` asks.
+- Per-command `EXAMPLES:` in `pkgdx init --help` & `pkgdx config --help`.
 
 ### Changed
 
