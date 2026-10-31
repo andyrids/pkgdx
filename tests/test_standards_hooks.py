@@ -159,6 +159,44 @@ def test_pymarkdown_lint_continues_past_a_crashing_document(
 
 
 @pytest.mark.parametrize(
+    ("args", "options", "paths"),
+    [
+        (["--stack-trace", "a.md"], ["--stack-trace"], ["a.md"]),
+        (["-d", "md013", "a.md"], ["-d", "md013"], ["a.md"]),
+        (["a.md", "b.md"], [], ["a.md", "b.md"]),
+        (["--stack-trace", "gone.md"], [], ["--stack-trace", "gone.md"]),
+    ],
+    ids=["stack-trace", "disable-rule", "files-only", "no-existing-path"],
+)
+def test_pymarkdown_lint_puts_options_before_scan(
+    args: list[str],
+    options: list[str],
+    paths: list[str],
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mock_subprocess_run: mock.MagicMock,
+) -> None:
+    """Global options go before `scan` & file names after it (#2, part b)."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "a.md").write_text("# A\n")
+    (tmp_path / "b.md").write_text("# B\n")
+
+    _hooks.core_pymarkdown_lint(args)
+
+    mock_subprocess_run.assert_called_once_with(
+        [
+            "pymarkdown",
+            "--config",
+            standards.PYMARKDOWN_CONFIG.as_posix(),
+            "--continue-on-error",
+            *options,
+            "scan",
+            *paths,
+        ]
+    )
+
+
+@pytest.mark.parametrize(
     ("hook", "name"),
     [
         (_hooks.core_ruff_format, "ruff.toml"),

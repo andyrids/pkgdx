@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+from pathlib import Path
 from typing import Any
 
 from pkgdx import exceptions, standards
@@ -68,13 +69,34 @@ def core_detect_secrets(args: list[str]) -> int:
 
 
 def core_pymarkdown_lint(args: list[str]) -> int:
-    """Core logic for pymarkdown linting."""
+    """Core logic for pymarkdown linting.
+
+    NOTE: PyMarkdown takes its global options before `scan` & the paths to
+    scan after it. The args are split at the first one naming an existing
+    path, as prek passes file names last: the args before it (e.g.
+    `--stack-trace`, or `-d md013` with its value) go before `scan`, that
+    path & the rest after it - so an option of `scan` itself (e.g. `-r`)
+    must follow the first path. With no existing path, all the args follow
+    `scan`, so PyMarkdown reports a missing file.
+
+    Args:
+        args: PyMarkdown global options, then the paths to scan.
+
+    Returns:
+        The PyMarkdown return code.
+
+    Raises:
+        exceptions.ToolNotFoundError: If `pymarkdown` is not on `PATH`.
+    """
     config = standards.resolve_config(standards.PYMARKDOWN_CONFIG).as_posix()
+    split = next((i for i, arg in enumerate(args) if Path(arg).exists()), 0)
     cmd = [
         "pymarkdown",
         "--config",
         config,
         "--continue-on-error",
+        *args[:split],
         "scan",
-    ] + args
+        *args[split:],
+    ]
     return _run_tool(cmd)
