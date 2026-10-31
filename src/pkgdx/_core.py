@@ -1,6 +1,5 @@
 """Core logic and file-system operations for `pkgdx init` and `config`."""
 
-import argparse
 import dataclasses
 import logging
 import os
@@ -8,14 +7,12 @@ import re
 import shutil
 import subprocess
 import sys
-from collections.abc import Iterable
-from enum import IntEnum, StrEnum
+from enum import StrEnum
 from itertools import chain, pairwise
 from pathlib import Path
 from typing import Any
 
 import tomlkit
-from rich.console import Console
 from tomlkit import TOMLDocument
 from tomlkit.exceptions import TOMLKitError
 from tomlkit.items import AoT, Table
@@ -29,20 +26,6 @@ _PREK_FIX_HINT = "Fix prek.toml, or regenerate it with `pkgdx init --reset`"
 _WOULD_UPDATE = re.compile(
     r"would update rev `(?P<old>[^`]+)` -> `(?P<new>[^`]+)`"
 )
-
-
-class ExitCode(IntEnum):
-    """Exit codes for the CLI commands.
-
-    NOTE: Members can be passed to `sys.exit` as `int` type checks pass
-    due to `IntEnum` inheritance.
-    """
-
-    EX_OK = 0
-    EX_FAILURE = 1
-    EX_SYNTAX = 2
-    EX_USAGE = 64
-    EX_INTERRUPT = 130
 
 
 class Outcome(StrEnum):
@@ -80,46 +63,6 @@ class StepResult:
     hint: str = ""
     change: Change | None = None
     subject: str = ""
-
-
-@dataclasses.dataclass(frozen=True, slots=True)
-class CLIContext:
-    """Centralized state for the CLI commands.
-
-    Attributes:
-        args: The parsed command-line arguments from argparse.
-        console: The Rich console instance used for terminal output.
-        is_debug: Flag indicating if the CLI is running in debug mode.
-    """
-
-    args: argparse.Namespace
-    console: Console
-    is_debug: bool = False
-
-
-class CLIGFormatter(argparse.RawDescriptionHelpFormatter):
-    """Custom formatter for the CLI help output.
-
-    NOTE: Based on CLI guidance from https://clig.dev/.
-    """
-
-    def add_usage(
-        self,
-        usage: str | None,
-        actions: Iterable[argparse.Action],
-        groups: Iterable[argparse._MutuallyExclusiveGroup],
-        prefix: str | None = None,
-    ) -> None:
-        """Add a custom usage message to the CLI help output.
-
-        Args:
-            usage: The usage string to display.
-            actions: The list of actions for the parser.
-            groups: The list of mutually exclusive groups for the parser.
-            prefix: The prefix for the usage message.
-        """
-
-        super().add_usage(usage, actions, groups, prefix=prefix or "")
 
 
 def get_git_toplevel() -> Path:

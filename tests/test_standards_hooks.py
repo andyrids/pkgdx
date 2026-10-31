@@ -195,5 +195,45 @@ def test_hook_entry_point_bad_env_dir_exits_1(
         __main__.ruff_lint()
     assert exc_info.value.code == 1
     err = capsys.readouterr().err
-    assert err.startswith("pkgdx: ")
+    assert err.startswith("error: ")
+    assert "pkgdx: " not in err
     assert "Traceback" not in err
+
+
+@pytest.mark.parametrize(
+    "shim",
+    [
+        __main__.ruff_format,
+        __main__.ruff_lint,
+        __main__.mypy_typing,
+        __main__.pymarkdown_lint,
+        __main__.detect_secrets,
+    ],
+    ids=["format", "lint", "typing", "markdown", "secrets"],
+)
+def test_hook_entry_point_interrupt_exits_130(
+    shim: Callable[[], None],
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Ctrl-C in any hook shim prints one warning line & exits 130."""
+    monkeypatch.setattr("sys.argv", ["pkgdx-hook"])
+    with (
+        mock.patch("subprocess.run", side_effect=KeyboardInterrupt),
+        pytest.raises(SystemExit) as exc_info,
+    ):
+        shim()
+    assert exc_info.value.code == 130
+    assert capsys.readouterr().err == "warning: interrupted\n"
+
+
+def test_hook_entry_point_passes_tool_exit_code(
+    mock_subprocess_run: mock.MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A shim exits with the wrapped tool's return code."""
+    mock_subprocess_run.return_value.returncode = 3
+    monkeypatch.setattr("sys.argv", ["pkgdx-secrets-hook"])
+    with pytest.raises(SystemExit) as exc_info:
+        __main__.detect_secrets()
+    assert exc_info.value.code == 3

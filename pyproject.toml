@@ -21,9 +21,11 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
+    "click~=8.5",
     "detect-secrets>=1.5.0",
     "mypy>=2.1.0",
     "prek~=0.4.8",
+    "pyclig",
     "pymarkdownlnt>=0.9.37",
     "rich>=15.0.0",
     "ruff>=0.15.20",
@@ -37,7 +39,7 @@ dev = [
 ]
 
 [project.scripts]
-pkgdx = "pkgdx.__main__:main"
+pkgdx = "pkgdx.__main__:cli"
 pkgdx-secrets-hook = "pkgdx.__main__:detect_secrets"
 pkgdx-format-hook = "pkgdx.__main__:ruff_format"
 pkgdx-lint-hook = "pkgdx.__main__:ruff_lint"
@@ -85,3 +87,6 @@ cache-keys = [{ file = "pyproject.toml" }, { git = { commit = true, tags = true 
 members = [
     "consumers/testing",
 ]
+
+[tool.uv.sources]
+pyclig = { path = "../../github/pyclig", editable = true }
