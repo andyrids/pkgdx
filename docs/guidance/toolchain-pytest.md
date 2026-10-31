@@ -3,8 +3,8 @@ context-hierarchy: Layer 3
 context-hierarchy-role: Reference material
 immutable: true
 recommended-context-tokens: 2500
-version: 1.0.0
-updated: 2026-10-30
+version: 1.1.0
+updated: 2026-10-31
 tags: [pytest, unit-testing]
 ---
 
@@ -29,11 +29,11 @@ Pytest is used for unit testing, with tests colocated in `tests/`.
 
 - Test modules: `tests/test_<module>.py`, mirroring `src/pkgdx/<module>.py`
 - Shared fixtures live once in `tests/conftest.py` and are consumed via dependency injection
-  (e.g. `configured_logging`, `tty_stderr_enable`/`tty_stderr_disable`, `mock_subprocess_run`,
-  `mock_project`) rather than re-declared per test module
-- Progress and log TTY tests patch `GLOBAL_CONSOLE.is_terminal`, not `sys.stdout.isatty`. Logs and
-  progress are STDERR messaging ([clig.dev](https://clig.dev/) basics + output); STDOUT TTY is a
-  separate concern for primary CLI output
+  (e.g. `mock_subprocess_run`, `mock_project`) rather than re-declared per test module
+- CLI tests run through `pyclig.testing.invoke`, setting each stream's TTY with `out_tty` /
+  `err_tty` and asserting `result.stdout` and `result.stderr` separately. Never patch Rich private
+  attributes (`_force_terminal`, `_width`, `_color_system`) or module consoles
+- Use a subprocess only where real streams matter - broken pipes, encodings, colour variables
 - Dataclass instances are built via factory fixtures (`make_symbol_node`, `make_package_info`,
   `make_cli_context`) that supply defaults for every field and accept `**overrides` - tests
   override only the fields they assert on, so a model field addition touches a single conftest
