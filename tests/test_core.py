@@ -352,6 +352,55 @@ def test_setup_prek_config_fails_on_broken_user_hooks_toml(
     assert "--reset" not in result.hint
 
 
+def test_setup_prek_config_fails_on_non_utf8_file(tmp_path: Path) -> None:
+    """A non-UTF-8 `prek.toml` gives a FAIL result instead of raising."""
+    (tmp_path / "prek.toml").write_bytes(
+        b'# caf\xe9\n[[repos]]\nrepo = "local"\n'
+    )
+
+    result = setup_prek_config(tmp_path)
+
+    assert result.outcome is Outcome.FAIL
+    assert result.detail == "prek.toml is not valid UTF-8"
+    assert "byte 0xe9 in position 5" in result.message
+    assert result.hint == (
+        "Save prek.toml as UTF-8, or regenerate it with `pkgdx init --reset`"
+    )
+
+
+def test_setup_prek_config_reset_replaces_non_utf8_file(
+    tmp_path: Path,
+) -> None:
+    """`--reset` overwrites a non-UTF-8 `prek.toml`, as its hint says."""
+    (tmp_path / "prek.toml").write_bytes(b"# caf\xe9\n")
+
+    result = setup_prek_config(tmp_path, reset=True)
+
+    assert result == StepResult(
+        Outcome.OK, change=Change.UPDATED, subject="prek.toml"
+    )
+    template_text = standards.PREK_CONFIG.read_text(encoding="utf-8")
+    assert (tmp_path / "prek.toml").read_text(
+        encoding="utf-8"
+    ) == template_text
+
+
+def test_setup_prek_config_fails_on_non_utf8_user_hooks_toml(
+    tmp_path: Path, isolated_user_config: Path
+) -> None:
+    """A non-UTF-8 user `hooks.toml` fails, naming it, without `--reset`."""
+    user_hooks = isolated_user_config / "hooks.toml"
+    user_hooks.write_bytes(b"# caf\xe9\n")
+
+    result = setup_prek_config(tmp_path)
+
+    assert result.outcome is Outcome.FAIL
+    assert result.detail == "hooks.toml is not valid UTF-8"
+    assert "byte 0xe9" in result.message
+    assert str(user_hooks) in result.hint
+    assert "--reset" not in result.hint
+
+
 def test_setup_prek_config_uses_user_hooks_toml(
     tmp_path: Path, isolated_user_config: Path
 ) -> None:

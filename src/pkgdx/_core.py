@@ -447,13 +447,24 @@ def setup_prek_config(root: Path, reset: bool = False) -> StepResult:
         config_template = standards.resolve_config(standards.PREK_CONFIG)
     except exceptions.ConfigDirError as e:
         return config_dir_failure(e)
-    template_text = config_template.read_text(encoding="utf-8")
+    try:
+        template_text = config_template.read_text(encoding="utf-8")
+    except UnicodeDecodeError as e:
+        return StepResult(
+            Outcome.FAIL,
+            f"{config_template.name} is not valid UTF-8",
+            str(e),
+            f"Save {config_template} as UTF-8, or remove it to use the"
+            " bundled template",
+        )
 
     if reset or not config_existing.exists():
         existed = config_existing.exists()
+        # `replace`: a non-UTF-8 `prek.toml` differs, so it is overwritten
         if (
             existed
-            and config_existing.read_text(encoding="utf-8") == template_text
+            and config_existing.read_text(encoding="utf-8", errors="replace")
+            == template_text
         ):
             logger.debug("Existing `prek.toml` matches the template")
             change = Change.UNCHANGED
@@ -469,6 +480,14 @@ def setup_prek_config(root: Path, reset: bool = False) -> StepResult:
             config_existing.read_text(encoding="utf-8")
         )
         _validate_prek_repos(doc_consumer)
+    except UnicodeDecodeError as e:
+        return StepResult(
+            Outcome.FAIL,
+            "prek.toml is not valid UTF-8",
+            str(e),
+            "Save prek.toml as UTF-8, or regenerate it with"
+            " `pkgdx init --reset`",
+        )
     except TOMLKitError as e:
         return StepResult(
             Outcome.FAIL,
