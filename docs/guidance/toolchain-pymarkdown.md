@@ -3,7 +3,9 @@ context-hierarchy: Layer 3
 context-hierarchy-role: Reference material
 immutable: true
 recommended-context-tokens: 2500
-tags: [pymarkdown]
+version: 1.0.0
+updated: 2026-10-30
+tags: [pymarkdown, markdown, lint]
 ---
 
 # Toolchain - `PyMarkdown`
@@ -13,14 +15,14 @@ PyMarkdown is used to implement Markdown linting standards.
 ## Commands
 
 - `uv run pkgdx-markdown-hook <file>` - Lint a file
-- `uv run pymarkdown --config src/pkgdx/standards/pymarkdown.toml scan <file>` - Lint a file
 - `uv run prek run --all-files` - Run the `markdown` hook alongside all other hooks
 
 ## Configuration
 
-The PyMarkdown config ships inside `pkgdx` package (`src/pkgdx/standards/pymarkdown.toml`) and is
-applied by the `pkgdx-markdown-hook` shim - prefer the hook over a hand-rolled `pymarkdown`
-invocation.
+The PyMarkdown config ships inside the installed `pkgdx` package
+(`src/pkgdx/standards/pymarkdown.toml`) and is applied by the `pkgdx-markdown-hook` shim - prefer
+the hook over a hand-rolled `pymarkdown` invocation. Overriding it is covered in
+`toolchain-pkgdx.md`.
 
 A bare `uv run pymarkdown scan <file>` uses PyMarkdown's own defaults (80 characters, setext
 headings), not the project's, so its output is misleading - it reports violations the hook does
