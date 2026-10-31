@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-31
+
 ### Added
 
 - Shell completion (`_PKGDX_COMPLETE`), from click.
@@ -32,13 +34,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Help: click layout, `-d, --debug` listed for every command.
 - Hook shims print `error: <message>` (was `pkgdx: <message>`) & map Ctrl-C & crashes too.
 - The `init` spinner shows only on an interactive STDERR (honours `TTY_INTERACTIVE`).
-- `docs/guidance/standard-cli.md`, `toolchain-logging.md` & `toolchain-pytest.md`.
+- `docs/guidance/standard-cli.md`, `toolchain-logging.md` & `toolchain-pytest.md` describe the
+  pyclig CLI, logging & tests (2.0.0 each, with MUST NOT rules).
+- `docs/guidance/` files carry `version` & `updated` frontmatter; `reference-toolchain-uv.md` is
+  now `toolchain-uv.md`, & `toolchain-pkgdx.md` is new.
 
 ### Removed
 
 - argparse option prefixes, e.g. `--res` for `--reset`; Python 3.14 argparse help colours.
 - `pkgdx.logging` (`GLOBAL_CONSOLE`, `CLI_CONSOLE`, `configure_*_logging`) & `config.toml`.
 - `pkgdx._core.ExitCode`, `CLIContext` & `CLIGFormatter`.
+- `docs/specification/`.
 
 ### Fixed
 
