@@ -16,6 +16,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > - `Fixed` for any bug fixes.
 > - `Security` in case of vulnerabilities.
 
+## [Unreleased]
+
+## [0.6.0] - 2026-10-31
+
+### Added
+
+- Shell completion (`_PKGDX_COMPLETE`), from click.
+- `EXAMPLES:` in the help, as `docs/guidance/standard-cli.md` asks.
+- Per-command `EXAMPLES:` in `pkgdx init --help` & `pkgdx config --help`.
+
+### Changed
+
+- The CLI is built on [pyclig](https://github.com/andyrids/pyclig) & click instead of argparse.
+- Exit codes: usage errors exit `2` (was `64`), unexpected errors `70` (was `1`/`2`) (#11, §6).
+- `-v` prints `pkgdx <version>` (was `v<version>`); bare `pkgdx` prints concise help.
+- Help: click layout, `-d, --debug` listed for every command.
+- Hook shims print `error: <message>` (was `pkgdx: <message>`) & map Ctrl-C & crashes too.
+- The `init` spinner shows only on an interactive STDERR (honours `TTY_INTERACTIVE`).
+- `docs/guidance/standard-cli.md`, `toolchain-logging.md` & `toolchain-pytest.md` describe the
+  pyclig CLI, logging & tests (2.0.0 each, with MUST NOT rules).
+- `docs/guidance/` files carry `version` & `updated` frontmatter; `reference-toolchain-uv.md` is
+  now `toolchain-uv.md`, & `toolchain-pkgdx.md` is new.
+
+### Removed
+
+- argparse option prefixes, e.g. `--res` for `--reset`; Python 3.14 argparse help colours.
+- `pkgdx.logging` (`GLOBAL_CONSOLE`, `CLI_CONSOLE`, `configure_*_logging`) & `config.toml`.
+- `pkgdx._core.ExitCode`, `CLIContext` & `CLIGFormatter`.
+- `docs/specification/`.
+
+### Fixed
+
+- Usage errors go to STDERR only & print user input literally (#7).
+- Importing `pkgdx` no longer redirects Rich's global console to STDERR (#8).
+- `-d/--debug` is accepted after the command name (#9).
+- Ctrl-C outside the step runner, incl. hook shims, prints no traceback (#10).
+- STDOUT honours `FORCE_COLOR`, `TTY_COMPATIBLE` & `NO_COLOR` (#11).
+- `pkgdx.__main__` imports without distribution metadata (#12).
+- CLI tests assert each stream & no longer patch Rich private attributes (#13).
+- Logging uses one handler per run, with no unused `config.toml` entries (#14).
+- Piped output on Windows is UTF-8, so `PKGDX_CONFIG_DIR` paths never fail to encode.
+- A hook whose tool is not on `PATH` exits 1 with `error:` & a hint, not a traceback (was `70`).
+- `pkgdx init` warns & uses the project root when `git` is not on `PATH`, instead of crashing.
+- `pkgdx init` reads & writes `prek.toml` & `hooks.toml` as UTF-8, not the locale's cp1252.
+- A non-UTF-8 `prek.toml` or `hooks.toml` fails its `pkgdx init` step instead of crashing.
+- `pkgdx-markdown` puts PyMarkdown global options, e.g. `--stack-trace`, before `scan` (#2, part b).
+
 ## [0.5.0] - 2026-10-29
 
 ### Added

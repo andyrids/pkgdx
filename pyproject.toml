@@ -12,18 +12,22 @@ keywords = ["DevEx", "CLI", "typing", "linting", "pre-commit"]
 classifiers = [
     # 3 - Alpha | 4 - Beta | 5 - Production/Stable
     "Development Status :: 4 - Beta",
+    "Environment :: Console",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Quality Assurance",
     "Typing :: Typed",
 ]
 dependencies = [
+    "click~=8.5",
     "detect-secrets>=1.5.0",
     "mypy>=2.1.0",
     "prek~=0.4.8",
+    "pyclig~=0.2",
     "pymarkdownlnt>=0.9.37",
     "rich>=15.0.0",
     "ruff>=0.15.20",
@@ -37,7 +41,7 @@ dev = [
 ]
 
 [project.scripts]
-pkgdx = "pkgdx.__main__:main"
+pkgdx = "pkgdx.__main__:cli"
 pkgdx-secrets-hook = "pkgdx.__main__:detect_secrets"
 pkgdx-format-hook = "pkgdx.__main__:ruff_format"
 pkgdx-lint-hook = "pkgdx.__main__:ruff_lint"

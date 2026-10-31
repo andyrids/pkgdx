@@ -1,6 +1,5 @@
 """Core logic and file-system operations for `pkgdx init` and `config`."""
 
-import argparse
 import dataclasses
 import logging
 import os
@@ -8,14 +7,12 @@ import re
 import shutil
 import subprocess
 import sys
-from collections.abc import Iterable
-from enum import IntEnum, StrEnum
+from enum import StrEnum
 from itertools import chain, pairwise
 from pathlib import Path
 from typing import Any
 
 import tomlkit
-from rich.console import Console
 from tomlkit import TOMLDocument
 from tomlkit.exceptions import TOMLKitError
 from tomlkit.items import AoT, Table
@@ -29,20 +26,6 @@ _PREK_FIX_HINT = "Fix prek.toml, or regenerate it with `pkgdx init --reset`"
 _WOULD_UPDATE = re.compile(
     r"would update rev `(?P<old>[^`]+)` -> `(?P<new>[^`]+)`"
 )
-
-
-class ExitCode(IntEnum):
-    """Exit codes for the CLI commands.
-
-    NOTE: Members can be passed to `sys.exit` as `int` type checks pass
-    due to `IntEnum` inheritance.
-    """
-
-    EX_OK = 0
-    EX_FAILURE = 1
-    EX_SYNTAX = 2
-    EX_USAGE = 64
-    EX_INTERRUPT = 130
 
 
 class Outcome(StrEnum):
@@ -82,46 +65,6 @@ class StepResult:
     subject: str = ""
 
 
-@dataclasses.dataclass(frozen=True, slots=True)
-class CLIContext:
-    """Centralized state for the CLI commands.
-
-    Attributes:
-        args: The parsed command-line arguments from argparse.
-        console: The Rich console instance used for terminal output.
-        is_debug: Flag indicating if the CLI is running in debug mode.
-    """
-
-    args: argparse.Namespace
-    console: Console
-    is_debug: bool = False
-
-
-class CLIGFormatter(argparse.RawDescriptionHelpFormatter):
-    """Custom formatter for the CLI help output.
-
-    NOTE: Based on CLI guidance from https://clig.dev/.
-    """
-
-    def add_usage(
-        self,
-        usage: str | None,
-        actions: Iterable[argparse.Action],
-        groups: Iterable[argparse._MutuallyExclusiveGroup],
-        prefix: str | None = None,
-    ) -> None:
-        """Add a custom usage message to the CLI help output.
-
-        Args:
-            usage: The usage string to display.
-            actions: The list of actions for the parser.
-            groups: The list of mutually exclusive groups for the parser.
-            prefix: The prefix for the usage message.
-        """
-
-        super().add_usage(usage, actions, groups, prefix=prefix or "")
-
-
 def get_git_toplevel() -> Path:
     """Get the root path of the consuming Git repository.
 
@@ -129,6 +72,7 @@ def get_git_toplevel() -> Path:
         The Git top-level directory path.
 
     Raises:
+        exceptions.GitNotFoundError: If `git` is not found on `PATH`.
         exceptions.GitTopLevelError: If the working directory is not inside
             a Git repository.
     """
@@ -136,9 +80,12 @@ def get_git_toplevel() -> Path:
         result = subprocess.run(
             ["git", "rev-parse", "--show-toplevel"],
             check=True,
-            text=True,
+            encoding="utf-8",
             capture_output=True,
         )
+    except FileNotFoundError as e:
+        msg = "`git` not found on PATH"
+        raise exceptions.GitNotFoundError(msg) from e
     except subprocess.CalledProcessError as e:
         logger.debug("git rev-parse failed: %s", e.stderr)
         msg = "Failed `git rev-parse --show-toplevel`"
@@ -500,23 +447,47 @@ def setup_prek_config(root: Path, reset: bool = False) -> StepResult:
         config_template = standards.resolve_config(standards.PREK_CONFIG)
     except exceptions.ConfigDirError as e:
         return config_dir_failure(e)
-    template_text = config_template.read_text()
+    try:
+        template_text = config_template.read_text(encoding="utf-8")
+    except UnicodeDecodeError as e:
+        return StepResult(
+            Outcome.FAIL,
+            f"{config_template.name} is not valid UTF-8",
+            str(e),
+            f"Save {config_template} as UTF-8, or remove it to use the"
+            " bundled template",
+        )
 
     if reset or not config_existing.exists():
         existed = config_existing.exists()
-        if existed and config_existing.read_text() == template_text:
+        # `replace`: a non-UTF-8 `prek.toml` differs, so it is overwritten
+        if (
+            existed
+            and config_existing.read_text(encoding="utf-8", errors="replace")
+            == template_text
+        ):
             logger.debug("Existing `prek.toml` matches the template")
             change = Change.UNCHANGED
         else:
             logger.debug("Creating `prek.toml` from template")
-            config_existing.write_text(template_text)
+            config_existing.write_text(template_text, encoding="utf-8")
             change = Change.UPDATED if existed else Change.CREATED
         return StepResult(Outcome.OK, change=change, subject="prek.toml")
 
     # Consuming project `prek.toml`
     try:
-        doc_consumer = tomlkit.parse(config_existing.read_text())
+        doc_consumer = tomlkit.parse(
+            config_existing.read_text(encoding="utf-8")
+        )
         _validate_prek_repos(doc_consumer)
+    except UnicodeDecodeError as e:
+        return StepResult(
+            Outcome.FAIL,
+            "prek.toml is not valid UTF-8",
+            str(e),
+            "Save prek.toml as UTF-8, or regenerate it with"
+            " `pkgdx init --reset`",
+        )
     except TOMLKitError as e:
         return StepResult(
             Outcome.FAIL,
@@ -551,7 +522,7 @@ def setup_prek_config(root: Path, reset: bool = False) -> StepResult:
     # Normalise spacing between tables
     config_text = re.sub(r"\n+\[\[repos", "\n\n[[repos", config_text)
 
-    config_existing.write_text(config_text)
+    config_existing.write_text(config_text, encoding="utf-8")
     logger.debug("Added missing pre-commit hooks to `prek.toml`")
     hooks = f"{added} hook{'s' * (added != 1)}"
     subject = f"prek.toml ({hooks} added)" if added else "prek.toml"

@@ -82,10 +82,10 @@ To apply the canonical standards to a project, run the `init` command:
 uv run pkgdx init
 ```
 
-To see verbose logging output, use the `--debug` or `-d` option:
+To see verbose logging output, use the `--debug` or `-d` option, before or after the command:
 
 ```bash
-uv run pkgdx -d init
+uv run pkgdx init -d
 ```
 
 To overwrite or reset an existing `prek.toml` in the project root, use the `--reset` option:
@@ -93,6 +93,11 @@ To overwrite or reset an existing `prek.toml` in the project root, use the `--re
 ```bash
 uv run pkgdx init --reset
 ```
+
+Exit codes are `0` for success (with or without warnings), `1` for a failure, `2` for a usage error,
+`70` for an unexpected error - a bug, please report it - and `130` for Ctrl-C. The pre-commit hooks
+exit with the wrapped tool's code, and print `error: <message>` for a pkgdx failure, such as a
+wrapped tool not found on `PATH`.
 
 To see which configuration file each hook uses, run the `config` command. See
 [Adopting your own standards](#adopting-your-own-standards-external-users).
@@ -129,7 +134,7 @@ uv add --dev git+https://gitlab.com/andyrids/pkgdx.git
 ```
 
 ```bash
-uv add --dev git+https://gitlab.com/andyrids/pkgdx.git@v0.5.0
+uv add --dev git+https://gitlab.com/andyrids/pkgdx.git@v0.6.0
 ```
 
 ## CI/CD integration
@@ -179,7 +184,8 @@ detect-secrets has no configuration file, so it always uses its bundled settings
 > [!IMPORTANT]
 > `hooks.toml` affects only `pkgdx init`, which uses it to write the `prek.toml` template. A
 > `prek.toml` that was already copied keeps its old hooks. After upgrading `pkgdx` or changing
-> `hooks.toml`, refresh the copy with `uv run pkgdx init --reset`.
+> `hooks.toml`, refresh the copy with `uv run pkgdx init --reset` (backup first if using custom
+> hooks).
 
 ### (3) Check and seed with `pkgdx config`
 
