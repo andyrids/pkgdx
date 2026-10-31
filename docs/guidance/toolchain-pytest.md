@@ -3,7 +3,7 @@ context-hierarchy: Layer 3
 context-hierarchy-role: Reference material
 immutable: true
 recommended-context-tokens: 2500
-version: 1.1.0
+version: 2.0.0
 updated: 2026-10-31
 tags: [pytest, unit-testing]
 ---
@@ -31,8 +31,8 @@ Pytest is used for unit testing, with tests colocated in `tests/`.
 - Shared fixtures live once in `tests/conftest.py` and are consumed via dependency injection
   (e.g. `mock_subprocess_run`, `mock_project`) rather than re-declared per test module
 - CLI tests run through `pyclig.testing.invoke`, setting each stream's TTY with `out_tty` /
-  `err_tty` and asserting `result.stdout` and `result.stderr` separately. Never patch Rich private
-  attributes (`_force_terminal`, `_width`, `_color_system`) or module consoles
+  `err_tty` and asserting `result.stdout` and `result.stderr` separately. They MUST NOT patch
+  Rich private attributes (`_force_terminal`, `_width`, `_color_system`) or module consoles
 - Use a subprocess only where real streams matter - broken pipes, encodings, colour variables
 - Dataclass instances are built via factory fixtures (`make_symbol_node`, `make_package_info`,
   `make_cli_context`) that supply defaults for every field and accept `**overrides` - tests
