@@ -35,3 +35,7 @@ class RichHandlerNotFound(Error):
 
 class ConfigDirError(Error):
     """Raised on an invalid `PKGDX_CONFIG_DIR`."""
+
+
+class ToolNotFoundError(Error):
+    """Raised when a hook tool executable is not found on `PATH`."""

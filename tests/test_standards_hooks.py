@@ -7,7 +7,7 @@ from unittest import mock
 
 import pytest
 
-from pkgdx import __main__, standards
+from pkgdx import __main__, exceptions, standards
 from pkgdx.standards import _hooks
 
 
@@ -225,6 +225,54 @@ def test_hook_entry_point_interrupt_exits_130(
         shim()
     assert exc_info.value.code == 130
     assert capsys.readouterr().err == "warning: interrupted\n"
+
+
+def test_run_tool_missing_executable_raises_tool_not_found(
+    mock_subprocess_run: mock.MagicMock,
+) -> None:
+    """A tool missing from `PATH` raises an error naming it & the fix."""
+    error = FileNotFoundError(2, "The system cannot find the file specified")
+    mock_subprocess_run.side_effect = error
+
+    with pytest.raises(exceptions.ToolNotFoundError) as exc_info:
+        _hooks._run_tool(["ruff", "check"])
+
+    assert str(exc_info.value) == (
+        "`ruff` not found on PATH - run the hook in the environment pkgdx is"
+        " installed in, e.g. via `uv run`"
+    )
+    assert exc_info.value.__cause__ is error
+
+
+@pytest.mark.parametrize(
+    ("shim", "tool"),
+    [
+        (__main__.ruff_format, "ruff"),
+        (__main__.ruff_lint, "ruff"),
+        (__main__.mypy_typing, "mypy"),
+        (__main__.pymarkdown_lint, "pymarkdown"),
+        (__main__.detect_secrets, "detect-secrets-hook"),
+    ],
+    ids=["format", "lint", "typing", "markdown", "secrets"],
+)
+def test_hook_entry_point_missing_tool_exits_1(
+    shim: Callable[[], None],
+    tool: str,
+    mock_subprocess_run: mock.MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A hook tool missing from `PATH` exits 1 with a one-line error."""
+    mock_subprocess_run.side_effect = FileNotFoundError(2, "not found")
+    monkeypatch.setattr("sys.argv", ["pkgdx-hook"])
+    with pytest.raises(SystemExit) as exc_info:
+        shim()
+    assert exc_info.value.code == 1
+    err = capsys.readouterr().err
+    assert err.startswith(f"error: `{tool}` not found on PATH - ")
+    assert len(err.splitlines()) == 1
+    assert "Traceback" not in err
+    assert "unexpected" not in err
 
 
 def test_hook_entry_point_passes_tool_exit_code(

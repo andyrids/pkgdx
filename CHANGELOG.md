@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI tests assert each stream & no longer patch Rich private attributes (#13).
 - Logging uses one handler per run, with no unused `config.toml` entries (#14).
 - Piped output on Windows is UTF-8, so `PKGDX_CONFIG_DIR` paths never fail to encode.
+- A hook whose tool is not on `PATH` exits 1 with `error:` & a hint, not a traceback (was `70`).
 
 ## [0.5.0] - 2026-10-29
 

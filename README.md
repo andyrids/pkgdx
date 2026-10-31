@@ -96,7 +96,8 @@ uv run pkgdx init --reset
 
 Exit codes are `0` for success (with or without warnings), `1` for a failure, `2` for a usage error,
 `70` for an unexpected error - a bug, please report it - and `130` for Ctrl-C. The pre-commit hooks
-exit with the wrapped tool's code, and print `error: <message>` for a pkgdx failure.
+exit with the wrapped tool's code, and print `error: <message>` for a pkgdx failure, such as a
+wrapped tool not found on `PATH`.
 
 To see which configuration file each hook uses, run the `config` command. See
 [Adopting your own standards](#adopting-your-own-standards-external-users).
