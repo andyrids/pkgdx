@@ -72,6 +72,7 @@ def get_git_toplevel() -> Path:
         The Git top-level directory path.
 
     Raises:
+        exceptions.GitNotFoundError: If `git` is not found on `PATH`.
         exceptions.GitTopLevelError: If the working directory is not inside
             a Git repository.
     """
@@ -82,6 +83,9 @@ def get_git_toplevel() -> Path:
             text=True,
             capture_output=True,
         )
+    except FileNotFoundError as e:
+        msg = "`git` not found on PATH"
+        raise exceptions.GitNotFoundError(msg) from e
     except subprocess.CalledProcessError as e:
         logger.debug("git rev-parse failed: %s", e.stderr)
         msg = "Failed `git rev-parse --show-toplevel`"

@@ -29,6 +29,10 @@ class GitTopLevelError(Error):
     """Raised on failed `git rev-parse --show-toplevel` command."""
 
 
+class GitNotFoundError(GitTopLevelError):
+    """Raised when the `git` executable is not found on `PATH`."""
+
+
 class RichHandlerNotFound(Error):
     """Raised on missing Rich logging handler."""
 

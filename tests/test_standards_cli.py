@@ -19,7 +19,7 @@ from rich.console import Console
 
 from pkgdx import exceptions, standards
 from pkgdx.__main__ import cli
-from pkgdx._core import Change, Outcome, StepResult
+from pkgdx._core import Change, Outcome, StepResult, get_git_toplevel
 
 STANDARDS_CLI = "pkgdx.standards._cli"
 
@@ -224,6 +224,28 @@ def test_init_reports_nothing_to_change_on_rerun(
 
     assert exit_code == ExitCode.OK
     assert lines[-1] == "pkgdx init: done in 2.9s (nothing to change)"
+
+
+def test_init_warns_and_uses_project_root_without_git(
+    steps: dict[str, mock.MagicMock],
+    mock_subprocess_run: mock.MagicMock,
+) -> None:
+    """A missing `git` executable warns & falls back to the project root."""
+    steps["get_git_toplevel"].side_effect = get_git_toplevel
+    mock_subprocess_run.side_effect = FileNotFoundError(2, "not found")
+
+    exit_code, lines = _run_init()
+
+    assert exit_code == ExitCode.OK
+    assert lines[1:3] == [
+        (
+            "  warn    identify Git top-level      "
+            "`git` not found on PATH, using project root"
+        ),
+        "        -> Install Git to enable pre-commit hooks",
+    ]
+    assert "Traceback" not in "\n".join(lines)
+    steps["install_prek_hooks"].assert_called_once_with(ROOT, None)
 
 
 def test_init_warning_count_singular(

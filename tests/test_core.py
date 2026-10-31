@@ -122,6 +122,15 @@ def test_get_git_toplevel_raises_outside_git(
         get_git_toplevel()
 
 
+def test_get_git_toplevel_raises_git_not_found_without_git(
+    mock_subprocess_run: mock.MagicMock,
+) -> None:
+    """A missing `git` executable raises `GitNotFoundError`, not a crash."""
+    mock_subprocess_run.side_effect = FileNotFoundError(2, "not found")
+    with pytest.raises(exceptions.GitNotFoundError, match="`git` not found"):
+        get_git_toplevel()
+
+
 def test_inject_missing_hooks_returns_added_count() -> None:
     """The number of hooks added is returned, and 0 when none are missing."""
     table = {"hooks": tomlkit.aot()}
