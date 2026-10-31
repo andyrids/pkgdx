@@ -2,10 +2,32 @@
 
 import os
 import subprocess
-from pathlib import Path
+from itertools import islice
 from typing import Any
 
 from pkgdx import exceptions, standards
+
+# PyMarkdown's global options (`pymarkdown --help`, 0.9.41), which go before
+# `scan`. The short `-e` is left out: after `scan` it means `--exclude`.
+_PYMARKDOWN_FLAGS = frozenset(
+    {"--continue-on-error", "--no-json5", "--stack-trace", "--strict-config"}
+)
+_PYMARKDOWN_OPTIONS = frozenset(
+    {
+        "--add-plugin",
+        "-c",
+        "--config",
+        "-d",
+        "--disable-rules",
+        "--enable-extensions",
+        "--enable-rules",
+        "--log-file",
+        "--log-level",
+        "--return-code-scheme",
+        "-s",
+        "--set",
+    }
+)
 
 
 def _run_tool(cmd: list[str], **kwargs: Any) -> int:
@@ -72,15 +94,14 @@ def core_pymarkdown_lint(args: list[str]) -> int:
     """Core logic for pymarkdown linting.
 
     NOTE: PyMarkdown takes its global options before `scan` & the paths to
-    scan after it. The args are split at the first one naming an existing
-    path, as prek passes file names last: the args before it (e.g.
-    `--stack-trace`, or `-d md013` with its value) go before `scan`, that
-    path & the rest after it - so an option of `scan` itself (e.g. `-r`)
-    must follow the first path. With no existing path, all the args follow
-    `scan`, so PyMarkdown reports a missing file.
+    scan after it. The args that are global options move before `scan`, in
+    order: a flag (`_PYMARKDOWN_FLAGS`, e.g. `--stack-trace`), or an option
+    & its value (`_PYMARKDOWN_OPTIONS`, e.g. `-d md013` or `--set=k=v`).
+    The rest - paths & `scan`'s own options, e.g. `-r` or `-e` (`--exclude`)
+    - follow `scan` in order, as before.
 
     Args:
-        args: PyMarkdown global options, then the paths to scan.
+        args: The hook arguments: paths, `scan` & global options.
 
     Returns:
         The PyMarkdown return code.
@@ -89,14 +110,26 @@ def core_pymarkdown_lint(args: list[str]) -> int:
         exceptions.ToolNotFoundError: If `pymarkdown` is not on `PATH`.
     """
     config = standards.resolve_config(standards.PYMARKDOWN_CONFIG).as_posix()
-    split = next((i for i, arg in enumerate(args) if Path(arg).exists()), 0)
+    options: list[str] = []
+    scan_args: list[str] = []
+    remaining = iter(args)
+    for arg in remaining:
+        if arg in _PYMARKDOWN_OPTIONS:
+            options += [arg, *islice(remaining, 1)]  # the option & its value
+        elif (
+            arg in _PYMARKDOWN_FLAGS
+            or arg.partition("=")[0] in _PYMARKDOWN_OPTIONS
+        ):
+            options.append(arg)
+        else:
+            scan_args.append(arg)
     cmd = [
         "pymarkdown",
         "--config",
         config,
         "--continue-on-error",
-        *args[:split],
+        *options,
         "scan",
-        *args[split:],
+        *scan_args,
     ]
     return _run_tool(cmd)

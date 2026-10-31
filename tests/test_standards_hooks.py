@@ -159,28 +159,26 @@ def test_pymarkdown_lint_continues_past_a_crashing_document(
 
 
 @pytest.mark.parametrize(
-    ("args", "options", "paths"),
+    ("args", "options", "scan_args"),
     [
         (["--stack-trace", "a.md"], ["--stack-trace"], ["a.md"]),
         (["-d", "md013", "a.md"], ["-d", "md013"], ["a.md"]),
-        (["a.md", "b.md"], [], ["a.md", "b.md"]),
-        (["--stack-trace", "gone.md"], [], ["--stack-trace", "gone.md"]),
+        (["--set=x=y", "a.md"], ["--set=x=y"], ["a.md"]),
+        (
+            ["a.md", "-r", "--log-level", "DEBUG", "-e", "x.md", "--no-json5"],
+            ["--log-level", "DEBUG", "--no-json5"],
+            ["a.md", "-r", "-e", "x.md"],
+        ),
     ],
-    ids=["stack-trace", "disable-rule", "files-only", "no-existing-path"],
+    ids=["stack-trace", "disable-rule", "set-equals", "mixed"],
 )
-def test_pymarkdown_lint_puts_options_before_scan(
+def test_pymarkdown_lint_moves_global_options_before_scan(
     args: list[str],
     options: list[str],
-    paths: list[str],
-    tmp_path: pathlib.Path,
-    monkeypatch: pytest.MonkeyPatch,
+    scan_args: list[str],
     mock_subprocess_run: mock.MagicMock,
 ) -> None:
-    """Global options go before `scan` & file names after it (#2, part b)."""
-    monkeypatch.chdir(tmp_path)
-    (tmp_path / "a.md").write_text("# A\n")
-    (tmp_path / "b.md").write_text("# B\n")
-
+    """Global options move before `scan`, in order (#2, part b)."""
     _hooks.core_pymarkdown_lint(args)
 
     mock_subprocess_run.assert_called_once_with(
@@ -191,7 +189,38 @@ def test_pymarkdown_lint_puts_options_before_scan(
             "--continue-on-error",
             *options,
             "scan",
-            *paths,
+            *scan_args,
+        ]
+    )
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        ["a.md", "b.md"],
+        ["-r", "docs"],
+        ["--recurse", "--list-files", "docs"],
+        ["-e", "x.md", "a.md"],
+        ["--exclude=x.md", "a.md"],
+        ["-ae", ".md,.mdx", "--respect-gitignore", "docs"],
+    ],
+    ids=["files", "recurse", "long-flags", "exclude", "exclude-equals", "mix"],
+)
+def test_pymarkdown_lint_keeps_scan_args_after_scan(
+    args: list[str],
+    mock_subprocess_run: mock.MagicMock,
+) -> None:
+    """Paths & `scan` options build the same command as before the fix."""
+    _hooks.core_pymarkdown_lint(args)
+
+    mock_subprocess_run.assert_called_once_with(
+        [
+            "pymarkdown",
+            "--config",
+            standards.PYMARKDOWN_CONFIG.as_posix(),
+            "--continue-on-error",
+            "scan",
+            *args,
         ]
     )
 
