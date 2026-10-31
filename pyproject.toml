@@ -87,3 +87,6 @@ cache-keys = [{ file = "pyproject.toml" }, { git = { commit = true, tags = true 
 members = [
     "consumers/testing",
 ]
+
+[tool.uv.sources]
+pyclig = { path = "../../github/pyclig", editable = true }
