@@ -25,7 +25,7 @@ dependencies = [
     "detect-secrets>=1.5.0",
     "mypy>=2.1.0",
     "prek~=0.4.8",
-    "pyclig",
+    "pyclig~=0.1",
     "pymarkdownlnt>=0.9.37",
     "rich>=15.0.0",
     "ruff>=0.15.20",
@@ -87,6 +87,3 @@ cache-keys = [{ file = "pyproject.toml" }, { git = { commit = true, tags = true 
 members = [
     "consumers/testing",
 ]
-
-[tool.uv.sources]
-pyclig = { path = "../../github/pyclig", editable = true }
