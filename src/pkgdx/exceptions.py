@@ -29,9 +29,17 @@ class GitTopLevelError(Error):
     """Raised on failed `git rev-parse --show-toplevel` command."""
 
 
+class GitNotFoundError(GitTopLevelError):
+    """Raised when the `git` executable is not found on `PATH`."""
+
+
 class RichHandlerNotFound(Error):
     """Raised on missing Rich logging handler."""
 
 
 class ConfigDirError(Error):
     """Raised on an invalid `PKGDX_CONFIG_DIR`."""
+
+
+class ToolNotFoundError(Error):
+    """Raised when a hook tool executable is not found on `PATH`."""

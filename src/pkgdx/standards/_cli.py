@@ -152,10 +152,16 @@ def _find_git_toplevel(state: _InitState) -> StepResult:
 
     Returns:
         An OK result naming the top-level (or `same as project root`), or
-        WARN outside a Git repository.
+        WARN without `git` or outside a Git repository.
     """
     try:
         state.git_toplevel = _core.get_git_toplevel()
+    except exceptions.GitNotFoundError:
+        return StepResult(
+            Outcome.WARN,
+            "`git` not found on PATH, using project root",
+            hint="Install Git to enable pre-commit hooks",
+        )
     except exceptions.GitTopLevelError:
         return StepResult(
             Outcome.WARN,

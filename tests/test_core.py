@@ -44,6 +44,22 @@ PREK_FETCH_FAILED = (
     "exit code: 128\n"
 )
 
+# Run with `-X warn_default_encoding`: an `EncodingWarning` (text I/O without
+# `encoding`) is an error only after the imports, so theirs do not count
+_ENCODING_PROBE = """
+import sys, warnings
+from pathlib import Path
+from pkgdx import _core, exceptions
+warnings.simplefilter("error", EncodingWarning)
+root = Path(sys.argv[1])
+_core.setup_prek_config(root)
+_core.setup_prek_config(root, reset=True)
+try:
+    _core.get_git_toplevel()
+except exceptions.GitTopLevelError:
+    pass
+"""
+
 
 def _completed(
     returncode: int, stdout: str = "", stderr: str = ""
@@ -119,6 +135,15 @@ def test_get_git_toplevel_raises_outside_git(
         128, ["git"], stderr="fatal: not a git repository"
     )
     with pytest.raises(exceptions.GitTopLevelError):
+        get_git_toplevel()
+
+
+def test_get_git_toplevel_raises_git_not_found_without_git(
+    mock_subprocess_run: mock.MagicMock,
+) -> None:
+    """A missing `git` executable raises `GitNotFoundError`, not a crash."""
+    mock_subprocess_run.side_effect = FileNotFoundError(2, "not found")
+    with pytest.raises(exceptions.GitNotFoundError, match="`git` not found"):
         get_git_toplevel()
 
 
@@ -327,6 +352,55 @@ def test_setup_prek_config_fails_on_broken_user_hooks_toml(
     assert "--reset" not in result.hint
 
 
+def test_setup_prek_config_fails_on_non_utf8_file(tmp_path: Path) -> None:
+    """A non-UTF-8 `prek.toml` gives a FAIL result instead of raising."""
+    (tmp_path / "prek.toml").write_bytes(
+        b'# caf\xe9\n[[repos]]\nrepo = "local"\n'
+    )
+
+    result = setup_prek_config(tmp_path)
+
+    assert result.outcome is Outcome.FAIL
+    assert result.detail == "prek.toml is not valid UTF-8"
+    assert "byte 0xe9 in position 5" in result.message
+    assert result.hint == (
+        "Save prek.toml as UTF-8, or regenerate it with `pkgdx init --reset`"
+    )
+
+
+def test_setup_prek_config_reset_replaces_non_utf8_file(
+    tmp_path: Path,
+) -> None:
+    """`--reset` overwrites a non-UTF-8 `prek.toml`, as its hint says."""
+    (tmp_path / "prek.toml").write_bytes(b"# caf\xe9\n")
+
+    result = setup_prek_config(tmp_path, reset=True)
+
+    assert result == StepResult(
+        Outcome.OK, change=Change.UPDATED, subject="prek.toml"
+    )
+    template_text = standards.PREK_CONFIG.read_text(encoding="utf-8")
+    assert (tmp_path / "prek.toml").read_text(
+        encoding="utf-8"
+    ) == template_text
+
+
+def test_setup_prek_config_fails_on_non_utf8_user_hooks_toml(
+    tmp_path: Path, isolated_user_config: Path
+) -> None:
+    """A non-UTF-8 user `hooks.toml` fails, naming it, without `--reset`."""
+    user_hooks = isolated_user_config / "hooks.toml"
+    user_hooks.write_bytes(b"# caf\xe9\n")
+
+    result = setup_prek_config(tmp_path)
+
+    assert result.outcome is Outcome.FAIL
+    assert result.detail == "hooks.toml is not valid UTF-8"
+    assert "byte 0xe9" in result.message
+    assert str(user_hooks) in result.hint
+    assert "--reset" not in result.hint
+
+
 def test_setup_prek_config_uses_user_hooks_toml(
     tmp_path: Path, isolated_user_config: Path
 ) -> None:
@@ -340,6 +414,38 @@ def test_setup_prek_config_uses_user_hooks_toml(
 
     assert result.change is Change.CREATED
     assert (project / "prek.toml").read_text() == user_hooks.read_text()
+
+
+def test_prek_toml_and_git_io_set_encoding_on_non_ascii_config(
+    tmp_path: Path,
+) -> None:
+    """`prek.toml` & `git` text I/O name UTF-8, not the locale encoding.
+
+    NOTE: The probe merges into a non-ASCII `prek.toml` (read & write), then
+    resets it (read & overwrite), then asks `git` for the top-level.
+    """
+    (tmp_path / "prek.toml").write_text(
+        '# café ✓ ━\n[[repos]]\nrepo = "local"\nhooks = []\n',
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-X",
+            "warn_default_encoding",
+            "-c",
+            _ENCODING_PROBE,
+            str(tmp_path),
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 def test_install_prek_hooks_skips_existing_shims(
