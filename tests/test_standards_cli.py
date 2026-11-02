@@ -4,7 +4,7 @@ import logging
 import os
 import subprocess
 import sys
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import ExitStack
 from pathlib import Path
 from typing import Any
@@ -634,6 +634,38 @@ def test_config_lists_user_override(isolated_user_config: Path) -> None:
         _source_row(standards.RUFF_CONFIG, "user", user_ruff),
     ]
     assert err[-1].endswith("from PKGDX_CONFIG_DIR (1 user, 3 bundled)")
+
+
+def test_config_lists_project_excludes(
+    excluded_project: Callable[..., Path],
+) -> None:
+    """Each entry gets a row, and one that does not exist says so."""
+    root = excluded_project("vendor", "typo")
+    (root / "vendor").mkdir()
+
+    exit_code, out, err = _run_config([])
+
+    assert exit_code == ExitCode.OK
+    assert out[len(standards.BUNDLED_CONFIGS) :] == [
+        f"  {'exclude':<15}  {'project':<11}vendor",
+        f"  {'exclude':<15}  {'project':<11}typo (not found)",
+    ]
+    assert err[-1].endswith("from PKGDX_CONFIG_DIR (0 user, 4 bundled)")
+
+
+def test_config_invalid_excludes_fails(
+    excluded_project: Callable[..., Path],
+) -> None:
+    """A bad list fails with one line on STDERR & no partial rows."""
+    excluded_project("a[1]")
+
+    exit_code, out, err = _run_config([])
+
+    assert exit_code == ExitCode.FAILURE
+    assert out == []
+    assert len(err) == 1
+    assert err[0].startswith("error: ")
+    assert "a[1]" in err[0]
 
 
 def test_config_names_platform_dir_when_env_unset(platform_dir: Path) -> None:

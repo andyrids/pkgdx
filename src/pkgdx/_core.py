@@ -557,7 +557,7 @@ def create_secrets_baseline(root: Path) -> StepResult:
                 "detect_secrets",
                 "scan",
                 "--exclude-files",
-                r"(.*\.lock)",
+                r"(\.venv|\.secrets\.baseline|.*\.lock)",
             ],
             cwd=root,
             env=os.environ | {"PYTHONUTF8": "1"},

@@ -724,6 +724,22 @@ def test_create_secrets_baseline_forces_utf8_mode(
     assert env["PKGDX_SENTINEL"] == "kept"
 
 
+def test_create_secrets_baseline_excludes_what_the_hook_excludes(
+    tmp_path: Path,
+    mock_subprocess_run: mock.MagicMock,
+) -> None:
+    """The baseline's stored filter matches the hook's `exclude` pattern."""
+    mock_subprocess_run.return_value.stdout = b"{}"
+
+    create_secrets_baseline(tmp_path)
+
+    command = mock_subprocess_run.call_args.args[0]
+    pattern = command[command.index("--exclude-files") + 1]
+    escaped = pattern.replace("\\", "\\\\")
+    manifest = Path(__file__).parents[1] / ".pre-commit-hooks.yaml"
+    assert f'exclude: "{escaped}"' in manifest.read_text(encoding="utf-8")
+
+
 def test_export_config_copies_bundled_file(tmp_path: Path) -> None:
     """A missing user file is created as a copy of the bundled file."""
     user_dir = tmp_path / "pkgdx"

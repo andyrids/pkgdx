@@ -2,7 +2,8 @@
 
 NOTE: `pkgdx.__main__` adds these commands (`command_init`,
 `command_config`) to the `pkgdx` group. The ledger, notes & closing lines go
-to the run's STDERR console (`ctx.err`); `config` source rows to STDOUT.
+to the run's STDERR console (`ctx.err`); `config` source & exclude rows
+to STDOUT.
 """
 
 import dataclasses
@@ -303,11 +304,11 @@ def command_init(ctx: pyclig.Context, reset: bool) -> int:
 )
 @pyclig.pass_context
 def command_config(ctx: pyclig.Context, export: bool) -> int:
-    """Show config sources or export bundled configs.
+    """Show config sources & excludes or export bundled configs.
 
     \f
-    NOTE: Source rows go to STDOUT (`ctx.out`). The closing line, the
-    `--export` ledger and errors go to STDERR (`ctx.err`).
+    NOTE: Source & project exclude rows go to STDOUT (`ctx.out`). The closing
+    line, the `--export` ledger and errors go to STDERR (`ctx.err`).
 
     Args:
         ctx: The CLI context.
@@ -315,8 +316,12 @@ def command_config(ctx: pyclig.Context, export: bool) -> int:
 
     Returns:
         The integer process exit code. 0 on success, 1 on an invalid
-        `PKGDX_CONFIG_DIR` or a failed copy and 130 on Ctrl-C during
-        `--export`.
+        `PKGDX_CONFIG_DIR`, an invalid `[tool.pkgdx]` table or a failed copy
+        and 130 on Ctrl-C during `--export`.
+
+    Raises:
+        exceptions.ProjectConfigError: If the `[tool.pkgdx]` table is invalid,
+            before any row prints.
     """
     env = standards.CONFIG_DIR_ENV
     try:
@@ -336,6 +341,7 @@ def command_config(ctx: pyclig.Context, export: bool) -> int:
             ],
         )
 
+    excludes = standards.project_excludes()
     width = max(len(bundled.name) for bundled in standards.BUNDLED_CONFIGS)
     users = 0
     for bundled in standards.BUNDLED_CONFIGS:
@@ -349,6 +355,17 @@ def command_config(ctx: pyclig.Context, export: bool) -> int:
             "  ",
             (f"{source:<{_KIND}}", style),
             str(resolved),
+        )
+        ctx.out.print(row, soft_wrap=True)
+
+    for path in excludes:
+        row = Text.assemble(
+            "  ",
+            "exclude".ljust(width),
+            "  ",
+            (f"{'project':<{_KIND}}", "bold"),
+            path,
+            "" if Path(path).exists() else " (not found)",
         )
         ctx.out.print(row, soft_wrap=True)
 
