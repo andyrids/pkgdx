@@ -134,7 +134,7 @@ uv add --dev git+https://gitlab.com/andyrids/pkgdx.git
 ```
 
 ```bash
-uv add --dev git+https://gitlab.com/andyrids/pkgdx.git@v0.6.0
+uv add --dev git+https://gitlab.com/andyrids/pkgdx.git@v0.7.0
 ```
 
 ## CI/CD integration
@@ -145,6 +145,30 @@ heavy boilerplate across each CI/CD YAML config.
 > [!TIP]
 > See `ruff-lint-job` in the project
 > [.gitlab-ci.yml](https://gitlab.com/andyrids/pkgdx/-/blob/main/.gitlab-ci.yml) for an example.
+
+## Excluding files and folders
+
+The lint, format and typing hooks walk your project themselves, so they check and auto-fix
+everything they find. To leave submodules, vendored code or generated files alone, list them in your
+project's `pyproject.toml`:
+
+```toml
+[tool.pkgdx]
+exclude = ["submodules", "vendor", "src/app/_gen.py"]
+```
+
+Entries are literal paths relative to that file, `/` separated and case-sensitive. A folder covers
+everything below it, and `vendor` never matches `src/vendor`. Globs are rejected, and an invalid
+list fails the hook before any tool runs.
+
+The list is committed, so it applies in CI and survives `pkgdx init --reset` and hook updates. It
+also applies to the markdown hook, but `pkgdx-secrets` keeps scanning listed paths, because a secret
+in vendored code is still a leaked secret. Run `uv run pkgdx config` to see the list in effect.
+
+> [!NOTE]
+> See [the guidance](https://gitlab.com/andyrids/pkgdx/-/blob/main/docs/guidance/toolchain-pkgdx.md)
+> for the full rules. When upgrading, move both the `pkgdx` lock and the hook `rev` before relying
+> on the list.
 
 ## Adopting your own standards (external users)
 
@@ -194,8 +218,8 @@ uv run pkgdx config
 ```
 
 This prints one row per file on standard output: its name, its source (`user` or `bundled`) and
-its resolved path. A summary line on standard error names the user config directory and whether
-`PKGDX_CONFIG_DIR` set it.
+its resolved path, then one row per [excluded path](#excluding-files-and-folders). A summary line on
+standard error names the user config directory and whether `PKGDX_CONFIG_DIR` set it.
 
 To start from the bundled files, export them into the user config directory:
 
