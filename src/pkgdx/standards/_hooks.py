@@ -1,6 +1,8 @@
 """Core pre-commit hook logic for the `pkgdx` canonical standards."""
 
+import json
 import os
+import re
 import subprocess
 from itertools import islice
 from typing import Any
@@ -55,27 +57,103 @@ def _run_tool(cmd: list[str], **kwargs: Any) -> int:
         return proc.returncode
 
 
+# PROJECT EXCLUDES
+
+
+def _ruff_exclude_args() -> list[str]:
+    """Translate the project excludes into Ruff arguments.
+
+    NOTE: Inline `--config`, as `ruff format --extend-exclude` needs ruff
+    0.15.21 & Ruff glob-expands flag values on Windows. `./` anchors a path
+    to the working directory; a bare name would match at any depth. Never
+    `--exclude`, which would replace Ruff's default exclusions.
+
+    Returns:
+        The arguments, empty if the project excludes nothing.
+
+    Raises:
+        exceptions.ProjectConfigError: If the project list is invalid.
+    """
+    excludes = standards.project_excludes()
+    if not excludes:
+        return []
+    paths = [f"./{path}" for path in excludes]
+    value = json.dumps(paths, ensure_ascii=False)
+    return ["--config", f"extend-exclude={value}"]
+
+
+def _mypy_exclude_args(args: list[str]) -> list[str]:
+    """Translate the project excludes into Mypy arguments.
+
+    NOTE: `--exclude` adds to the config's `exclude` & only filters discovery.
+    With no args the whole project is checked, so `--follow-imports=silent`
+    only hides errors in excluded code the project imports, which a consumer
+    cannot do as the shim pins the config file. Args may narrow the target,
+    where the flag would hide errors in first-party code too, so it stays off.
+
+    Args:
+        args: The hook arguments.
+
+    Returns:
+        The arguments, empty if the project excludes nothing.
+
+    Raises:
+        exceptions.ProjectConfigError: If the project list is invalid.
+    """
+    excludes = standards.project_excludes()
+    patterns = [
+        arg
+        for path in excludes
+        for arg in ("--exclude", f"^{re.escape(path)}(/|$)")
+    ]
+    silent = excludes and not args
+    return [*patterns, "--follow-imports=silent"] if silent else patterns
+
+
+def _is_excluded(arg: str, excludes: list[str]) -> bool:
+    """Check whether a hook argument is a path under an excluded path.
+
+    NOTE: Compares strings, as Mypy does, so that a match is case-sensitive
+    on every platform.
+
+    Args:
+        arg: The hook argument.
+        excludes: The project excludes, relative to the working directory.
+
+    Returns:
+        True if the argument is an excluded path or is below one.
+    """
+    try:
+        path = os.path.relpath(arg).replace(os.sep, "/")
+    except ValueError:  # on another Windows drive, so outside the project
+        return False
+    return any(
+        path == exclude or path.startswith(f"{exclude}/")
+        for exclude in excludes
+    )
+
+
 # CORE HOOK LOGIC
 
 
 def core_ruff_format(args: list[str]) -> int:
     """Core logic for ruff formatting."""
     config = standards.resolve_config(standards.RUFF_CONFIG).as_posix()
-    cmd = ["ruff", "format", "--config", config] + args
+    cmd = ["ruff", "format", "--config", config, *_ruff_exclude_args(), *args]
     return _run_tool(cmd)
 
 
 def core_ruff_lint(args: list[str]) -> int:
     """Core logic for ruff linting."""
     config = standards.resolve_config(standards.RUFF_CONFIG).as_posix()
-    cmd = ["ruff", "check", "--config", config] + args
+    cmd = ["ruff", "check", "--config", config, *_ruff_exclude_args(), *args]
     return _run_tool(cmd)
 
 
 def core_mypy_typing(args: list[str]) -> int:
     """Core logic for mypy type checking."""
     config = standards.resolve_config(standards.MYPY_CONFIG).as_posix()
-    cmd = ["mypy", "--config-file", config] + args
+    cmd = ["mypy", "--config-file", config, *_mypy_exclude_args(args), *args]
     return _run_tool(cmd)
 
 
@@ -100,13 +178,19 @@ def core_pymarkdown_lint(args: list[str]) -> int:
     The rest - paths & `scan`'s own options, e.g. `-r` or `-e` (`--exclude`)
     - follow `scan` in order, as before.
 
+    Project excludes are dropped from a plain list of paths, which is what
+    prek passes, not passed as `-e`: PyMarkdown exits 1 silently when `-e`
+    leaves it nothing to scan, so the hook returns 0. A command with `scan`
+    options is hand-written & runs as given, as an option's value is no path.
+
     Args:
         args: The hook arguments: paths, `scan` & global options.
 
     Returns:
-        The PyMarkdown return code.
+        The PyMarkdown return code, or 0 if every path was dropped.
 
     Raises:
+        exceptions.ProjectConfigError: If the project list is invalid.
         exceptions.ToolNotFoundError: If `pymarkdown` is not on `PATH`.
     """
     config = standards.resolve_config(standards.PYMARKDOWN_CONFIG).as_posix()
@@ -123,6 +207,16 @@ def core_pymarkdown_lint(args: list[str]) -> int:
             options.append(arg)
         else:
             scan_args.append(arg)
+
+    excludes = standards.project_excludes()
+    has_options = any(
+        arg.startswith("-") and not os.path.lexists(arg) for arg in scan_args
+    )
+    if scan_args and not has_options:
+        scan_args = [a for a in scan_args if not _is_excluded(a, excludes)]
+        if not scan_args:
+            return 0
+
     cmd = [
         "pymarkdown",
         "--config",

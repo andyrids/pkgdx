@@ -8,7 +8,7 @@ import logging
 import os
 import sys
 from functools import lru_cache
-from pathlib import Path
+from pathlib import Path, PurePath, PurePosixPath, PureWindowsPath
 from typing import Any
 
 logger = logging.getLogger(__package__)
@@ -26,6 +26,7 @@ BUNDLED_CONFIGS: tuple[Path, ...] = (
     PYMARKDOWN_CONFIG,
     RUFF_CONFIG,
 )
+_EXCLUDE_CHARS = frozenset("\\*?[]{}\x7f") | set(map(chr, range(32)))
 
 
 def user_config_dir() -> Path:
@@ -78,6 +79,102 @@ def resolve_config(bundled: Path) -> Path:
         return user_file
     logger.debug("Using bundled config %s", bundled)
     return bundled
+
+
+def _relative_exclude(entry: str, below: Path) -> str:
+    """Make an `exclude` entry relative to the working directory.
+
+    NOTE: Built from path parts, as Windows path functions rewrite names such
+    as `NUL`. From at or inside the entry it stays whole, as a bare `..` would
+    match everything above the working directory.
+
+    Args:
+        entry: The validated entry, relative to the project root.
+        below: The working directory, relative to the project root.
+
+    Returns:
+        The `/` separated path, relative to the working directory.
+    """
+    parts = PurePosixPath(entry).parts
+    shared = len(PurePath(os.path.commonpath([below, entry])).parts)
+    if shared == len(parts):
+        shared = 0
+    return "/".join([".."] * (len(below.parts) - shared) + [*parts[shared:]])
+
+
+def project_excludes() -> list[str]:
+    """Get the paths the project excludes from the hooks.
+
+    NOTE: Reads `[tool.pkgdx] exclude` from the nearest `pyproject.toml`,
+    from the working directory up. Entries are literal paths, as those
+    translate exactly into each tool's syntax, & rejecting glob characters
+    keeps glob support addable without breaking a config. A path that does
+    not exist is allowed, as an uninitialised submodule or an ungenerated
+    folder is normal.
+
+    Raises:
+        ProjectConfigError: If the `pyproject.toml` or its table is invalid.
+
+    Returns:
+        The paths, `/` separated & relative to the working directory, or an
+        empty list if the project sets none.
+    """
+    import tomllib
+
+    from pkgdx.exceptions import ProjectConfigError
+
+    cwd = Path.cwd()
+    for directory in (cwd, *cwd.parents):
+        pyproject = directory / "pyproject.toml"
+        # `lexists`: anything unreadable here fails closed below, unskipped
+        if os.path.lexists(pyproject):
+            break
+    else:
+        return []
+
+    try:
+        with pyproject.open("rb") as f:
+            document = tomllib.load(f)
+    except (OSError, ValueError) as e:
+        msg = f"Could not read {pyproject}: {e}"
+        raise ProjectConfigError(msg) from e
+
+    tool = document.get("tool", {})
+    table = tool.get("pkgdx", {}) if isinstance(tool, dict) else tool
+    if not isinstance(table, dict):
+        msg = f"`tool.pkgdx` must be a table, not {table!r}, in {pyproject}"
+        raise ProjectConfigError(msg)
+
+    if unknown := table.keys() - {"exclude"}:
+        msg = f"Unknown `[tool.pkgdx]` keys in {pyproject}: {sorted(unknown)}"
+        raise ProjectConfigError(msg)
+
+    entries = table.get("exclude", [])
+    if not isinstance(entries, list):
+        msg = (
+            f"`[tool.pkgdx] exclude` must be a list, not {entries!r},"
+            f" in {pyproject}"
+        )
+        raise ProjectConfigError(msg)
+
+    for entry in entries:
+        parts = PurePosixPath(entry).parts if isinstance(entry, str) else ()
+        # `rstrip` covers `..` & a name Windows would rewrite, e.g. `vendor.`
+        if (
+            not parts
+            or not _EXCLUDE_CHARS.isdisjoint(entry)
+            or PureWindowsPath(entry).anchor
+            or any(part != part.rstrip(". ") for part in parts)
+        ):
+            msg = (
+                f"`[tool.pkgdx] exclude` entry {entry!r} in {pyproject} must"
+                " be a literal relative path, `/` separated, with no globs,"
+                " control characters or names ending in a dot or space"
+            )
+            raise ProjectConfigError(msg)
+
+    below = cwd.relative_to(directory)
+    return [_relative_exclude(entry, below) for entry in entries]
 
 
 @lru_cache(maxsize=1)
@@ -177,6 +274,7 @@ __all__: list[str] = [
     "PREK_CONFIG",
     "PYMARKDOWN_CONFIG",
     "RUFF_CONFIG",
+    "project_excludes",
     "resolve_config",
     "user_config_dir",
 ]

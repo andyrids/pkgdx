@@ -41,5 +41,9 @@ class ConfigDirError(Error):
     """Raised on an invalid `PKGDX_CONFIG_DIR`."""
 
 
+class ProjectConfigError(Error):
+    """Raised on an invalid `[tool.pkgdx]` table in `pyproject.toml`."""
+
+
 class ToolNotFoundError(Error):
     """Raised when a hook tool executable is not found on `PATH`."""

@@ -16,7 +16,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > - `Fixed` for any bug fixes.
 > - `Security` in case of vulnerabilities.
 
-## [Unreleased]
+## [0.7.0] - 2026-11-02
+
+### Added
+
+- `[tool.pkgdx] exclude` in `pyproject.toml` lists paths the lint, format, typing & markdown hooks
+  skip.
+- `pkgdx config` lists each excluded path, marking one that does not exist `(not found)`.
+
+### Changed
+
+- `docs/guidance/toolchain-pkgdx.md` (1.1.0) & `toolchain-mypy.md` (1.0.1) describe the exclude
+  list.
+
+### Fixed
+
+- The lint, format & typing hooks can skip submodules & vendored code (#5). This needs no reset, but
+  both a `pkgdx` lock upgrade & `prek update`.
+- The bundled `ruff.toml` no longer clears Ruff's default exclusions. A directory Ruff skips by
+  default, e.g. `dist`, `_build`, `venv` or `node_modules`, is no longer linted or formatted at any
+  depth, even when not gitignored. Exported user copies keep the old `exclude = []` until that line
+  is deleted.
+- The `prek.toml` template's `#:schema` URL points at prek's `main` branch (it returned a 404).
+- `pkgdx init` creates `.secrets.baseline` with the same exclude pattern as the `pkgdx-secrets` hook.
 
 ## [0.6.0] - 2026-10-31
 
