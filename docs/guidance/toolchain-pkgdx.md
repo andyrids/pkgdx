@@ -3,7 +3,7 @@ context-hierarchy: Layer 3
 context-hierarchy-role: Reference material
 immutable: true
 recommended-context-tokens: 2500
-version: 1.1.0
+version: 1.1.1
 updated: 2026-11-02
 tags: [pkgdx, prek, pre-commit, config, exclude, submodules]
 ---
@@ -130,22 +130,4 @@ replaces the bundled one, otherwise the bundled one is used.
 
 ## Installation
 
-`pkgdx` is a dev dependency, published to PyPI and the GitLab package registry. Projects generated
-from the template resolve it from the GitLab registry through an explicit index (see
-`toolchain-uv.md`).
-
-## This repository
-
-`pkgdx` develops the standards above, so its own setup differs from a consuming project:
-
-- `src/pkgdx/standards/` holds the canonical configs and `hooks.toml` - changing them changes the
-  standard, released with a version bump (see `AGENTS.md`)
-- `prek.toml` is maintained by hand. Its local `format`, `lint` and `markdown` hooks pass the
-  in-repo configs by path and ignore the user config directory; `typing` runs `pkgdx-typing-hook`
-  and follows it
-- MUST NOT run `pkgdx init` here - it adds the published `pkgdx` hooks alongside the local ones,
-  so every check runs twice
-- `uv run pymarkdown --config src/pkgdx/standards/pymarkdown.toml scan <file>` - Lint a file
-  against the in-repo config
-- A release that changes `pkgdx-typing` in `hooks.toml` MUST say so in the CHANGELOG, as consumers
-  only pick it up with a reset
+`pkgdx` is a dev dependency, resolved from PyPI.

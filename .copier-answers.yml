@@ -1,14 +1,16 @@
 # Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
-_commit: e36889c
+_commit: v0.3.0
 _src_path: gh:andyrids/copier-python-package
+cli: true
 git_platform: GitLab
 git_repository: https://gitlab.com/andyrids/pkgdx
 gitlab_user: andyrids
 install_just_dependency: false
-package_description: ''
+package_description: A package to centralise standards across Python projects.
 package_name: pkgdx
+publish_to_pypi: true
+python_min: '3.11'
 python_version: 3.13.13
-requires_python: '>=3.12'
 task_runner: Just
 user_email: 52859097+andyrids@users.noreply.github.com
 user_name: Andrew Ridyard
