@@ -14,7 +14,7 @@ import pytest
 import tomlkit
 from click.testing import Result
 from pyclig import ExitCode
-from pyclig.testing import invoke
+from pyclig.testing import assert_conforms, invoke
 from rich.console import Console
 
 from pkgdx import exceptions, standards
@@ -521,6 +521,11 @@ def test_command_help_lists_examples(
     assert lines.index("EXAMPLES:") < lines.index("OPTIONS:")
     start = lines.index("EXAMPLES:") + 1
     assert lines[start : lines.index("", start)] == examples
+
+
+def test_cli_conforms_to_the_guidelines() -> None:
+    """The CLI has no findings from pyclig's conformance kit."""
+    assert_conforms(cli)
 
 
 def test_config_interrupt_exits_130() -> None:
