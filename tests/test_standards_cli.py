@@ -775,3 +775,77 @@ def test_config_bad_env_dir_fails_without_traceback(
         "pkgdx config: failed",
     ]
     assert not missing.exists()
+
+
+def _run_init_quiet() -> tuple[int, list[str]]:
+    """Run `pkgdx init -q` & return the exit code and STDERR lines."""
+    result = _run(["init", "-q"])
+    assert result.stdout == ""
+    return result.exit_code, result.stderr.splitlines()
+
+
+def test_init_quiet_prints_nothing_when_all_ok(
+    steps: dict[str, mock.MagicMock],
+) -> None:
+    """`-q` drops the OK rows & the closing line."""
+    exit_code, lines = _run_init_quiet()
+
+    assert exit_code == ExitCode.OK
+    assert lines == []
+
+
+def test_init_quiet_keeps_warn_row_and_note(
+    steps: dict[str, mock.MagicMock],
+) -> None:
+    """`-q` shows only a WARN row & its note."""
+    steps["update_prek_hooks"].return_value = StepResult(
+        Outcome.WARN,
+        "pkgdx v0.4.2 -> v0.5.0 available",
+        hint="Update remote hook revisions - `prek update`",
+    )
+
+    exit_code, lines = _run_init_quiet()
+
+    assert exit_code == ExitCode.OK
+    assert lines == [
+        (
+            "  warn    prek update --check         "
+            "pkgdx v0.4.2 -> v0.5.0 available"
+        ),
+        "        -> Update remote hook revisions - `prek update`",
+    ]
+
+
+def test_init_quiet_keeps_failure_and_closing_line(
+    steps: dict[str, mock.MagicMock],
+) -> None:
+    """`-q` keeps a failed step, its not-run note & the closing line."""
+    steps["setup_prek_config"].return_value = StepResult(
+        Outcome.FAIL,
+        "prek.toml could not be parsed",
+        "Invalid value (at line 12, column 9)",
+        "Fix prek.toml, or regenerate it with `pkgdx init --reset`",
+    )
+
+    exit_code, lines = _run_init_quiet()
+
+    assert exit_code == ExitCode.FAILURE
+    assert lines == FAIL_LEDGER[2:]
+
+
+def test_config_quiet_keeps_stdout_rows_and_drops_closing_line(
+    isolated_user_config: Path,
+) -> None:
+    """`-q` leaves the STDOUT rows & drops the STDERR closing line."""
+    result = _run(["config", "-q"])
+    exit_code, out, err = (
+        result.exit_code,
+        result.stdout.splitlines(),
+        result.stderr.splitlines(),
+    )
+    _, plain_out, _ = _run_config([])
+
+    assert exit_code == ExitCode.OK
+    assert out == plain_out
+    assert out
+    assert err == []
