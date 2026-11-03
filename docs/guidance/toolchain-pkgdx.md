@@ -3,7 +3,7 @@ context-hierarchy: Layer 3
 context-hierarchy-role: Reference material
 immutable: true
 recommended-context-tokens: 2500
-version: 1.1.0
+version: 1.1.1
 updated: 2026-11-02
 tags: [pkgdx, prek, pre-commit, config, exclude, submodules]
 ---
@@ -130,9 +130,7 @@ replaces the bundled one, otherwise the bundled one is used.
 
 ## Installation
 
-`pkgdx` is a dev dependency, published to PyPI and the GitLab package registry. Projects generated
-from the template resolve it from the GitLab registry through an explicit index (see
-`toolchain-uv.md`).
+`pkgdx` is a dev dependency, resolved from PyPI.
 
 ## This repository
 
