@@ -48,11 +48,9 @@ def _run_tool(cmd: list[str], **kwargs: Any) -> int:
     try:
         proc = subprocess.run(cmd, **kwargs)
     except FileNotFoundError as e:
-        msg = (
-            f"`{cmd[0]}` not found on PATH - run the hook in the environment"
-            " pkgdx is installed in, e.g. via `uv run`"
-        )
-        raise exceptions.ToolNotFoundError(msg) from e
+        raise exceptions.ToolNotFoundError(
+            f"`{cmd[0]}` not found on PATH"
+        ) from e
     else:
         return proc.returncode
 

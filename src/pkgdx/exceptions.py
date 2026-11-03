@@ -46,4 +46,13 @@ class ProjectConfigError(Error):
 
 
 class ToolNotFoundError(Error):
-    """Raised when a hook tool executable is not found on `PATH`."""
+    """Raised when a hook tool executable is not found on `PATH`.
+
+    Attributes:
+        hint: The remedy, printed by the CLI after the error.
+    """
+
+    hint = (
+        "Run the hook in the environment pkgdx is installed in, "
+        "e.g. via `uv run`"
+    )
