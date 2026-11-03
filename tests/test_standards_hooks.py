@@ -297,17 +297,15 @@ def test_hook_entry_point_interrupt_exits_130(
 def test_run_tool_missing_executable_raises_tool_not_found(
     mock_subprocess_run: mock.MagicMock,
 ) -> None:
-    """A tool missing from `PATH` raises an error naming it & the fix."""
+    """A tool missing from `PATH` raises an error naming it, with a hint."""
     error = FileNotFoundError(2, "The system cannot find the file specified")
     mock_subprocess_run.side_effect = error
 
     with pytest.raises(exceptions.ToolNotFoundError) as exc_info:
         _hooks._run_tool(["ruff", "check"])
 
-    assert str(exc_info.value) == (
-        "`ruff` not found on PATH - run the hook in the environment pkgdx is"
-        " installed in, e.g. via `uv run`"
-    )
+    assert str(exc_info.value) == "`ruff` not found on PATH"
+    assert exc_info.value.hint.startswith("Run the hook in the environment")
     assert exc_info.value.__cause__ is error
 
 
@@ -329,15 +327,20 @@ def test_hook_entry_point_missing_tool_exits_1(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """A hook tool missing from `PATH` exits 1 with a one-line error."""
+    """A hook tool missing from `PATH` exits 1: the error, then the hint."""
     mock_subprocess_run.side_effect = FileNotFoundError(2, "not found")
     monkeypatch.setattr("sys.argv", ["pkgdx-hook"])
     with pytest.raises(SystemExit) as exc_info:
         shim()
     assert exc_info.value.code == 1
     err = capsys.readouterr().err
-    assert err.startswith(f"error: `{tool}` not found on PATH - ")
-    assert len(err.splitlines()) == 1
+    assert err.splitlines() == [
+        f"error: `{tool}` not found on PATH",
+        (
+            "Run the hook in the environment pkgdx is installed in, "
+            "e.g. via `uv run`"
+        ),
+    ]
     assert "Traceback" not in err
     assert "unexpected" not in err
 
