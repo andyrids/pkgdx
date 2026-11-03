@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-03
+
 ### Added
 
 - `-q`, `--no-color` & `--no-input` run flags, `GLOBAL OPTIONS:` in `--help` & `-h` after a usage
