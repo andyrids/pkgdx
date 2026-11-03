@@ -195,17 +195,20 @@ def _run_steps(
     console: Console,
     command: str,
     steps: Sequence[tuple[str, Callable[[], StepResult]]],
+    quiet: bool = False,
 ) -> int:
     """Run ledger steps in order, printing one line per step & a summary.
 
     NOTE: Prints to STDERR, with a transient spinner only when STDERR is an
     interactive terminal. Debug log lines (`-d`) appear above the line of
-    the step that emitted them. Stops at the first FAIL.
+    the step that emitted them. Stops at the first FAIL. With `quiet`, OK
+    rows & the `done` line are skipped; warnings & failures stay.
 
     Args:
         console: The STDERR console, shared with logging.
         command: The `pkgdx` subcommand, named in the closing line.
         steps: The step labels & callables, in run order.
+        quiet: Skip OK rows & the `done` line (`-q`).
 
     Returns:
         The integer process exit code. 0 on success (with or without
@@ -223,7 +226,8 @@ def _run_steps(
             else:
                 result = run()
 
-            _report(console, label, result, width)
+            if not (quiet and result.outcome is Outcome.OK):
+                _report(console, label, result, width)
             if result.outcome is Outcome.FAIL:
                 closing = (
                     f"pkgdx {command}: failed at step {number}/{len(steps)}"
@@ -254,9 +258,10 @@ def _run_steps(
         else "nothing to change"
     )
     elapsed = time.monotonic() - start
-    console.print(
-        Text(f"pkgdx {command}: done in {elapsed:.1f}s{tail} ({counts})")
-    )
+    if not quiet:
+        console.print(
+            Text(f"pkgdx {command}: done in {elapsed:.1f}s{tail} ({counts})")
+        )
     return pyclig.ExitCode.OK
 
 
@@ -289,6 +294,7 @@ def command_init(ctx: pyclig.Context, reset: bool) -> int:
         ctx.err,
         "init",
         [(label, partial(run, state)) for label, run in _STEPS],
+        ctx.quiet,
     )
 
 
@@ -339,6 +345,7 @@ def command_config(ctx: pyclig.Context, export: bool) -> int:
                 (bundled.name, partial(_core.export_config, bundled, user_dir))
                 for bundled in standards.BUNDLED_CONFIGS
             ],
+            ctx.quiet,
         )
 
     excludes = standards.project_excludes()
@@ -371,8 +378,11 @@ def command_config(ctx: pyclig.Context, export: bool) -> int:
 
     via = f"from {env}" if os.environ.get(env) else f"{env} not set"
     sources = f"{users} user, {len(standards.BUNDLED_CONFIGS) - users} bundled"
-    ctx.err.print(
-        Text(f"pkgdx config: user config dir {user_dir}, {via} ({sources})"),
-        soft_wrap=True,
-    )
+    if not ctx.quiet:
+        ctx.err.print(
+            Text(
+                f"pkgdx config: user config dir {user_dir}, {via} ({sources})"
+            ),
+            soft_wrap=True,
+        )
     return pyclig.ExitCode.OK

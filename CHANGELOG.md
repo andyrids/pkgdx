@@ -16,6 +16,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > - `Fixed` for any bug fixes.
 > - `Security` in case of vulnerabilities.
 
+## [Unreleased]
+
+## [0.8.0] - 2026-11-03
+
+### Added
+
+- `-q`, `--no-color` & `--no-input` run flags, `GLOBAL OPTIONS:` in `--help` & `-h` after a usage
+  error, from `pyclig` 0.3.0.
+- `test_cli_conforms_to_the_guidelines` runs `pyclig`'s conformance kit against the CLI.
+
+### Changed
+
+- `pyclig` is pinned to `~=0.3.0` (was `~=0.2`).
+- `--help` lists `EXAMPLES:` before `OPTIONS:`.
+- `ToolNotFoundError` carries a `hint`. A hook shim whose tool is missing from `PATH` prints
+  `error:` with the fact, then the remedy on the next line.
+
+### Fixed
+
+- `-q` on `pkgdx init` & `pkgdx config` drops the OK rows & the closing line. Warnings, failures &
+  `config`'s STDOUT rows stay.
+
 ## [0.7.0] - 2026-11-02
 
 ### Added
