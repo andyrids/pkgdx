@@ -514,13 +514,13 @@ def test_usage_error_only_on_stderr(
 def test_command_help_lists_examples(
     command: str, examples: list[str]
 ) -> None:
-    """`--help` lists the command's examples under `EXAMPLES:`, last."""
+    """`--help` lists the command's examples under `EXAMPLES:`, first."""
     result = _run([command, "--help"])
     assert result.exit_code == ExitCode.OK
     lines = result.stdout.splitlines()
-    assert lines.index("EXAMPLES:") > lines.index("OPTIONS:")
+    assert lines.index("EXAMPLES:") < lines.index("OPTIONS:")
     start = lines.index("EXAMPLES:") + 1
-    assert lines[start:] == examples
+    assert lines[start : lines.index("", start)] == examples
 
 
 def test_config_interrupt_exits_130() -> None:
