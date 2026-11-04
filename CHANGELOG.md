@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-04
+
+### Added
+
+- `help` & `help <command>` print the same help as `--help`, from `pyclig` 0.4.0.
+
+### Changed
+
+- `pyclig` is pinned to `~=0.4.0` (was `~=0.3.0`).
+
 ## [0.8.0] - 2026-11-03
 
 ### Added
