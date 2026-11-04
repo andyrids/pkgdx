@@ -15,7 +15,7 @@ This project adheres to [YAGNI](docs/guidance/standard-yagni.md) principles.
 ## Release workflow
 
 Project pre-commit hooks are versioned and referenced by the `src/pkgdx/standards/hooks.toml`, in
-the `rev = "v0.8.0"`, which means on release or realease candidate:
+the `rev = "v0.9.0"`, which means on release or realease candidate:
 
 - `src/pkgdx/standards/hooks.toml` must reflect the new release version (repo tag).
 - The project must be tagged with this same version.
