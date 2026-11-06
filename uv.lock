@@ -687,7 +687,7 @@ requires-dist = [
     { name = "detect-secrets", specifier = ">=1.5.0" },
     { name = "mypy", specifier = ">=2.1.0" },
     { name = "prek", specifier = "~=0.4.8" },
-    { name = "pyclig", specifier = "~=0.4.0" },
+    { name = "pyclig", specifier = "~=0.5.0" },
     { name = "pymarkdownlnt", specifier = ">=0.9.37" },
     { name = "rich", specifier = ">=15.0.0" },
     { name = "ruff", specifier = ">=0.15.20" },
@@ -747,15 +747,15 @@ wheels = [
 
 [[package]]
 name = "pyclig"
-version = "0.4.0"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
     { name = "rich" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c0/77/a86dd2a1c946e9738ec36b9c0945bcb58ed1558198d3000e64a4d73eb27f/pyclig-0.4.0.tar.gz", hash = "sha256:bada5cac93171cbc2d1066b75638c7b556b14782836aa74f17c4275bd738e534", size = 41622, upload-time = "2026-11-04T21:36:42.792Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c1/f6/55ca93096b08383ffe5a22dfc6d92f10fb081180b957a5b081cf6fb67c92/pyclig-0.5.0.tar.gz", hash = "sha256:722676a1320eb3fea151aa9be68f5a3c71eb1622406b750bc0e3d560cee7032e", size = 54201, upload-time = "2026-11-06T22:00:56.317Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ef/74/fd580d503c4700fc910309b6821e1c32cb7c7fc63a9c5c785c0d7c9c37cc/pyclig-0.4.0-py3-none-any.whl", hash = "sha256:975dfd4ba2dd6b824460fb35dd1140262fa6651a6c69a86438ceb80f830458cc", size = 45799, upload-time = "2026-11-04T21:36:41.543Z" },
+    { url = "https://files.pythonhosted.org/packages/1a/6f/54f80855462fa85c82f8734347f96a93214e8b1ed8daad11ae54b216ac05/pyclig-0.5.0-py3-none-any.whl", hash = "sha256:12f4038a3046752d0fbe34b527e3c97f6d582f1775e37486c0d1c0ab8171d6b3", size = 59217, upload-time = "2026-11-06T22:00:55.169Z" },
 ]
 
 [[package]]
