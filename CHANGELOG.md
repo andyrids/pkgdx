@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-11-10
+
 ### Fixed
 
 - Interrupts are reported by `pyclig`: Ctrl-C in `pkgdx init` prints the `stop` row & one
