@@ -18,9 +18,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-10
+
 ### Changed
 
 - `pyclig` is pinned to `~=0.6.0` (was `~=0.5.0`).
+- Ctrl-C prints `warning: interrupted` at once, through `pyclig` 0.6.0. The hooks' own interrupt
+  line still follows it, so two lines are printed.
+- SIGTERM exits 143 with `warning: terminated` on POSIX.
+- Third-party warnings & root-logger records print as `warning:` lines when the root logger is
+  unconfigured.
+- `PKGDX_LOG_FILE=FILE` appends a debug log.
 
 ## [0.10.0] - 2026-11-06
 
