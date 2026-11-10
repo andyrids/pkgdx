@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Interrupts are reported by `pyclig`: Ctrl-C in `pkgdx init` prints the `stop` row & one
+  `warning: interrupted` line (the closing `interrupted, no cleanup performed` line is gone), and
+  SIGTERM exits 143 rather than 130.
+
 ## [0.11.0] - 2026-11-10
 
 ### Changed
