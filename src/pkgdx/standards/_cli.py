@@ -244,10 +244,7 @@ def _run_steps(
             unchanged += result.change is Change.UNCHANGED
     except KeyboardInterrupt:
         _row(console, _STOP, label, Text("interrupted"), width)
-        console.print(
-            Text(f"pkgdx {command}: interrupted, no cleanup performed")
-        )
-        return pyclig.ExitCode.INTERRUPT
+        raise
 
     tail = (
         f" with {warnings} warning{'s' * (warnings != 1)}" if warnings else ""
