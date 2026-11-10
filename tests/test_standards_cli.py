@@ -398,7 +398,7 @@ def test_init_runs_real_steps_on_configured_project(
 def test_init_keyboard_interrupt_prints_stop_row(
     steps: dict[str, mock.MagicMock],
 ) -> None:
-    """Ctrl-C names the interrupted step & exits with code 130."""
+    """Ctrl-C names the interrupted step, then pyclig reports it once (130)."""
     steps["install_prek_hooks"].side_effect = KeyboardInterrupt
 
     exit_code, lines = _run_init()
@@ -406,7 +406,7 @@ def test_init_keyboard_interrupt_prints_stop_row(
     assert exit_code == ExitCode.INTERRUPT == 130
     assert lines[-2:] == [
         "  stop    prek install                interrupted",
-        "pkgdx init: interrupted, no cleanup performed",
+        "warning: interrupted",
     ]
     steps["update_prek_hooks"].assert_not_called()
     steps["create_secrets_baseline"].assert_not_called()
