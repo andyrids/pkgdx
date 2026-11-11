@@ -134,7 +134,7 @@ uv add --dev git+https://gitlab.com/andyrids/pkgdx.git
 ```
 
 ```bash
-uv add --dev git+https://gitlab.com/andyrids/pkgdx.git@v0.12.0
+uv add --dev git+https://gitlab.com/andyrids/pkgdx.git@v0.13.0
 ```
 
 ## CI/CD integration
