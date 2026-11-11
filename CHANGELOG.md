@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-11-11
+
+### Changed
+
+- `pyclig` is pinned to `~=1.0` (was `~=0.7.0`).
+
 ## [0.12.0] - 2026-11-11
 
 ### Changed
