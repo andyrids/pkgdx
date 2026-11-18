@@ -35,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `pymarkdownlnt` floor is `>=0.9.42` (was `>=0.9.37`).
+- `pkgdx init` adds template top-level settings missing from `prek.toml`; set ones are kept.
+- `pkgdx init` runs `prek install` when any `default_install_hook_types` shim is missing, and
+  warns if one still is (e.g. a nested project). prek keeps a foreign `pre-commit` hook as
+  `pre-commit.legacy`.
 - `docs/guidance/toolchain-pkgdx.md` is now `docs/reference.md`, without frontmatter.
 - `AGENTS.md` carries the maintainer notes; `CLAUDE.md` imports it instead of a symlink.
 
