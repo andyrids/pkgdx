@@ -25,11 +25,21 @@ entries belong to `pkgdx`:
   `pkgdx-markdown`, `pkgdx-secrets`)
 - The `pkgdx-typing` hook in the `local` repo
 - The `check-toml`, `check-yaml` and `detect-private-key` hooks in the `builtin` repo
+- The `https://github.com/compilerla/conventional-pre-commit` repo and its
+  `conventional-pre-commit` hook, which checks each commit message
+- The top-level `default_install_hook_types` (`pre-commit` and `commit-msg`) and
+  `default_stages` (`pre-commit`) settings
 
 Their behaviour is set by the `pkgdx` release, not by the project:
 
 - MUST NOT edit or remove the `pkgdx` entries by hand
 - COULD add custom `local` hooks next to `pkgdx-typing`, or remote hooks as new `[[repos]]` entries
+
+Commit messages MUST follow [Conventional Commits](https://www.conventionalcommits.org/) - a
+`type: description` subject such as `feat: add export`. Merge, `fixup!` and `squash!` messages
+pass, but Git's default `Revert "..."` message does not - reword it as `revert: <description>`. A
+project that sets its own `default_install_hook_types` MUST include `commit-msg` in it, or
+the check never runs.
 
 On an existing `prek.toml`, `init` only adds what is missing - top-level settings matched by key,
 repos by `repo` and hooks by `id` - and never edits or removes an entry, `rev` included. Project
@@ -112,8 +122,9 @@ hook, remote repo and edit.
 1. `uv lock --upgrade-package pkgdx`, then `uv sync`
 2. `uv run prek update --repo https://gitlab.com/andyrids/pkgdx` to move `rev` to the same release.
    The remote hooks are defined in the `pkgdx` repo at that `rev`, so they follow it.
-3. `pkgdx-typing` is copied into `prek.toml` in full, so neither step refreshes it. When the
-   `pkgdx` CHANGELOG reports a change to it, apply it with a reset (see Resetting).
+3. `uv run pkgdx init` to add new `pkgdx` entries, settings and Git shims.
+4. `pkgdx-typing` is copied into `prek.toml` in full, so no step refreshes it. When the `pkgdx`
+   CHANGELOG reports a change to it, apply it with a reset (see Resetting).
 
 Remote hooks run the `pkgdx` at `rev`, while `pkgdx config` and `pkgdx-typing` run the locked one.
 To adopt `[tool.pkgdx] exclude`, SHOULD complete steps 1 and 2, add the table and run

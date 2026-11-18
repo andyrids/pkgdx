@@ -29,7 +29,10 @@ it in step with code changes.
 Consumer hooks reference this repo by the `rev` in `src/pkgdx/standards/hooks.toml`. On a release
 or release candidate:
 
-- Set `rev` in `src/pkgdx/standards/hooks.toml` to the new release version (repo tag)
+- Set the `rev` of the `https://gitlab.com/andyrids/pkgdx` repo in
+  `src/pkgdx/standards/hooks.toml` to the new release version (repo tag). The
+  `conventional-pre-commit` `rev` is pinned separately; bump it when `test_prek_revision_update`
+  flags it
 - Tag the project with that same version
 - If `pkgdx-typing` in `hooks.toml` changed, say so in the CHANGELOG, as consumers only pick it up
   with `pkgdx init --reset`

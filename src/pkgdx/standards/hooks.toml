@@ -1,5 +1,8 @@
 #:schema https://raw.githubusercontent.com/j178/prek/refs/heads/main/prek.schema.json
 
+default_install_hook_types = ["pre-commit", "commit-msg"]
+default_stages = ["pre-commit"]
+
 [[repos]]
 repo = "https://gitlab.com/andyrids/pkgdx"
 rev = "v0.13.0"
@@ -48,3 +51,12 @@ name = "Check YAML [Builtin]"
 [[repos.hooks]]
 id = "detect-private-key"
 name = "Detect PEM [Builtin]"
+
+[[repos]]
+repo = "https://github.com/compilerla/conventional-pre-commit"
+rev = "v4.5.0"
+
+[[repos.hooks]]
+id = "conventional-pre-commit"
+name = "Commit [Conventional]"
+args = []
