@@ -135,28 +135,56 @@ def _is_excluded(arg: str, excludes: list[str]) -> bool:
 
 
 def core_ruff_format(args: list[str]) -> int:
-    """Core logic for ruff formatting."""
+    """Core logic for ruff formatting.
+
+    Args:
+        args: The hook arguments, passed to Ruff.
+
+    Returns:
+        The Ruff return code.
+    """
     config = standards.resolve_config(standards.RUFF_CONFIG).as_posix()
     cmd = ["ruff", "format", "--config", config, *_ruff_exclude_args(), *args]
     return _run_tool(cmd)
 
 
 def core_ruff_lint(args: list[str]) -> int:
-    """Core logic for ruff linting."""
+    """Core logic for ruff linting.
+
+    Args:
+        args: The hook arguments, passed to Ruff.
+
+    Returns:
+        The Ruff return code.
+    """
     config = standards.resolve_config(standards.RUFF_CONFIG).as_posix()
     cmd = ["ruff", "check", "--config", config, *_ruff_exclude_args(), *args]
     return _run_tool(cmd)
 
 
 def core_mypy_typing(args: list[str]) -> int:
-    """Core logic for mypy type checking."""
+    """Core logic for mypy type checking.
+
+    Args:
+        args: The hook arguments, passed to Mypy.
+
+    Returns:
+        The Mypy return code.
+    """
     config = standards.resolve_config(standards.MYPY_CONFIG).as_posix()
     cmd = ["mypy", "--config-file", config, *_mypy_exclude_args(args), *args]
     return _run_tool(cmd)
 
 
 def core_detect_secrets(args: list[str]) -> int:
-    """Core logic for detect-secrets."""
+    """Core logic for detect-secrets.
+
+    Args:
+        args: The hook arguments, passed to detect-secrets.
+
+    Returns:
+        The detect-secrets return code.
+    """
     if "--baseline" not in args:
         args = ["--baseline", ".secrets.baseline"] + args
     cmd = ["detect-secrets-hook"] + args

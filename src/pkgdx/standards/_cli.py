@@ -212,7 +212,11 @@ def _run_steps(
 
     Returns:
         The integer process exit code. 0 on success (with or without
-        warnings), 1 on a failed step and 130 on Ctrl-C.
+        warnings) & 1 on a failed step.
+
+    Raises:
+        KeyboardInterrupt: Re-raised on Ctrl-C after the interrupted row is
+            printed; pyclig maps it to exit code 130.
     """
     width = max(len(label) for label, _ in steps)
     start = time.monotonic()
