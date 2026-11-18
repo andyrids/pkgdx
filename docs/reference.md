@@ -85,6 +85,14 @@ A run with any argument, even a flag such as `--pretty`, leaves import following
 reports those errors and can fail where the no-argument hook passes. Add `--follow-imports=silent`
 to match. If every Python file is excluded, Mypy exits 2.
 
+## PyMarkdown crashes
+
+PyMarkdown can crash while tokenizing a document. It then reports `<path>:0:0: An unhandled error`
+with no line, keeps scanning the other files and exits 1. `pkgdx-markdown` follows that line with a
+`hint:`. A known cause is a pipe (`|`) in a list item or blockquote, which the `markdown-tables`
+extension misreads; escaping it does not help, so reword it (`A or B` for `A | B`). Add
+`--stack-trace` to the hook arguments to see where it failed.
+
 ## Resetting
 
 `uv run pkgdx init --reset` overwrites `prek.toml` with the `pkgdx` template, losing every project

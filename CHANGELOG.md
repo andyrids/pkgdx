@@ -29,9 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   upper-bounded, so preview rules can change with a Ruff release.
 - A `ruff.toml` in the user config directory replaces the whole file, so it gets none of these.
 - `CPY001` is not selected, as there is no per-file copyright header convention.
+- `pkgdx-markdown` adds a `hint:` after a PyMarkdown tokenizer crash (`:0:0:`), naming a known
+  trigger (a pipe in a list item or blockquote) & its workaround.
 
 ### Changed
 
+- `pymarkdownlnt` floor is `>=0.9.42` (was `>=0.9.37`).
 - `docs/guidance/toolchain-pkgdx.md` is now `docs/reference.md`, without frontmatter.
 - `AGENTS.md` carries the maintainer notes; `CLAUDE.md` imports it instead of a symlink.
 
