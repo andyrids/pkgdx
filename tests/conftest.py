@@ -43,6 +43,7 @@ def mock_subprocess_run() -> Iterator[mock.MagicMock]:
     """Mock `subprocess.run` to avoid calling external tools."""
     with mock.patch("subprocess.run") as mocked:
         mocked.return_value.returncode = 0
+        mocked.return_value.stderr = b""
         yield mocked
 
 

@@ -2,6 +2,7 @@
 
 import os
 import pathlib
+import subprocess
 from collections.abc import Callable
 from unittest import mock
 
@@ -12,22 +13,25 @@ from pkgdx.standards import _hooks
 
 
 @pytest.mark.parametrize(
-    ("hook", "prefix", "args"),
+    ("hook", "prefix", "args", "kwargs"),
     [
         (
             _hooks.core_ruff_format,
             ["ruff", "format", "--config", standards.RUFF_CONFIG.as_posix()],
             ["--exit-non-zero-on-format"],
+            {},
         ),
         (
             _hooks.core_ruff_lint,
             ["ruff", "check", "--config", standards.RUFF_CONFIG.as_posix()],
             ["--fix", "--exit-non-zero-on-fix"],
+            {},
         ),
         (
             _hooks.core_mypy_typing,
             ["mypy", "--config-file", standards.MYPY_CONFIG.as_posix()],
             [],
+            {},
         ),
         (
             _hooks.core_pymarkdown_lint,
@@ -39,6 +43,7 @@ from pkgdx.standards import _hooks
                 "scan",
             ],
             ["README.md"],
+            {"stderr": subprocess.PIPE},
         ),
     ],
     ids=["ruff-format", "ruff-lint", "mypy-typing", "pymarkdown-lint"],
@@ -47,6 +52,7 @@ def test_config_hook_builds_command_and_forwards_returncode(
     hook: Callable[[list[str]], int],
     prefix: list[str],
     args: list[str],
+    kwargs: dict[str, int],
     mock_subprocess_run: mock.MagicMock,
 ) -> None:
     """Config hooks prepend bundled config and forward the tool returncode."""
@@ -54,7 +60,7 @@ def test_config_hook_builds_command_and_forwards_returncode(
 
     returncode = hook(args)
 
-    mock_subprocess_run.assert_called_once_with(prefix + args)
+    mock_subprocess_run.assert_called_once_with(prefix + args, **kwargs)
     assert returncode == 1
 
 
@@ -136,10 +142,11 @@ def test_pymarkdown_lint_continues_past_a_crashing_document(
 ) -> None:
     """A `BadTokenizationError` on one file does not abort the scan (issue #2).
 
-    With `markdown-tables` enabled, pymarkdownlnt 0.9.40 crashes tokenizing a
-    quoted list containing a pipe (`|`) character. `--continue-on-error`
-    keeps the scan going so later files are still linted and named alongside
-    the crashing one.
+    With `markdown-tables` enabled, pymarkdownlnt 0.9.40 to 0.9.42 crashes
+    tokenizing a quoted list containing a pipe (`|`) character.
+    `--continue-on-error` keeps the scan going so later files are still
+    linted and named alongside the crashing one, & the crash hint follows
+    once (#22).
     """
     crash = tmp_path / "crash.md"
     crash.write_text("> quote\n>\n> - `A | B` first item\n> - second item\n")
@@ -155,7 +162,53 @@ def test_pymarkdown_lint_continues_past_a_crashing_document(
     assert returncode == 1
     assert str(lint) in output
     assert "MD032" in output
-    assert str(crash) in output
+    assert f"{crash}:0:0: An unhandled error" in captured.err
+    assert captured.err.count(_hooks._PYMARKDOWN_CRASH_HINT) == 1  # noqa: SLF001
+
+
+def test_pymarkdown_lint_nested_list_pipe_gets_no_crash_hint(
+    tmp_path: pathlib.Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    """A pipe in a nested list item lints cleanly, without the hint (#22)."""
+    nested = tmp_path / "nested.md"
+    nested.write_text(
+        "# Nested\n\n- Item:\n  - `A` | `B` - pick one\n", encoding="utf-8"
+    )
+
+    returncode = _hooks.core_pymarkdown_lint([str(nested)])
+
+    captured = capfd.readouterr()
+    assert returncode == 0
+    assert ":0:0:" not in captured.out + captured.err
+    assert "hint:" not in captured.err
+
+
+@pytest.mark.parametrize(
+    ("stderr", "hinted"),
+    [
+        (b"doc.md:0:0: An unhandled error occurred processing doc.md.\n", 1),
+        (b"BadPluginError: plugin failed to load\n", 0),
+    ],
+    ids=["crash", "other-error"],
+)
+def test_pymarkdown_lint_passes_stderr_through_and_hints_on_crash(
+    stderr: bytes,
+    hinted: int,
+    mock_subprocess_run: mock.MagicMock,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """STDERR passes through as is; only a crash line adds the hint (#22)."""
+    mock_subprocess_run.return_value.returncode = 1
+    mock_subprocess_run.return_value.stderr = stderr
+
+    returncode = _hooks.core_pymarkdown_lint(["doc.md"])
+
+    err = capsys.readouterr().err
+    hint = _hooks._PYMARKDOWN_CRASH_HINT  # noqa: SLF001 - text under test
+    assert returncode == 1
+    assert err.startswith(stderr.decode())
+    assert err.count(hint) == hinted
 
 
 @pytest.mark.parametrize(
@@ -190,7 +243,8 @@ def test_pymarkdown_lint_moves_global_options_before_scan(
             *options,
             "scan",
             *scan_args,
-        ]
+        ],
+        stderr=subprocess.PIPE,
     )
 
 
@@ -221,7 +275,8 @@ def test_pymarkdown_lint_keeps_scan_args_after_scan(
             "--continue-on-error",
             "scan",
             *args,
-        ]
+        ],
+        stderr=subprocess.PIPE,
     )
 
 
