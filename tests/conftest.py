@@ -46,7 +46,7 @@ def mock_subprocess_run() -> Iterator[mock.MagicMock]:
         yield mocked
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def mock_project(tmp_path_factory: pytest.TempPathFactory) -> pathlib.Path:
     """Create a temporary project directory for testing."""
 

@@ -261,6 +261,9 @@ def _create_repo_table(
         doc: The TOMLDocument to parse.
         name: The name of the repository.
         revision: The revision of the repository.
+
+    Returns:
+        The new repository table, appended to `doc["repos"]`.
     """
     new_repo = tomlkit.table()
     new_repo["repo"] = name

@@ -302,7 +302,7 @@ def test_run_tool_missing_executable_raises_tool_not_found(
     mock_subprocess_run.side_effect = error
 
     with pytest.raises(exceptions.ToolNotFoundError) as exc_info:
-        _hooks._run_tool(["ruff", "check"])
+        _hooks._run_tool(["ruff", "check"])  # noqa: SLF001 - unit under test
 
     assert str(exc_info.value) == "`ruff` not found on PATH"
     assert exc_info.value.hint.startswith("Run the hook in the environment")
@@ -796,8 +796,9 @@ def test_pymarkdown_lint_without_paths_still_runs_tool(
 
 def test_is_excluded_keeps_a_path_on_another_drive() -> None:
     """`relpath` raises across Windows drives, so the path is kept."""
+    is_excluded = _hooks._is_excluded  # noqa: SLF001 - unit under test
     with mock.patch("os.path.relpath", side_effect=ValueError):
-        assert not _hooks._is_excluded("D:/vendor/a.md", ["vendor"])
+        assert not is_excluded("D:/vendor/a.md", ["vendor"])
 
 
 def test_detect_secrets_ignores_project_excludes(

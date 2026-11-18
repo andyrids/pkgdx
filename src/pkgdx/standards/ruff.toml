@@ -7,6 +7,8 @@ line-ending = "auto"
 quote-style = "double"
 
 [lint]
+preview = true
+explicit-preview-rules = true
 select = [
     "A",      # flake8-builtins (ruleset)
     "ANN001", # flake8-annotations (missing-type-function-argument)
@@ -20,6 +22,9 @@ select = [
     "D403",   # pydocstyle (first-word-uncapitalized)
     "D417",   # pydocstyle (undocumented-param)
     "D419",   # pydocstyle (empty-docstring)
+    "DOC201", # pydoclint (docstring-missing-returns, preview)
+    "DOC402", # pydoclint (docstring-missing-yields, preview)
+    "DOC501", # pydoclint (docstring-missing-exception, preview)
     "E",      # pycodestyle-error (ruleset)
     "ERA",    # eradicate (ruleset)
     "F541",   # pyflakes (f-string-missing-placeholders)
@@ -35,14 +40,18 @@ select = [
     "NPY001", # NumPy-specific rules (numpy-deprecated-type-alias)
     "NPY003", # NumPy-specific rules (numpy-deprecated-function)
     "PERF",   # perflint (ruleset)
+    "PGH003", # pygrep-hooks (blanket-type-ignore)
+    "PT",     # flake8-pytest-style (ruleset)
     "PYI034", # flake8-pyi (non-self-return-type
     "RET",    # flake8-return (ruleset)
+    "SLF001", # flake8-self (private-member-access)
     "T100",   # flake8-debugger (debugger)
     "T201",   # flake8-print (print)
     "TC001",  # flake8-type-checking (typing-only-first-party-import)
     "TC002",  # flake8-type-checking (typing-only-third-party-import)
     "TC003",  # flake8-type-checking (typing-only-standard-library-import)
     "TC004",  # flake8-type-checking (runtime-import-in-type-checking-block)
+    "TID251", # flake8-tidy-imports (banned-api)
     "TRY002", # tryceratops (raise-vanilla-class)
     "TRY004", # tryceratops (type-check-without-type-error)
     "TRY300", # tryceratops (try-consider-else)
@@ -54,3 +63,11 @@ select = [
 
 [lint.pydocstyle]
 convention = "google"
+
+[lint.flake8-tidy-imports.banned-api]
+"logging.basicConfig".msg = "Libraries must not configure logging; attach only a NullHandler in the package __init__"
+"logging.captureWarnings".msg = "Libraries must not capture warnings globally"
+
+[lint.per-file-ignores]
+"!**/tests/**" = ["PT", "SLF001"]
+"**/tests/**" = ["DOC201", "DOC402"]
