@@ -31,6 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `CPY001` is not selected, as there is no per-file copyright header convention.
 - `pkgdx-markdown` adds a `hint:` after a PyMarkdown tokenizer crash (`:0:0:`), naming a known
   trigger (a pipe in a list item or blockquote) & its workaround.
+- `conventional-pre-commit` hook (`commit-msg` stage) checks commit messages follow Conventional
+  Commits. The template sets `default_install_hook_types` & `default_stages = ["pre-commit"]`.
+  Existing projects pick these up with `uv run pkgdx init`.
 
 ### Changed
 

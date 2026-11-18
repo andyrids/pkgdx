@@ -364,10 +364,20 @@ def test_init_runs_real_steps_on_configured_project(
 
     NOTE: The fixture's `prek.toml` has an inline `hooks = []`, which must
     be converted before hooks are added, or the written file is invalid.
+    Its `.git/hooks` has only a `pre-commit` shim, so the `commit-msg` type
+    the template adds is installed.
     """
     prek_toml = mock_project / "prek.toml"
+    commit_msg = mock_project / ".git" / "hooks" / "commit-msg"
     template = tomlkit.parse(standards.PREK_CONFIG.read_text())
     hooks = sum(len(repo.get("hooks", [])) for repo in template["repos"])
+
+    def _subprocess_run(cmd: list[str], **_: Any) -> mock.MagicMock:
+        if "install" in cmd:
+            commit_msg.write_text("#!/bin/sh")
+        return mock_subprocess_run.return_value
+
+    mock_subprocess_run.side_effect = _subprocess_run
     with (
         mock.patch(
             f"{STANDARDS_CLI}._core.get_project_root",
@@ -387,12 +397,14 @@ def test_init_runs_real_steps_on_configured_project(
             "  ok      configure pre-commit hooks  updated    "
             f"prek.toml ({hooks} hooks added)"
         ),
-        "  ok      prek install                unchanged  Git shims",
+        "  ok      prek install                updated    Git shims",
         "  ok      prek update --check         hook revisions up to date",
         "  ok      detect-secrets scan         unchanged  .secrets.baseline",
     ]
-    assert lines[-1].endswith("(1 changed, 2 unchanged)")
-    tomlkit.parse(prek_toml.read_text())
+    assert lines[-1].endswith("(2 changed, 1 unchanged)")
+    assert commit_msg.exists()
+    doc = tomlkit.parse(prek_toml.read_text())
+    assert doc["default_install_hook_types"] == ["pre-commit", "commit-msg"]
 
 
 def test_init_keyboard_interrupt_prints_stop_row(

@@ -17,11 +17,13 @@ single source of truth for toolchain configuration:
 3. PyMarkdown (Markdown linting)
 4. detect-secrets (secret detection)
 5. Prek (hook framework)
+6. conventional-pre-commit (Conventional Commits message check)
 
 ## Quick start
 
 1. Run `uv add --dev pkgdx` for a consuming project
-2. Run `uv run pkgdx init` to configure hooks and install Git shims
+2. Run `uv run pkgdx init` to configure hooks and install the `pre-commit` and `commit-msg` Git
+   shims
 3. Run `uv run pkgdx config --export` to export toolchain config files
 
 The config files; `hooks.toml`, `mypy.ini`, `pymarkdown.toml` and `ruff.toml` are exported to

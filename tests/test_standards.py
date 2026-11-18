@@ -30,6 +30,25 @@ def test_validate_manifest() -> None:
     assert result.returncode == 0, stderr
 
 
+def test_validate_hooks_template() -> None:
+    """Validates the `prek.toml` template."""
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "prek",
+            "validate-config",
+            str(standards.PREK_CONFIG),
+        ],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+
+    stderr = re.sub(r"\n", "", result.stderr)
+    assert result.returncode == 0, stderr
+
+
 @pytest.mark.skipif(
     os.environ.get("CI") is not None,
     reason="Avoid CI/CD race conditions",

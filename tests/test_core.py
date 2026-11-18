@@ -169,6 +169,31 @@ def test_setup_prek_config_creates_missing_file(tmp_path: Path) -> None:
     assert (tmp_path / "prek.toml").read_text() == template_text
 
 
+def test_setup_prek_config_fresh_file_has_commit_msg_hook(
+    tmp_path: Path,
+) -> None:
+    """A new `prek.toml` installs a `commit-msg` shim & checks messages."""
+    setup_prek_config(tmp_path)
+    prek_toml = tmp_path / "prek.toml"
+    content = prek_toml.read_bytes()
+    doc = tomlkit.parse(content.decode())
+    url = "https://github.com/compilerla/conventional-pre-commit"
+
+    assert doc["default_install_hook_types"] == ["pre-commit", "commit-msg"]
+    assert doc["default_stages"] == ["pre-commit"]
+    hook_ids = [
+        hook["id"]
+        for repo in doc["repos"]
+        if repo["repo"] == url
+        for hook in repo["hooks"]
+    ]
+    assert hook_ids == ["conventional-pre-commit"]
+    assert setup_prek_config(tmp_path) == StepResult(
+        Outcome.OK, change=Change.UNCHANGED, subject="prek.toml"
+    )
+    assert prek_toml.read_bytes() == content
+
+
 def test_setup_prek_config_reset_updates_differing_file(
     tmp_path: Path,
 ) -> None:
