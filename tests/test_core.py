@@ -3,7 +3,9 @@
 import logging
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -255,6 +257,51 @@ def test_setup_prek_config_second_run_is_unchanged(tmp_path: Path) -> None:
     assert prek.read_bytes() == merged
 
 
+def test_setup_prek_config_adds_missing_top_level_key(
+    tmp_path: Path, isolated_user_config: Path
+) -> None:
+    """A template setting the project lacks is added above `[[repos]]`."""
+    (isolated_user_config / "hooks.toml").write_text(
+        'default_stages = ["pre-commit"]\n\n'
+        '[[repos]]\nrepo = "local"\n\n[[repos.hooks]]\nid = "a"\n'
+    )
+    prek = tmp_path / "prek.toml"
+    prek.write_text('[[repos]]\nrepo = "local"\n\n[[repos.hooks]]\nid = "a"\n')
+
+    result = setup_prek_config(tmp_path)
+
+    assert result == StepResult(
+        Outcome.OK, change=Change.UPDATED, subject="prek.toml"
+    )
+    text = prek.read_text()
+    assert tomlkit.parse(text)["default_stages"] == ["pre-commit"]
+    assert text.index("default_stages") < text.index("[[repos]]")
+    merged = prek.read_bytes()
+    assert setup_prek_config(tmp_path).change is Change.UNCHANGED
+    assert prek.read_bytes() == merged
+
+
+def test_setup_prek_config_keeps_project_top_level_key(
+    tmp_path: Path, isolated_user_config: Path
+) -> None:
+    """A setting the project already has keeps its value."""
+    (isolated_user_config / "hooks.toml").write_text(
+        'default_stages = ["pre-commit"]\n\n'
+        '[[repos]]\nrepo = "local"\n\n[[repos.hooks]]\nid = "a"\n'
+    )
+    prek = tmp_path / "prek.toml"
+    prek.write_text(
+        'default_stages = ["manual"]\n\n'
+        '[[repos]]\nrepo = "local"\n\n[[repos.hooks]]\nid = "a"\n'
+    )
+    original = prek.read_bytes()
+
+    result = setup_prek_config(tmp_path)
+
+    assert result.change is Change.UNCHANGED
+    assert prek.read_bytes() == original
+
+
 @pytest.mark.parametrize(
     ("inline", "args"),
     [
@@ -448,13 +495,50 @@ def test_prek_toml_and_git_io_set_encoding_on_non_ascii_config(
     assert result.returncode == 0, result.stderr
 
 
+_BOTH_HOOK_TYPES = (
+    'default_install_hook_types = ["pre-commit", "commit-msg"]\n'
+)
+
+
+def _write_shims(directory: Path, *hook_types: str) -> None:
+    """Write a Git shim for each hook type under `directory/.git/hooks`."""
+    hooks = directory / ".git" / "hooks"
+    hooks.mkdir(parents=True, exist_ok=True)
+    for hook_type in hook_types:
+        (hooks / hook_type).write_text("#!/bin/sh")
+
+
+def _prek_install(
+    *hook_types: str,
+) -> Callable[..., subprocess.CompletedProcess[str]]:
+    """Build a `prek install` mock that writes shims where it runs."""
+
+    def run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        _write_shims(kwargs["cwd"], *hook_types)
+        return _completed(0)
+
+    return run
+
+
+@pytest.mark.parametrize(
+    ("config", "shims"),
+    [
+        ("", ["pre-commit"]),
+        (_BOTH_HOOK_TYPES, ["pre-commit", "commit-msg"]),
+        ("[[repos]\n", ["pre-commit"]),
+        ('default_install_hook_types = "commit-msg"\n', ["pre-commit"]),
+    ],
+    ids=["default", "configured", "unparsable", "not-a-list"],
+)
 def test_install_prek_hooks_skips_existing_shims(
-    tmp_path: Path, mock_subprocess_run: mock.MagicMock
+    tmp_path: Path,
+    mock_subprocess_run: mock.MagicMock,
+    config: str,
+    shims: list[str],
 ) -> None:
     """Existing Git shims are left as they are, without running prek."""
-    shim = tmp_path / ".git" / "hooks" / "pre-commit"
-    shim.parent.mkdir(parents=True)
-    shim.write_text("#!/bin/sh")
+    (tmp_path / "prek.toml").write_text(config)
+    _write_shims(tmp_path, *shims)
 
     result = install_prek_hooks(tmp_path, tmp_path)
 
@@ -464,11 +548,63 @@ def test_install_prek_hooks_skips_existing_shims(
     mock_subprocess_run.assert_not_called()
 
 
+def test_install_prek_hooks_installs_missing_configured_shim(
+    tmp_path: Path, mock_subprocess_run: mock.MagicMock
+) -> None:
+    """A configured hook type without a shim runs a bare `prek install`."""
+    (tmp_path / "prek.toml").write_text(_BOTH_HOOK_TYPES)
+    _write_shims(tmp_path, "pre-commit")
+    mock_subprocess_run.side_effect = _prek_install("pre-commit", "commit-msg")
+
+    result = install_prek_hooks(tmp_path, tmp_path)
+
+    assert result == StepResult(
+        Outcome.OK, change=Change.UPDATED, subject="Git shims"
+    )
+    mock_subprocess_run.assert_called_once()
+    cmd = mock_subprocess_run.call_args.args[0]
+    assert cmd == [sys.executable, "-m", "prek", "install"]
+
+
+def test_install_prek_hooks_warns_when_configured_shim_still_missing(
+    tmp_path: Path, mock_subprocess_run: mock.MagicMock
+) -> None:
+    """A shim `prek install` did not write warns, naming its hook type."""
+    (tmp_path / "prek.toml").write_text(_BOTH_HOOK_TYPES)
+    _write_shims(tmp_path, "pre-commit")
+    mock_subprocess_run.side_effect = _prek_install("pre-commit")
+
+    result = install_prek_hooks(tmp_path, tmp_path)
+
+    assert result.outcome is Outcome.WARN
+    assert result.detail == "Git shims not installed"
+    assert result.message == "`prek install` left no commit-msg shim"
+    assert "pre-commit" not in result.message
+    assert "default_install_hook_types" in result.hint
+
+
+def test_install_prek_hooks_reads_config_at_project_root(
+    tmp_path: Path, mock_subprocess_run: mock.MagicMock
+) -> None:
+    """The hook types come from the project `prek.toml`, not the top-level."""
+    root = tmp_path / "proj"
+    root.mkdir()
+    (root / "prek.toml").write_text(_BOTH_HOOK_TYPES)
+    (tmp_path / "prek.toml").write_text("")
+    _write_shims(tmp_path, "pre-commit")
+    mock_subprocess_run.side_effect = _prek_install("pre-commit", "commit-msg")
+
+    result = install_prek_hooks(root, tmp_path)
+
+    assert result.change is Change.UPDATED
+    assert mock_subprocess_run.call_args.kwargs["cwd"] == tmp_path
+
+
 def test_install_prek_hooks_installs_at_git_toplevel(
     tmp_path: Path, mock_subprocess_run: mock.MagicMock
 ) -> None:
     """Git shims are installed from the Git top-level."""
-    mock_subprocess_run.return_value = _completed(0)
+    mock_subprocess_run.side_effect = _prek_install("pre-commit")
     toplevel = tmp_path / "top"
 
     result = install_prek_hooks(tmp_path, toplevel)
@@ -483,7 +619,7 @@ def test_install_prek_hooks_installs_at_project_root(
     tmp_path: Path, mock_subprocess_run: mock.MagicMock
 ) -> None:
     """Without a Git top-level, the shims are installed at the root."""
-    mock_subprocess_run.return_value = _completed(0)
+    mock_subprocess_run.side_effect = _prek_install("pre-commit")
 
     result = install_prek_hooks(tmp_path, None)
 

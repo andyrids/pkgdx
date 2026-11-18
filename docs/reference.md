@@ -31,8 +31,15 @@ Their behaviour is set by the `pkgdx` release, not by the project:
 - MUST NOT edit or remove the `pkgdx` entries by hand
 - COULD add custom `local` hooks next to `pkgdx-typing`, or remote hooks as new `[[repos]]` entries
 
-On an existing `prek.toml`, `init` only adds what is missing - repos matched by `repo`, hooks by
-`id` - and never edits or removes an entry, `rev` included. Project hooks survive it.
+On an existing `prek.toml`, `init` only adds what is missing - top-level settings matched by key,
+repos by `repo` and hooks by `id` - and never edits or removes an entry, `rev` included. Project
+hooks and settings survive it.
+
+`init` runs `prek install` when a hook type in `default_install_hook_types` (`pre-commit` if unset)
+has no shim in `.git/hooks`, and warns if one is still missing afterwards. prek reads the
+`prek.toml` at the Git top-level, so a project nested below it needs its hook types set there. Any
+existing file counts as a shim, even one prek did not write; `prek install` keeps a foreign
+`pre-commit` hook as `pre-commit.legacy`.
 
 ## Excluding files and folders
 
