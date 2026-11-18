@@ -5,7 +5,7 @@ default_stages = ["pre-commit"]
 
 [[repos]]
 repo = "https://gitlab.com/andyrids/pkgdx"
-rev = "v0.13.0"
+rev = "v0.14.0"
 
 [[repos.hooks]]
 id = "pkgdx-lint"
