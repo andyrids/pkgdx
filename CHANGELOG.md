@@ -18,6 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `docs/guidance/toolchain-pkgdx.md` is now `docs/reference.md`, without frontmatter.
+- `AGENTS.md` carries the maintainer notes; `CLAUDE.md` imports it instead of a symlink.
+
+### Removed
+
+- `docs/guidance/` standards, now managed outside pkgdx as personal agent rules.
+
 ## [0.13.0] - 2026-11-11
 
 ### Changed
