@@ -166,8 +166,8 @@ also applies to the markdown hook, but `pkgdx-secrets` keeps scanning listed pat
 in vendored code is still a leaked secret. Run `uv run pkgdx config` to see the list in effect.
 
 > [!NOTE]
-> See [the guidance](https://gitlab.com/andyrids/pkgdx/-/blob/main/docs/guidance/toolchain-pkgdx.md)
-> for the full rules. When upgrading, move both the `pkgdx` lock and the hook `rev` before relying
+> See [the reference](https://gitlab.com/andyrids/pkgdx/-/blob/main/docs/reference.md) for the
+> full rules. When upgrading, move both the `pkgdx` lock and the hook `rev` before relying
 > on the list.
 
 ## Adopting your own standards (external users)
