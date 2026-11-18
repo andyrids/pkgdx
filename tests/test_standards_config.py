@@ -127,12 +127,12 @@ def test_get_config_revision_ignores_user_hooks(
     """The revision comes from the bundled `hooks.toml` only."""
     (isolated_user_config / "hooks.toml").write_text("repos = []")
     standards.get_config_revision.cache_clear()
-    standards._load_prek_config.cache_clear()
+    standards._load_prek_config.cache_clear()  # noqa: SLF001 - reset cache
     try:
         assert standards.get_config_revision()
     finally:
         standards.get_config_revision.cache_clear()
-        standards._load_prek_config.cache_clear()
+        standards._load_prek_config.cache_clear()  # noqa: SLF001 - reset cache
 
 
 @pytest.mark.parametrize(

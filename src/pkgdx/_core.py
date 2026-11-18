@@ -130,8 +130,37 @@ def _last_line(text: str) -> str:
     return lines[-1].strip() if lines else ""
 
 
+def _install_hook_types(config: Path) -> tuple[str, ...]:
+    """Get the Git hook types `prek install` installs a shim for.
+
+    Args:
+        config: The project `prek.toml`.
+
+    Returns:
+        Its `default_install_hook_types`, or prek's default (`pre-commit`)
+        if the file cannot be read or parsed, or the key is unset or not a
+        list of strings.
+    """
+    try:
+        doc = tomlkit.parse(config.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, TOMLKitError) as e:
+        logger.debug("Could not read hook types from `%s`: %s", config, e)
+        return ("pre-commit",)
+    types = doc.get("default_install_hook_types")
+    if not isinstance(types, list) or not all(
+        isinstance(hook_type, str) for hook_type in types
+    ):
+        return ("pre-commit",)
+    return tuple(types)
+
+
 def install_prek_hooks(root: Path, git_toplevel: Path | None) -> StepResult:
-    """Install the pre-commit Git shims if not installed.
+    """Install the Git shims for each configured hook type if missing.
+
+    NOTE: The hook types are read from `default_install_hook_types` in the
+    project `prek.toml`. A bare `prek install` reads the config where it
+    runs, so the shims are checked again after it: one still missing (e.g.
+    a nested project, where prek reads the top-level config) warns.
 
     Args:
         root: The root path of the consuming repo.
@@ -139,13 +168,16 @@ def install_prek_hooks(root: Path, git_toplevel: Path | None) -> StepResult:
             the project root.
 
     Returns:
-        An OK result (created or unchanged), or WARN if `prek install`
-        fails.
+        An OK result (created, updated or unchanged), or WARN if `prek
+        install` fails or leaves a configured shim missing.
     """
     target = git_toplevel or root
     subject = "Git shims" if git_toplevel else "Git shims (at project root)"
-    if (target / ".git" / "hooks" / "pre-commit").exists():
-        logger.debug("Git shims already installed at `.git/hooks/pre-commit`")
+    hooks_dir = target / ".git" / "hooks"
+    hook_types = _install_hook_types(root / "prek.toml")
+    missing = [t for t in hook_types if not (hooks_dir / t).exists()]
+    if not missing:
+        logger.debug("Git shims already installed: %s", ", ".join(hook_types))
         return StepResult(Outcome.OK, change=Change.UNCHANGED, subject=subject)
 
     try:
@@ -164,9 +196,18 @@ def install_prek_hooks(root: Path, git_toplevel: Path | None) -> StepResult:
             "prek install exited %d: %s", proc.returncode, proc.stderr
         )
         if proc.returncode == 0:
-            return StepResult(
-                Outcome.OK, change=Change.CREATED, subject=subject
-            )
+            still = [t for t in missing if not (hooks_dir / t).exists()]
+            if still:
+                return StepResult(
+                    Outcome.WARN,
+                    "Git shims not installed",
+                    f"`prek install` left no {', '.join(still)} shim",
+                    "Set `default_install_hook_types` in the `prek.toml` at"
+                    " the Git top-level, then run `prek install`",
+                )
+            installed = len(missing) < len(hook_types)
+            change = Change.UPDATED if installed else Change.CREATED
+            return StepResult(Outcome.OK, change=change, subject=subject)
         reason = (
             _last_line(proc.stderr)
             or f"prek exited with code {proc.returncode}"
@@ -261,6 +302,9 @@ def _create_repo_table(
         doc: The TOMLDocument to parse.
         name: The name of the repository.
         revision: The revision of the repository.
+
+    Returns:
+        The new repository table, appended to `doc["repos"]`.
     """
     new_repo = tomlkit.table()
     new_repo["repo"] = name
@@ -344,7 +388,11 @@ def _inject_missing_hooks(
 def _merge_template(
     doc: TOMLDocument, template: TOMLDocument
 ) -> tuple[bool, int]:
-    """Merge the template repos & hooks missing from a consumer document.
+    """Merge the template settings, repos & hooks missing from a document.
+
+    NOTE: A top-level setting (e.g. `default_install_hook_types`) is added
+    only when the document lacks its key; a value the project set is kept.
+    tomlkit places an added setting above the first table.
 
     Args:
         doc: The parsed consumer `prek.toml` document, modified in place.
@@ -355,6 +403,12 @@ def _merge_template(
         of hooks added.
     """
     changed, added = False, 0
+    for key, value in template.items():
+        if key != "repos" and key not in doc:
+            logger.debug("Detected missing top-level key `%s`", key)
+            doc[key] = value
+            changed = True
+
     if "repos" not in doc or not doc.get("repos", []):
         logger.debug("Existing `prek.toml` missing or has empty `[repos]`")
         doc["repos"] = tomlkit.aot()

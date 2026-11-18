@@ -43,10 +43,11 @@ def mock_subprocess_run() -> Iterator[mock.MagicMock]:
     """Mock `subprocess.run` to avoid calling external tools."""
     with mock.patch("subprocess.run") as mocked:
         mocked.return_value.returncode = 0
+        mocked.return_value.stderr = b""
         yield mocked
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def mock_project(tmp_path_factory: pytest.TempPathFactory) -> pathlib.Path:
     """Create a temporary project directory for testing."""
 

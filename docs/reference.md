@@ -1,14 +1,4 @@
----
-context-hierarchy: Layer 3
-context-hierarchy-role: Reference material
-immutable: true
-recommended-context-tokens: 2500
-version: 1.1.1
-updated: 2026-11-02
-tags: [pkgdx, prek, pre-commit, config, exclude, submodules]
----
-
-# Toolchain - `pkgdx`
+# `pkgdx` reference for consuming projects
 
 `pkgdx` is the dev dependency that carries the canonical standards. It ships the Ruff, Mypy and
 PyMarkdown configs, the hook shims that apply them, and the template for the hooks it manages in
@@ -35,14 +25,31 @@ entries belong to `pkgdx`:
   `pkgdx-markdown`, `pkgdx-secrets`)
 - The `pkgdx-typing` hook in the `local` repo
 - The `check-toml`, `check-yaml` and `detect-private-key` hooks in the `builtin` repo
+- The `https://github.com/compilerla/conventional-pre-commit` repo and its
+  `conventional-pre-commit` hook, which checks each commit message
+- The top-level `default_install_hook_types` (`pre-commit` and `commit-msg`) and
+  `default_stages` (`pre-commit`) settings
 
 Their behaviour is set by the `pkgdx` release, not by the project:
 
 - MUST NOT edit or remove the `pkgdx` entries by hand
 - COULD add custom `local` hooks next to `pkgdx-typing`, or remote hooks as new `[[repos]]` entries
 
-On an existing `prek.toml`, `init` only adds what is missing - repos matched by `repo`, hooks by
-`id` - and never edits or removes an entry, `rev` included. Project hooks survive it.
+Commit messages MUST follow [Conventional Commits](https://www.conventionalcommits.org/) - a
+`type: description` subject such as `feat: add export`. Merge, `fixup!` and `squash!` messages
+pass, but Git's default `Revert "..."` message does not - reword it as `revert: <description>`. A
+project that sets its own `default_install_hook_types` MUST include `commit-msg` in it, or
+the check never runs.
+
+On an existing `prek.toml`, `init` only adds what is missing - top-level settings matched by key,
+repos by `repo` and hooks by `id` - and never edits or removes an entry, `rev` included. Project
+hooks and settings survive it.
+
+`init` runs `prek install` when a hook type in `default_install_hook_types` (`pre-commit` if unset)
+has no shim in `.git/hooks`, and warns if one is still missing afterwards. prek reads the
+`prek.toml` at the Git top-level, so a project nested below it needs its hook types set there. Any
+existing file counts as a shim, even one prek did not write; `prek install` keeps a foreign
+`pre-commit` hook as `pre-commit.legacy`.
 
 ## Excluding files and folders
 
@@ -95,6 +102,14 @@ A run with any argument, even a flag such as `--pretty`, leaves import following
 reports those errors and can fail where the no-argument hook passes. Add `--follow-imports=silent`
 to match. If every Python file is excluded, Mypy exits 2.
 
+## PyMarkdown crashes
+
+PyMarkdown can crash while tokenizing a document. It then reports `<path>:0:0: An unhandled error`
+with no line, keeps scanning the other files and exits 1. `pkgdx-markdown` follows that line with a
+`hint:`. A known cause is a pipe (`|`) in a list item or blockquote, which the `markdown-tables`
+extension misreads; escaping it does not help, so reword it (`A or B` for `A | B`). Add
+`--stack-trace` to the hook arguments to see where it failed.
+
 ## Resetting
 
 `uv run pkgdx init --reset` overwrites `prek.toml` with the `pkgdx` template, losing every project
@@ -107,8 +122,9 @@ hook, remote repo and edit.
 1. `uv lock --upgrade-package pkgdx`, then `uv sync`
 2. `uv run prek update --repo https://gitlab.com/andyrids/pkgdx` to move `rev` to the same release.
    The remote hooks are defined in the `pkgdx` repo at that `rev`, so they follow it.
-3. `pkgdx-typing` is copied into `prek.toml` in full, so neither step refreshes it. When the
-   `pkgdx` CHANGELOG reports a change to it, apply it with a reset (see Resetting).
+3. `uv run pkgdx init` to add new `pkgdx` entries, settings and Git shims.
+4. `pkgdx-typing` is copied into `prek.toml` in full, so no step refreshes it. When the `pkgdx`
+   CHANGELOG reports a change to it, apply it with a reset (see Resetting).
 
 Remote hooks run the `pkgdx` at `rev`, while `pkgdx config` and `pkgdx-typing` run the locked one.
 To adopt `[tool.pkgdx] exclude`, SHOULD complete steps 1 and 2, add the table and run
@@ -131,19 +147,3 @@ replaces the bundled one, otherwise the bundled one is used.
 ## Installation
 
 `pkgdx` is a dev dependency, resolved from PyPI.
-
-## This repository
-
-`pkgdx` develops the standards above, so its own setup differs from a consuming project:
-
-- `src/pkgdx/standards/` holds the canonical configs and `hooks.toml` - changing them changes the
-  standard, released with a version bump (see `AGENTS.md`)
-- `prek.toml` is maintained by hand. Its local `format`, `lint` and `markdown` hooks pass the
-  in-repo configs by path and ignore the user config directory; `typing` runs `pkgdx-typing-hook`
-  and follows it
-- MUST NOT run `pkgdx init` here - it adds the published `pkgdx` hooks alongside the local ones,
-  so every check runs twice
-- `uv run pymarkdown --config src/pkgdx/standards/pymarkdown.toml scan <file>` - Lint a file
-  against the in-repo config
-- A release that changes `pkgdx-typing` in `hooks.toml` MUST say so in the CHANGELOG, as consumers
-  only pick it up with a reset

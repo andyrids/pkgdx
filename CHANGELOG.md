@@ -16,7 +16,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > - `Fixed` for any bug fixes.
 > - `Security` in case of vulnerabilities.
 
-## [Unreleased]
+## [0.14.0] - 2026-11-18
+
+### Added
+
+- `ruff.toml` selects `PGH003`, `TID251`, `PT`, `SLF001` & preview `DOC201`, `DOC402`, `DOC501`.
+  Existing projects may see new violations.
+- `TID251` bans `logging.basicConfig` & `logging.captureWarnings`, as libraries must not
+  configure logging.
+- `PT` & `SLF001` apply only under `**/tests/**`; `DOC201` & `DOC402` are ignored there.
+- `preview = true` also turns on the preview behaviour of rules already selected. Ruff is not
+  upper-bounded, so preview rules can change with a Ruff release.
+- A `ruff.toml` in the user config directory replaces the whole file, so it gets none of these.
+- `CPY001` is not selected, as there is no per-file copyright header convention.
+- `pkgdx-markdown` adds a `hint:` after a PyMarkdown tokenizer crash (`:0:0:`), naming a known
+  trigger (a pipe in a list item or blockquote) & its workaround.
+- `conventional-pre-commit` hook (`commit-msg` stage) checks commit messages follow Conventional
+  Commits. The template sets `default_install_hook_types` & `default_stages = ["pre-commit"]`.
+  Existing projects pick these up with `uv run pkgdx init`.
+
+### Changed
+
+- `pymarkdownlnt` floor is `>=0.9.42` (was `>=0.9.37`).
+- `pkgdx init` adds template top-level settings missing from `prek.toml`; set ones are kept.
+- `pkgdx init` runs `prek install` when any `default_install_hook_types` shim is missing, and
+  warns if one still is (e.g. a nested project). prek keeps a foreign `pre-commit` hook as
+  `pre-commit.legacy`.
+- `docs/guidance/toolchain-pkgdx.md` is now `docs/reference.md`, without frontmatter.
+- `AGENTS.md` carries the maintainer notes; `CLAUDE.md` imports it instead of a symlink.
+
+### Removed
+
+- `docs/guidance/` standards, now managed outside pkgdx as personal agent rules.
 
 ## [0.13.0] - 2026-11-11
 

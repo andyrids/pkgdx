@@ -4,12 +4,13 @@ import json
 import os
 import re
 import subprocess
+import sys
 from itertools import islice
 from typing import Any
 
 from pkgdx import exceptions, standards
 
-# PyMarkdown's global options (`pymarkdown --help`, 0.9.41), which go before
+# PyMarkdown's global options (`pymarkdown --help`, 0.9.42), which go before
 # `scan`. The short `-e` is left out: after `scan` it means `--exclude`.
 _PYMARKDOWN_FLAGS = frozenset(
     {"--continue-on-error", "--no-json5", "--stack-trace", "--strict-config"}
@@ -30,6 +31,38 @@ _PYMARKDOWN_OPTIONS = frozenset(
         "--set",
     }
 )
+# PyMarkdown reports a tokenizer crash on STDERR, at no line, as e.g.
+# `<path>:0:0: An unhandled error occurred processing the document.`
+_PYMARKDOWN_CRASH = b":0:0: An unhandled error"
+_PYMARKDOWN_CRASH_HINT = (
+    "hint: PyMarkdown crashed tokenizing a document above & reports no line."
+    " A pipe (`|`) in a list item or blockquote is a known cause while the"
+    " markdown-tables extension is enabled; escaping it does not help, so"
+    " reword it (e.g. replace `A | B` with `A or B`).\n"
+)
+
+
+def _run_process(
+    cmd: list[str], **kwargs: Any
+) -> subprocess.CompletedProcess[bytes]:
+    """Run a hook tool & return the completed process.
+
+    Args:
+        cmd: The tool command, its executable first.
+        **kwargs: Extra `subprocess.run` keyword arguments.
+
+    Returns:
+        The completed process.
+
+    Raises:
+        exceptions.ToolNotFoundError: If the executable is not on `PATH`.
+    """
+    try:
+        return subprocess.run(cmd, **kwargs)
+    except FileNotFoundError as e:
+        raise exceptions.ToolNotFoundError(
+            f"`{cmd[0]}` not found on PATH"
+        ) from e
 
 
 def _run_tool(cmd: list[str], **kwargs: Any) -> int:
@@ -41,18 +74,8 @@ def _run_tool(cmd: list[str], **kwargs: Any) -> int:
 
     Returns:
         The tool's return code.
-
-    Raises:
-        exceptions.ToolNotFoundError: If the executable is not on `PATH`.
     """
-    try:
-        proc = subprocess.run(cmd, **kwargs)
-    except FileNotFoundError as e:
-        raise exceptions.ToolNotFoundError(
-            f"`{cmd[0]}` not found on PATH"
-        ) from e
-    else:
-        return proc.returncode
+    return _run_process(cmd, **kwargs).returncode
 
 
 # PROJECT EXCLUDES
@@ -135,28 +158,56 @@ def _is_excluded(arg: str, excludes: list[str]) -> bool:
 
 
 def core_ruff_format(args: list[str]) -> int:
-    """Core logic for ruff formatting."""
+    """Core logic for ruff formatting.
+
+    Args:
+        args: The hook arguments, passed to Ruff.
+
+    Returns:
+        The Ruff return code.
+    """
     config = standards.resolve_config(standards.RUFF_CONFIG).as_posix()
     cmd = ["ruff", "format", "--config", config, *_ruff_exclude_args(), *args]
     return _run_tool(cmd)
 
 
 def core_ruff_lint(args: list[str]) -> int:
-    """Core logic for ruff linting."""
+    """Core logic for ruff linting.
+
+    Args:
+        args: The hook arguments, passed to Ruff.
+
+    Returns:
+        The Ruff return code.
+    """
     config = standards.resolve_config(standards.RUFF_CONFIG).as_posix()
     cmd = ["ruff", "check", "--config", config, *_ruff_exclude_args(), *args]
     return _run_tool(cmd)
 
 
 def core_mypy_typing(args: list[str]) -> int:
-    """Core logic for mypy type checking."""
+    """Core logic for mypy type checking.
+
+    Args:
+        args: The hook arguments, passed to Mypy.
+
+    Returns:
+        The Mypy return code.
+    """
     config = standards.resolve_config(standards.MYPY_CONFIG).as_posix()
     cmd = ["mypy", "--config-file", config, *_mypy_exclude_args(args), *args]
     return _run_tool(cmd)
 
 
 def core_detect_secrets(args: list[str]) -> int:
-    """Core logic for detect-secrets."""
+    """Core logic for detect-secrets.
+
+    Args:
+        args: The hook arguments, passed to detect-secrets.
+
+    Returns:
+        The detect-secrets return code.
+    """
     if "--baseline" not in args:
         args = ["--baseline", ".secrets.baseline"] + args
     cmd = ["detect-secrets-hook"] + args
@@ -180,6 +231,10 @@ def core_pymarkdown_lint(args: list[str]) -> int:
     prek passes, not passed as `-e`: PyMarkdown exits 1 silently when `-e`
     leaves it nothing to scan, so the hook returns 0. A command with `scan`
     options is hand-written & runs as given, as an option's value is no path.
+
+    PyMarkdown's STDERR is captured & passed through as is, after its STDOUT.
+    If it reports a tokenizer crash (`_PYMARKDOWN_CRASH`), which names no
+    line, `_PYMARKDOWN_CRASH_HINT` follows it once.
 
     Args:
         args: The hook arguments: paths, `scan` & global options.
@@ -224,4 +279,11 @@ def core_pymarkdown_lint(args: list[str]) -> int:
         "scan",
         *scan_args,
     ]
-    return _run_tool(cmd)
+    proc = _run_process(cmd, stderr=subprocess.PIPE)
+    if proc.stderr:
+        sys.stderr.flush()
+        sys.stderr.buffer.write(proc.stderr)
+        sys.stderr.buffer.flush()
+        if _PYMARKDOWN_CRASH in proc.stderr:
+            sys.stderr.write(_PYMARKDOWN_CRASH_HINT)
+    return proc.returncode
