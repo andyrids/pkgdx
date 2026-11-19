@@ -43,7 +43,7 @@ just consumer-demo
 > Use `uvx rust-just consumer-demo` if [Just](https://just.systems/man/en/) command runner
 > is not installed.
 
-![Demo Preview](./docs/pkgdx-demo.webp)
+![Demo Preview](./docs/pkgdx-demo-v2.webp)
 
 Further installation and setup guidance is available below.
 
